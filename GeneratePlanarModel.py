@@ -15,12 +15,13 @@ from biorbd.model_creation import (
     SegmentCoordinateSystemReal,
     SegmentCoordinateSystem,
     InertiaParametersReal,
+    InertiaParameters,
     Translations,
     Rotations,
 )
 
 # Visualization of the model 3D
-# Model3D = bioviz.Viz('/home/lim/Documents/Anais/Robust_standingBack/Pyomecaman_original.bioMod')
+#Model3D = bioviz.Viz('/home/lim/Documents/Anais/Robust_standingBack/Pyomecaman_original.bioMod')
 model3D = biorbd.Model('/home/lim/Documents/Anais/Robust_standingBack/Pyomecaman_original.bioMod')
 
 #path_model3D= '/home/lim/Documents/Anais/Robust_standingBack/Pyomecaman_original.bioMod'
@@ -36,8 +37,8 @@ We create a new model in 2D (sagittal plane) from an old model
 model2D = BiomechanicalModelReal()
 
 # The trunk segment
-model2D["Pelvis"] = SegmentReal(
-    name="Pelvis",
+model2D[model3D.segments()[0].name().to_string()] = SegmentReal(
+    name=model3D.segments()[0].name().to_string(),
     translations=Translations.XY,
     rotations=Rotations.Z,
     inertia_parameters=InertiaParametersReal(
@@ -46,13 +47,13 @@ model2D["Pelvis"] = SegmentReal(
         inertia=model3D.segments()[0].characteristics().inertia().to_array()))
 
 for i in range(0, 5):
-    model2D["Pelvis"].add_marker(MarkerReal(name=model3D.markerNames()[i].to_string(),
-                                            parent_name="Pelvis",
-                                            position=model3D.markers()[i].to_array()))
+    model2D[model3D.segments()[0].name().to_string()].add_marker(MarkerReal(name=model3D.markerNames()[i].to_string(),
+                                                                            parent_name=model3D.segments()[0].name().to_string(),
+                                                                            position=model3D.markers()[i].to_array()))
 
 # The Thorax segment
-model2D["Thorax"] = SegmentReal(
-    parent_name="Pelvis",
+model2D[model3D.segments()[1].name().to_string()] = SegmentReal(
+    parent_name=model3D.segments()[0].name().to_string(),
     rotations=Rotations.Z,
     segment_coordinate_system=SegmentCoordinateSystemReal.from_euler_and_translation(
         (0, 0, 0), "xyz", (.0000000000, -0.0515404739, 0.1813885235)),
@@ -62,13 +63,13 @@ model2D["Thorax"] = SegmentReal(
         inertia=model3D.segments()[1].characteristics().inertia().to_array()))
 
 for i in range(6, 11):
-    model2D["Thorax"].add_marker(MarkerReal(name=model3D.markerNames()[6].to_string(),
-                                            parent_name="Thorax",
-                                            position=model3D.markers()[6].to_array()))
+    model2D[model3D.segments()[1].name().to_string()].add_marker(MarkerReal(name=model3D.markerNames()[6].to_string(),
+                                                                            parent_name=model3D.segments()[1].name().to_string(),
+                                                                            position=model3D.markers()[6].to_array()))
 
 # The Head segment
-model2D["Head"] = SegmentReal(
-    parent_name="Thorax",
+model2D[model3D.segments()[2].name().to_string()] = SegmentReal(
+    parent_name=model3D.segments()[1].name().to_string(),
     rotations=Rotations.Z,
     segment_coordinate_system=SegmentCoordinateSystemReal.from_euler_and_translation(
         (0, 0, 0), "xyz", (.0000000000, -0.0515404739, 0.1813885235)),
@@ -78,13 +79,13 @@ model2D["Head"] = SegmentReal(
         inertia=model3D.segments()[2].characteristics().inertia().to_array()))
 
 for i in range(12, 16):
-    model2D["Head"].add_marker(MarkerReal(name=model3D.markerNames()[12].to_string(),
-                                          parent_name="Head",
-                                          position=model3D.markers()[12].to_array()))
+    model2D[model3D.segments()[2].name().to_string()].add_marker(MarkerReal(name=model3D.markerNames()[12].to_string(),
+                                                                            parent_name=model3D.segments()[2].name().to_string(),
+                                                                            position=model3D.markers()[12].to_array()))
 
 # The arm segment
 model2D["Arm"] = SegmentReal(
-    parent_name="Thorax",
+    parent_name=model3D.segments()[1].name().to_string(),
     rotations=Rotations.Z,
     segment_coordinate_system=SegmentCoordinateSystemReal.from_euler_and_translation(
         (0, 0, 0), "xyz", (0, 0, 0.53)),
@@ -141,7 +142,7 @@ for i in range(30, 32):
 # The thigh segment
 model2D["Thigh"] = SegmentReal(
     name="Thigh",
-    parent_name="Pelvis",
+    parent_name=model3D.segments()[0].name().to_string(),
     rotations=Rotations.Z,
     inertia_parameters=InertiaParametersReal(
         mass=model3D.segments()[9].characteristics().mass()*2,
@@ -157,7 +158,7 @@ for i in range(49, 53):
 # The leg segment
 model2D["Leg"] = SegmentReal(
     name="Leg",
-    parent_name="THIGH",
+    parent_name="Thigh",
     rotations=Rotations.Z,
     segment_coordinate_system=SegmentCoordinateSystemReal.from_euler_and_translation(
         (0, 0, 0), "xyz", (0, 0, -0.42)),
