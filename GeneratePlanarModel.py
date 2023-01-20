@@ -42,7 +42,7 @@ model2D["Pelvis"] = SegmentReal(
     rotations=Rotations.Z,
     inertia_parameters=InertiaParametersReal(
         mass=model3D.segments()[0].characteristics().mass(),
-        center_of_mass=model3D.segments()[0].characteristics().CoM().to_array(),
+        center_of_mass=model3D.segments()[0].characteristics().CoM().to_array()[:, np.newaxis],
         inertia=model3D.segments()[0].characteristics().inertia().to_array()))
 
 for i in range(0, 5):
@@ -58,7 +58,7 @@ model2D["Thorax"] = SegmentReal(
         (0, 0, 0), "xyz", (.0000000000, -0.0515404739, 0.1813885235)),
     inertia_parameters=InertiaParametersReal(
         mass=model3D.segments()[1].characteristics().mass(),
-        center_of_mass=model3D.segments()[1].characteristics().CoM().to_array(),
+        center_of_mass=model3D.segments()[1].characteristics().CoM().to_array()[:, np.newaxis],
         inertia=model3D.segments()[1].characteristics().inertia().to_array()))
 
 for i in range(6, 11):
@@ -74,7 +74,7 @@ model2D["Head"] = SegmentReal(
         (0, 0, 0), "xyz", (.0000000000, -0.0515404739, 0.1813885235)),
     inertia_parameters=InertiaParametersReal(
         mass=model3D.segments()[2].characteristics().mass(),
-        center_of_mass=model3D.segments()[2].characteristics().CoM().to_array(),
+        center_of_mass=model3D.segments()[2].characteristics().CoM().to_array()[:, np.newaxis],
         inertia=model3D.segments()[2].characteristics().inertia().to_array()))
 
 for i in range(12, 16):
@@ -90,7 +90,7 @@ model2D["Arm"] = SegmentReal(
         (0, 0, 0), "xyz", (0, 0, 0.53)),
     inertia_parameters=InertiaParametersReal(
         mass=model3D.segments()[3].characteristics().mass()*2,
-        center_of_mass=model3D.segments()[3].characteristics().CoM().to_array(),
+        center_of_mass=model3D.segments()[3].characteristics().CoM().to_array()[:, np.newaxis],
         inertia=model3D.segments()[3].characteristics().inertia().to_array()*2))
 
 for i in range(17, 21):
@@ -108,7 +108,7 @@ model2D["Forearm"] = SegmentReal(
         (0, 0, 0), "xyz", (0, 0, -0.28)),
     inertia_parameters=InertiaParametersReal(
         mass=model3D.segments()[4].characteristics().mass()*2,
-        center_of_mass=model3D.segments()[4].characteristics().CoM().to_array(),
+        center_of_mass=model3D.segments()[4].characteristics().CoM().to_array()[:, np.newaxis],
         inertia=model3D.segments()[4].characteristics().inertia().to_array()*2))
 
 for i in range(22, 29):
@@ -127,7 +127,7 @@ model2D["Hand"] = SegmentReal(
         (0, 0, 0), "xyz", (0, 0, -0.27)),
     inertia_parameters=InertiaParametersReal(
         mass=model3D.segments()[5].characteristics().mass() * 2,
-        center_of_mass=model3D.segments()[5].characteristics().CoM().to_array(),
+        center_of_mass=model3D.segments()[5].characteristics().CoM().to_array()[:, np.newaxis],
         inertia=model3D.segments()[5].characteristics().inertia().to_array() * 2)
 )
 
@@ -145,7 +145,7 @@ model2D["Thigh"] = SegmentReal(
     rotations=Rotations.Z,
     inertia_parameters=InertiaParametersReal(
         mass=model3D.segments()[9].characteristics().mass()*2,
-        center_of_mass=model3D.segments()[9].characteristics().CoM().to_array(),
+        center_of_mass=model3D.segments()[9].characteristics().CoM().to_array()[:, np.newaxis],
         inertia=model3D.segments()[9].characteristics().inertia().to_array()*2))
 
 for i in range(49, 53):
@@ -163,7 +163,7 @@ model2D["Leg"] = SegmentReal(
         (0, 0, 0), "xyz", (0, 0, -0.42)),
     inertia_parameters=InertiaParametersReal(
         mass=model3D.segments()[10].characteristics().mass()*2,
-        center_of_mass=model3D.segments()[10].characteristics().CoM().to_array(),
+        center_of_mass=model3D.segments()[10].characteristics().CoM().to_array()[:, np.newaxis],
         inertia=model3D.segments()[10].characteristics().inertia().to_array()*2))
 
 for i in range(54, 59):
@@ -182,7 +182,7 @@ model2D["Foot"] = SegmentReal(
         (-np.pi / 2, 0, 0), "xyz", (0, 0, -0.43)),
     inertia_parameters=InertiaParametersReal(
         mass=model3D.segments()[11].characteristics().mass()*2,
-        center_of_mass=model3D.segments()[11].characteristics().CoM().to_array(),
+        center_of_mass=model3D.segments()[11].characteristics().CoM().to_array()[:, np.newaxis],
         inertia=model3D.segments()[11].characteristics().inertia().to_array()*2))
 
 for i in range(60, 65):
