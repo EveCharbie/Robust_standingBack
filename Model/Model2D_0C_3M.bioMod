@@ -3,7 +3,7 @@ version 4
 gravity 0 0 -9.81
 
 segment	Pelvis
-	RT -0.1 0 0	xyz 0 0 0
+	RT -0.1 0 0	xyz 0 0 0.8
 	translations yz
 	rotations	 x
 	rangesQ
@@ -309,9 +309,9 @@ marker	 BELOW_KNEE
 	position 0.0 0.07 -0.1575
 	technical 1
 endmarker
-
-contact	Foot_Toe
+marker	 FOOT
 	parent	Foot
-	position	0.00000000000   -0.0300000000   -0.15000000000
-	axis	yz
-endcontact
+	position 0.0 -0.03 -0.12
+	technical 1
+endmarker
+

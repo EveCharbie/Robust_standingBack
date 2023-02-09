@@ -3,7 +3,7 @@ version 4
 gravity 0 0 -9.81
 
 segment	Pelvis
-	RT -0.1 0 0	xyz 0 0 0
+	RT -0.1 0 0	xyz 0 0 0.8
 	translations yz
 	rotations	 x
 	rangesQ
@@ -19,7 +19,6 @@ segment	Pelvis
 		0.0	0.1254	0.0
 		0.0	0.0	0.1123
 	com	0.0	0.0	0.1044
-	meshfile	mesh/pelvis.stl
 endsegment
 
 actuator	 Pelvis
@@ -67,7 +66,6 @@ segment	Thorax
 		0.0	0.6185	0.0
 		0.0	0.0	0.2343
 	com	0.0	0.0	0.1767
-	meshfile	mesh/thorax.stl
 endsegment
 
 segment	Head
@@ -79,7 +77,6 @@ segment	Head
 		0.0	0.0881	0.0
 		0.0	0.0	0.0156
 	com	0.0	0.0	0.0853
-	meshfile	mesh/head.stl
 endsegment
 
 segment	Arm
@@ -99,7 +96,6 @@ segment	Arm
 		0.0	0.03770325476957999	0.0
 		0.0	0.0	0.005996554197399041
 	com	0.0	0.0	-0.1427
-	meshfile	mesh/arm.stl
 endsegment
 
 actuator	 Arm
@@ -144,8 +140,6 @@ segment	Forearm
 		0.0	0.013154165656146893	0.0
 		0.0	0.0	0.0019576149660600886
 	com	0.0	0.0	-0.1264
-	meshfile	mesh/fore_arm.stl
-	meshrt	0 0 0	xyz	0 0 0
 endsegment
 
 segment	Hand
@@ -162,8 +156,6 @@ segment	Hand
 		0.0	0.0031487689115472926	0.0
 		0.0	0.0	0.0006717710781510774
 	com	0.01927061	-0.007717575	-0.051481325
-	meshfile	mesh/hand.stl
-	meshrt	-1 0 0	xyz	0 0 0
 endsegment
 
 marker	 CENTER_HAND
@@ -188,8 +180,6 @@ segment	Thigh
 		0.0	0.3444	0.0
 		0.0	0.0	0.0674
 	com	0.0	0.0	-0.2017
-	meshfile	mesh/thigh.stl
-	meshrt	0 0 0	xyz	 0 0 0
 endsegment
 
 actuator	 Thigh
@@ -237,8 +227,6 @@ segment	Leg
 		0.0	0.1702	0.0
 		0.0	0.0	0.0122
 	com	0.0	0.0	-0.2026
-	meshfile	mesh/leg_right.stl
-	meshrt	0 0 1	xyz	 0 0 0
 endsegment
 
 actuator	 Leg
@@ -286,8 +274,6 @@ segment	Foot
 		0.0	0.0022	0.0
 		0.0	0.0	0.0176
 	com	0.0	0.0	-0.0757
-	meshfile	mesh/foot.stl
-	meshrt	0 0 0	xyz	0.014 -0.02 -0.022
 endsegment
 
 actuator	 Foot
@@ -321,6 +307,11 @@ endactuator
 marker	 BELOW_KNEE
 	parent	Leg
 	position 0.0 0.07 -0.1575
+	technical 1
+endmarker
+marker	 FOOT
+	parent	Foot
+	position 0.0 -0.03 -0.12
 	technical 1
 endmarker
 
