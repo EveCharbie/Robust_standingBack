@@ -87,7 +87,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         max_bound=max_bound,
         node=Node.END,
         contact_index=1,
-        phase=2)
+        phase=1)
 
     constraints.add(
         ConstraintFcn.TRACK_CONTACT_FORCES,
@@ -95,7 +95,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         max_bound=max_bound,
         node=Node.END,
         contact_index=2,
-        phase=2)
+        phase=1)
 
     #constraints.add(
     #    ConstraintFcn.TRACK_MARKERS,
@@ -115,13 +115,13 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Initialize x_bounds
     x_bounds = BoundsList()
 
-    # Phase 1
+    # Phase 1:
     x_bounds.add(bounds=QAndQDotBounds(bio_model[0]))
     x_bounds[0][:, 0] = pose_at_first_node + [0] * n_qdot
     x_bounds[0].min[2, 1] = -np.pi/2
     x_bounds[0].max[2, 1] = np.pi/2
 
-    # Phase 2
+    # Phase 2:
     x_bounds.add(bounds=QAndQDotBounds(bio_model[1]))
     x_bounds[1].min[2, 1] = 0
     x_bounds[1].max[2, 1] = 2 * np.pi
