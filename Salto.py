@@ -4,14 +4,9 @@ Phase 1: Propulsion
 - one contact (toe)
 - objectives functions: maximize velocity of CoM and minimize time of flight
 
-Phase 2: Phase in air + salto
-- zero contact (in the air)
-- objectives functions: maximize height of CoM and maximize time of flight
-
-Phase 3: Landing
-- zero contact (in the air)
-- objectives functions: maximize height of CoM and maximize time of flight
-
+Phase 2: Salto + Landing
+- zero contact + 1 contact marker foot end phase
+- objectives functions: maximize torque,
 
 """
 # --- Import package --- #
@@ -61,17 +56,15 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     #objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=1, phase=0)
 
     # Phase 2 (Salto + Landing):  Rotation, Maximize
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_COM_POSITION, weight=-100, phase=1)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=-10, phase=1)
-    #objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=-1000, phase=1, min_bound=0.3, max_bound=1.5)
+    #objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_COM_POSITION, weight=-100, phase=1)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=10, phase=1)
+    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=-1000, phase=1, min_bound=0.3, max_bound=2)
     #objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_STATE, node=Node.END, key="qdot", weight=100, phase=1)
 
     # Dynamics
     dynamics = DynamicsList()
     dynamics.add(DynamicsFcn.TORQUE_DRIVEN, with_contact=True)
     dynamics.add(DynamicsFcn.TORQUE_DRIVEN)
-    #dynamics.add(DynamicsFcn.TORQUE_DRIVEN)
-    #dynamics.add(DynamicsFcn.TORQUE_DRIVEN, with_contact=True)
 
     # Constraints
     constraints = ConstraintList()
@@ -90,8 +83,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         axes=Axis.Z,
         phase=1)
 
-
-
     # Path constraint
     n_q = bio_model[0].nb_q
     n_qdot = n_q
@@ -100,7 +91,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     #pose_salto = [-0.19583755162181637, 0.5015741174899331, 0.0843622312961141, 1.774819320123863, 2.19012680837638, -1.3515591584543678, -0.5899163322480979]
     #pose_salto = [0.0, 0.5, 0.9211, 1.125, 2.2382, -2.2639, 0.0]
     #pose_landing = [0.0, 0.14, 0.0, 3.1, 0.0, 0.0, 0.0]
-
 
     # Initialize x_bounds
     x_bounds = BoundsList()
@@ -117,18 +107,14 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[1].max[2, 1] = 2 * np.pi #2 * np.pi + 0.5
     x_bounds[1].min[2, 2] = 2 * np.pi - 0.5 #0
     x_bounds[1].max[2, 2] = 2 * np.pi + 0.5
-    x_bounds[1].min[4, 2] = 0 - 0.05
-    x_bounds[1].max[4, 2] = 0 + 0.05
-
-    # Phase 3
-    #x_bounds.add(bounds=QAndQDotBounds(bio_model[2]))
-    #x_bounds[2][:, 2] = pose_landing + [0] * n_qdot
 
     # Initial guess
     x_init = InitialGuessList()
-    x_init.add((np.array([pose_at_first_node + [0] * n_qdot, pose_extension + [0] * n_qdot])).T, interpolation=InterpolationType.LINEAR)
+    x_init.add(pose_at_first_node + [0] * n_qdot)
+    #x_init.add((np.array([pose_at_first_node + [0] * n_qdot, pose_extension + [0] * n_qdot])).T, interpolation=InterpolationType.LINEAR)
     #x_init.add((np.array([pose_extension + [0] * n_qdot, pose_salto + [0] * n_qdot])).T, interpolation=InterpolationType.LINEAR)
     #x_init.add((np.array([pose_salto + [0] * n_qdot, pose_landing + [0] * n_qdot])).T, interpolation=InterpolationType.LINEAR)
+    #x_init.add(pose_at_first_node + [0] * n_qdot)
     x_init.add(pose_at_first_node + [0] * n_qdot)
 
     # Define control path constraint
@@ -167,8 +153,8 @@ def main():
     ocp = prepare_ocp(
         biorbd_model_path=("/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_1C_3M.bioMod",
                            "/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_0C_3M.bioMod"),
-        phase_time=(0.3, 1.5),
-        n_shooting=(30, 150),
+        phase_time=(0.5, 2),
+        n_shooting=(50, 200),
         min_bound=50,
         max_bound=np.inf,
     )

@@ -114,7 +114,7 @@ model3D = biorbd.Model('/home/lim/Documents/Anais/Robust_standingBack/Pyomecaman
 # model2D = biorbd.Model('/home/lim/Documents/Anais/Robust_standingBack/Model2D')
 
 # Create a txt file
-Model2D = open("Model2D", "w")
+Model2D = open("Model2D_2C_3M_mesh.bioMod", "w")
 
 # Create list
 meshfile_name = ["mesh/pelvis.stl", "mesh/thorax.stl", "mesh/head.stl", "mesh/arm.stl", "mesh/fore_arm.stl",
@@ -146,7 +146,7 @@ Model2D.write("version 4\n\ngravity 0 0 -9.81\n\n")
 # Pelvis segment
 Model2D.write("segment\t" + segment[0] + "\n")
 Model2D.write("\tRT -0.1 0 0\txyz" + " " + str(xyz_segment[0][0]) + " " + str(xyz_segment[0][1]) + " " + str(
-    xyz_segment[0][0]) + "\n")
+    xyz_segment[0][2]) + "\n")
 Model2D.write("\ttranslations yz\n")
 Model2D.write("\trotations\t x\n")
 Model2D.write("\trangesQ\n\t\t" + str(model3D.segments()[0].QRanges()[0].min()) + " " + str(
@@ -412,7 +412,7 @@ Model2D.write(str(ActuatorGauss3P(
     float(List_actuator[11][((12-10)*2+1)]))))
 
 Model2D.write(str(Markers("BELOW_KNEE", segment[7], np.array([0, 0.07, -0.1575]))))
-
+Model2D.write(str(Markers("FOOT", segment[8], np.array([0, -0.05, -0.12]))))
 Model2D.write("contact\tFoot_Heel\n")
 Model2D.write("\tparent\t" + parent[7] + "\n")
 Model2D.write("\tposition\t0.00000000000   -0.0300000000    0.05000000000\n")
@@ -434,7 +434,7 @@ Model2D.close()
 #model2D = biorbd.Model('/home/lim/Documents/Anais/Robust_standingBack/Model2D')
 
 # Visualisation of the new model
-#b = bioviz.Viz('/home/lim/Documents/Anais/Robust_standingBack/Model2D')
+#b = bioviz.Viz('/home/lim/Documents/Anais/Robust_standingBack/Model2D_0C_1M.bioMod')
 #b.exec()
 
 
