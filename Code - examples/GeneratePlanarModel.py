@@ -109,12 +109,10 @@ class ActuatorGauss3P:
 # Load the 3D model
 
 # Visualization of the model 3D
-#Model3D = bioviz.Viz('/home/lim/Documents/Anais/Robust_standingBack/Pyomecaman_original.bioMod')
-model3D = biorbd.Model('/home/lim/Documents/Anais/Robust_standingBack/Pyomecaman_original.bioMod')
-# model2D = biorbd.Model('/home/lim/Documents/Anais/Robust_standingBack/Model2D')
+model3D = biorbd.Model('/home/lim/Documents/Anais/Robust_standingBack/Model/Pyomecaman_original.bioMod')
 
 # Create a txt file
-Model2D = open("Model2D_2C_3M_mesh.bioMod", "w")
+Model2D = open("Model2D_2C_3M_new.bioMod", "w")
 
 # Create list
 meshfile_name = ["mesh/pelvis.stl", "mesh/thorax.stl", "mesh/head.stl", "mesh/arm.stl", "mesh/fore_arm.stl",
@@ -279,6 +277,8 @@ for i in range(4, 6):
     Model2D.write("endsegment\n\n")
 
 Model2D.write(str(Markers("CENTER_HAND", segment[5], np.array([0, 0.025, -0.0655]))))
+Model2D.write(str(ActuatorConstant(segment[4], "RotX", "positive", 0.0)))
+Model2D.write(str(ActuatorConstant(segment[4], "RotX", "negative", 0.0)))
 
 
 rangeQ = [model3D.segments()[10].QRanges()[0].min(), model3D.segments()[10].QRanges()[0].max(), -model3D.segments()[11].QRanges()[0].max(), model3D.segments()[11].QRanges()[0].min()]
@@ -429,12 +429,3 @@ Model2D.write("endcontact\n")
 
 # Close the txt file
 Model2D.close()
-
-# Open the new model
-#model2D = biorbd.Model('/home/lim/Documents/Anais/Robust_standingBack/Model2D')
-
-# Visualisation of the new model
-#b = bioviz.Viz('/home/lim/Documents/Anais/Robust_standingBack/Model2D_0C_1M.bioMod')
-#b.exec()
-
-
