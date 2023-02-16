@@ -31,7 +31,7 @@ Second method: Create a 2D model from a old 3D model in a txt file
 def format_vec(vec):
     return ("{} " * len(vec)).format(*vec)[:-1]
 
-#Create class
+# --- Create class --- #
 
 
 DType = TypeVar("DType", bound=np.generic)
@@ -106,15 +106,13 @@ class ActuatorGauss3P:
         return rt
 
 
-# Load the 3D model
-
-# Visualization of the model 3D
+# --- Load the 3D model --- #
 model3D = biorbd.Model('/home/lim/Documents/Anais/Robust_standingBack/Model/Pyomecaman_original.bioMod')
 
-# Create a txt file
-Model2D = open("Model2D_2C_3M_new.bioMod", "w")
+# --- Create a txt file --- #
+Model2D = open("Model2D_2C_3M_RotX_elbow.bioMod", "w")
 
-# Create list
+# --- Create list --- #
 meshfile_name = ["mesh/pelvis.stl", "mesh/thorax.stl", "mesh/head.stl", "mesh/arm.stl", "mesh/fore_arm.stl",
                  "mesh/hand.stl", "mesh/thigh.stl", "mesh/leg_right.stl", "mesh/foot.stl"]
 
@@ -122,6 +120,8 @@ xyz_segment = [[0, 0, 0.8], [0.0000000000, -0.0515404739, 0.1813885235], [0.0000
                [-0.091447676, 0.040607449, -0.104557232]]
 segment = ["Pelvis", "Thorax", "Head", "Arm", "Forearm", "Hand", "Thigh", "Leg", "Foot"]
 parent = ["Pelvis", "Thorax", "Arm", "Forearm", "Pelvis", "Thigh", "Leg", "Foot"]
+Qdot_min = -31.42
+Qdot_max = 31.42
 
 List_actuator = [
     ["Thigh", "Leg", "Foot"],
@@ -138,10 +138,16 @@ List_actuator = [
     [25.6939, 72.5836, 61.7303, 33.2908, 0.7442, 12.6824]
 ]
 
-# Write on the txt file
+rangeQ = [model3D.segments()[10].QRanges()[0].min(), model3D.segments()[10].QRanges()[0].max(), -model3D.segments()[11].QRanges()[0].max(), model3D.segments()[11].QRanges()[0].min()]
+meshrt_leg = [0, 1]
+meshrt_hand = [0, -1]
+Matrice_rotation_x = biorbd.Rotation.fromEulerAngles(np.array([np.pi/2, 0, 0]), 'xyz').to_array()
+
+# --- Write on the txt file --- #
 Model2D.write("version 4\n\ngravity 0 0 -9.81\n\n")
 
-# Pelvis segment
+# --- Pelvis --- #
+# Segment Pelvis
 Model2D.write("segment\t" + segment[0] + "\n")
 Model2D.write("\tRT -0.1 0 0\txyz" + " " + str(xyz_segment[0][0]) + " " + str(xyz_segment[0][1]) + " " + str(
     xyz_segment[0][2]) + "\n")
@@ -153,12 +159,9 @@ Model2D.write("\trangesQ\n\t\t" + str(model3D.segments()[0].QRanges()[0].min()) 
     model3D.segments()[0].QRanges()[1].max()) + "\n\t\t"
               + str(model3D.segments()[0].QRanges()[2].min()) + " " + str(
     model3D.segments()[0].QRanges()[2].max()) + "\n")
-Model2D.write("\trangesQdot\t" + str(model3D.segments()[0].QDotRanges()[0].min()) + " " + str(
-    model3D.segments()[0].QDotRanges()[0].max()) + "\n\t\t"
-              + str(model3D.segments()[0].QDotRanges()[1].min()) + " " + str(
-    model3D.segments()[0].QDotRanges()[1].max()) + "\n\t\t"
-              + str(model3D.segments()[0].QDotRanges()[2].min()) + " " + str(
-    model3D.segments()[0].QDotRanges()[2].max()) + "\n")
+Model2D.write("\trangesQdot\t" + str(Qdot_min) + " " + str(Qdot_max) + "\n\t\t"
+              + str(Qdot_min) + " " + str(Qdot_max) + "\n\t\t"
+              + str(Qdot_min) + " " + str(Qdot_max) + "\n")
 Model2D.write("\tmass\t" + str(model3D.segments()[0].characteristics().mass()) + "\n")
 Model2D.write("\tinertia\n\t\t" + str(model3D.segments()[0].characteristics().inertia().to_array()[0][0]) + "\t"
               + str(model3D.segments()[0].characteristics().inertia().to_array()[0][1]) + "\t"
@@ -184,7 +187,8 @@ Model2D.write(str(ActuatorConstant(segment[0], "TransZ", "negative", 0.0)))
 Model2D.write(str(ActuatorConstant(segment[0], "RotX", "positive", 0.0)))
 Model2D.write(str(ActuatorConstant(segment[0], "RotX", "negative", 0.0)))
 
-# Thorax and head segment
+# --- Thorax and head --- #
+# Segment Thorax and head
 for i in range(1, 3):
     Model2D.write("segment\t" + segment[i] + "\n")
     Model2D.write("\tparent\t" + parent[i - 1] + "\n")
@@ -208,8 +212,8 @@ for i in range(1, 3):
     Model2D.write("\tmeshfile\t" + meshfile_name[i] + "\n")
     Model2D.write("endsegment\n\n")
 
-# Arm
-
+# --- Arm --- #
+# Segment Arm
 Model2D.write("segment\t" + segment[3] + "\n")
 Model2D.write("\tparent\t" + parent[3 - 2] + "\n")
 Model2D.write("\tRTinMatrix\t1\n")
@@ -222,8 +226,7 @@ Model2D.write("\tRT\n\t\t" + "1" + " " + " 0 " + " " + "0" + " "
 Model2D.write("\trotations\t x\n")
 Model2D.write("\trangesQ\t" + str(model3D.segments()[3].QRanges()[0].min()) + " " + str(
     model3D.segments()[3].QRanges()[0].max()) + "\n")
-Model2D.write("\trangesQdot\t" + str(model3D.segments()[3].QDotRanges()[0].min()) + " " + str(
-    model3D.segments()[3].QDotRanges()[0].max()) + "\n")
+Model2D.write("\trangesQdot\t" + str(Qdot_min) + " " + str(Qdot_max) + "\n")
 Model2D.write("\tmass\t" + str(model3D.segments()[3].characteristics().mass() * 2) + "\n")
 Model2D.write("\tinertia\n\t\t"
               + str(model3D.segments()[3].characteristics().inertia().to_array()[0][0] * 2) + "\t"
@@ -242,49 +245,85 @@ Model2D.write("\tcom\t"
 Model2D.write("\tmeshfile\t" + meshfile_name[3] + "\n")
 Model2D.write("endsegment\n\n")
 
+# Actuators Arm
 Model2D.write(str(ActuatorGauss3P(segment[3], "RotX", "positive", 112.8107, 89.0611, 1000, 400, 0.878, 40, -6.275, 109.6679, -41.0307)))
 Model2D.write(str(ActuatorGauss3P(segment[3], "RotX", "negative", 162.7655, 128.4991, 812.5000, 325.0000, 0.9678, 40.0000, -90.0000, 103.9095, -101.6627)))
 
-meshrt_hand = [0, -1]
-# Forearm and hand
-for i in range(4, 6):
-    Model2D.write("segment\t" + segment[i] + "\n")
-    Model2D.write("\tparent\t" + parent[i - 2] + "\n")
-    Model2D.write("\tRTinMatrix\t1\n")
-    Model2D.write("\tRT\n\t\t" + "1" + " " + " 0 " + " " + "0" + " "
-                  + str((model3D.localJCS()[i].to_array()[0][3] + model3D.localJCS()[i + 3].to_array()[0][3]) / 2) + "\n\t\t"
-                  + "0" + " " + "1" + " " + "0" + " " + str((model3D.localJCS()[i].to_array()[1][3] + model3D.localJCS()[i + 3].to_array()[1][3]) / 2) + "\n\t\t"
-                  + "0" + " " + "0 " + " " + "1" + " "
-                  + str((model3D.localJCS()[i].to_array()[2][3] + model3D.localJCS()[i + 3].to_array()[2][3]) / 2) + "\n\t\t"
-                  + "0" + " " + "0" + " " + "0" + " " + "1" + "\n")
-    Model2D.write("\tmass\t" + str(model3D.segments()[i].characteristics().mass() * 2) + "\n")
-    Model2D.write("\tinertia\n\t\t"
-                  + str(model3D.segments()[i].characteristics().inertia().to_array()[0][0] * 2) + "\t"
-                  + str(model3D.segments()[i].characteristics().inertia().to_array()[0][1] * 2) + "\t"
-                  + str(model3D.segments()[i].characteristics().inertia().to_array()[0][2] * 2) + "\n\t\t"
-                  + str(model3D.segments()[i].characteristics().inertia().to_array()[1][0] * 2) + "\t"
-                  + str(model3D.segments()[i].characteristics().inertia().to_array()[1][1] * 2) + "\t"
-                  + str(model3D.segments()[i].characteristics().inertia().to_array()[1][2] * 2) + "\n\t\t"
-                  + str(model3D.segments()[i].characteristics().inertia().to_array()[2][0] * 2) + "\t"
-                  + str(model3D.segments()[i].characteristics().inertia().to_array()[2][1] * 2) + "\t"
-                  + str(model3D.segments()[i].characteristics().inertia().to_array()[2][2] * 2) + "\n")
-    Model2D.write("\tcom\t"
-                  + str(model3D.segments()[i].characteristics().CoM().to_array()[0]) + "\t"
-                  + str(model3D.segments()[i].characteristics().CoM().to_array()[1]) + "\t"
-                  + str(model3D.segments()[i].characteristics().CoM().to_array()[2]) + "\n")
-    Model2D.write("\tmeshfile\t" + meshfile_name[i] + "\n")
-    Model2D.write("\tmeshrt\t" + str(meshrt_hand[i-4]) + " 0 0\txyz\t0 0 0\n")
-    Model2D.write("endsegment\n\n")
+# --- Forearm --- #
+# Segment Forearm
+Model2D.write("segment\t" + segment[4] + "\n")
+Model2D.write("\tparent\t" + parent[4 - 2] + "\n")
+Model2D.write("\tRTinMatrix\t1\n")
+Model2D.write("\tRT\n\t\t" + "1" + " " + " 0 " + " " + "0" + " "
+              + str((model3D.localJCS()[4].to_array()[0][3] + model3D.localJCS()[4 + 3].to_array()[0][3]) / 2) + "\n\t\t"
+              + "0" + " " + "1" + " " + "0" + " " + str((model3D.localJCS()[4].to_array()[1][3] + model3D.localJCS()[4 + 3].to_array()[1][3]) / 2) + "\n\t\t"
+              + "0" + " " + "0 " + " " + "1" + " "
+              + str((model3D.localJCS()[4].to_array()[2][3] + model3D.localJCS()[4 + 3].to_array()[2][3]) / 2) + "\n\t\t"
+              + "0" + " " + "0" + " " + "0" + " " + "1" + "\n")
+Model2D.write("\trotations\t x\n")
+Model2D.write("\trangesQ\t" + str(0) + " " + str(2.09) + "\n")
+Model2D.write("\trangesQdot\t" + str(Qdot_min) + " " + str(Qdot_max) + "\n")
+Model2D.write("\tmass\t" + str(model3D.segments()[4].characteristics().mass() * 2) + "\n")
+Model2D.write("\tinertia\n\t\t"
+              + str(model3D.segments()[4].characteristics().inertia().to_array()[0][0] * 2) + "\t"
+              + str(model3D.segments()[4].characteristics().inertia().to_array()[0][1] * 2) + "\t"
+              + str(model3D.segments()[4].characteristics().inertia().to_array()[0][2] * 2) + "\n\t\t"
+              + str(model3D.segments()[4].characteristics().inertia().to_array()[1][0] * 2) + "\t"
+              + str(model3D.segments()[4].characteristics().inertia().to_array()[1][1] * 2) + "\t"
+              + str(model3D.segments()[4].characteristics().inertia().to_array()[1][2] * 2) + "\n\t\t"
+              + str(model3D.segments()[4].characteristics().inertia().to_array()[2][0] * 2) + "\t"
+              + str(model3D.segments()[4].characteristics().inertia().to_array()[2][1] * 2) + "\t"
+              + str(model3D.segments()[4].characteristics().inertia().to_array()[2][2] * 2) + "\n")
+Model2D.write("\tcom\t"
+              + str(model3D.segments()[4].characteristics().CoM().to_array()[0]) + "\t"
+              + str(model3D.segments()[4].characteristics().CoM().to_array()[1]) + "\t"
+              + str(model3D.segments()[4].characteristics().CoM().to_array()[2]) + "\n")
+Model2D.write("\tmeshfile\t" + meshfile_name[4] + "\n")
+Model2D.write("\tmeshrt\t" + str(meshrt_hand[0]) + " 0 0\txyz\t0 0 0\n")
+Model2D.write("endsegment\n\n")
 
+# Actuators Forearm
+Model2D.write(str(ActuatorGauss3P(segment[4], "RotX", "positive", 69, 49.3, 1268, 905.7, 0.99, 40, -90, 27.5, 79)))
+Model2D.write(str(ActuatorGauss3P(segment[4], "RotX", "negative", 66, 47.14, 1368, 977.14, 0.99, 40.0000, -90.0000, 28.6, 76)))
+
+# Marker Forearm
+Model2D.write(str(Markers("ELBOW", segment[4], np.array([0, 0, 0]))))
+
+# --- Hand --- #
+# Segment Hand
+Model2D.write("segment\t" + segment[5] + "\n")
+Model2D.write("\tparent\t" + parent[3] + "\n")
+Model2D.write("\tRTinMatrix\t1\n")
+Model2D.write("\tRT\n\t\t" + "1" + " " + " 0 " + " " + "0" + " "
+              + str((model3D.localJCS()[5].to_array()[0][3] + model3D.localJCS()[5 + 3].to_array()[0][3]) / 2) + "\n\t\t"
+              + "0" + " " + "1" + " " + "0" + " " + str((model3D.localJCS()[5].to_array()[1][3] + model3D.localJCS()[5 + 3].to_array()[1][3]) / 2) + "\n\t\t"
+              + "0" + " " + "0 " + " " + "1" + " "
+              + str((model3D.localJCS()[5].to_array()[2][3] + model3D.localJCS()[5 + 3].to_array()[2][3]) / 2) + "\n\t\t"
+              + "0" + " " + "0" + " " + "0" + " " + "1" + "\n")
+Model2D.write("\tmass\t" + str(model3D.segments()[5].characteristics().mass() * 2) + "\n")
+Model2D.write("\tinertia\n\t\t"
+              + str(model3D.segments()[5].characteristics().inertia().to_array()[0][0] * 2) + "\t"
+              + str(model3D.segments()[5].characteristics().inertia().to_array()[0][1] * 2) + "\t"
+              + str(model3D.segments()[5].characteristics().inertia().to_array()[0][2] * 2) + "\n\t\t"
+              + str(model3D.segments()[5].characteristics().inertia().to_array()[1][0] * 2) + "\t"
+              + str(model3D.segments()[5].characteristics().inertia().to_array()[1][1] * 2) + "\t"
+              + str(model3D.segments()[5].characteristics().inertia().to_array()[1][2] * 2) + "\n\t\t"
+              + str(model3D.segments()[5].characteristics().inertia().to_array()[2][0] * 2) + "\t"
+              + str(model3D.segments()[5].characteristics().inertia().to_array()[2][1] * 2) + "\t"
+              + str(model3D.segments()[5].characteristics().inertia().to_array()[2][2] * 2) + "\n")
+Model2D.write("\tcom\t"
+              + str(model3D.segments()[5].characteristics().CoM().to_array()[0]) + "\t"
+              + str(model3D.segments()[5].characteristics().CoM().to_array()[1]) + "\t"
+              + str(model3D.segments()[5].characteristics().CoM().to_array()[2]) + "\n")
+Model2D.write("\tmeshfile\t" + meshfile_name[5] + "\n")
+Model2D.write("\tmeshrt\t" + str(meshrt_hand[1]) + " 0 0\txyz\t0 0 0\n")
+Model2D.write("endsegment\n\n")
+
+# Marker Hand
 Model2D.write(str(Markers("CENTER_HAND", segment[5], np.array([0, 0.025, -0.0655]))))
-Model2D.write(str(ActuatorConstant(segment[4], "RotX", "positive", 0.0)))
-Model2D.write(str(ActuatorConstant(segment[4], "RotX", "negative", 0.0)))
 
-
-rangeQ = [model3D.segments()[10].QRanges()[0].min(), model3D.segments()[10].QRanges()[0].max(), -model3D.segments()[11].QRanges()[0].max(), model3D.segments()[11].QRanges()[0].min()]
-
-meshrt_leg = [0, 1]
-# Thigh, Leg
+# --- Thigh and Leg --- #
+# Segment Thigh and Leg
 for i in range(10, 12):
     Model2D.write("segment\t" + segment[i - 4] + "\n")
     Model2D.write("\tparent\t" + parent[i - 6] + "\n")
@@ -297,8 +336,7 @@ for i in range(10, 12):
                   + "0" + " " + "0" + " " + "0" + " " + "1" + "\n")
     Model2D.write("\trotations\t x\n")
     Model2D.write("\trangesQ\t" + str(rangeQ[(i-10)*2]) + " " + str(rangeQ[(i-10)*2+1]) + "\n")
-    Model2D.write("\trangesQdot\t" + str(model3D.segments()[i].QDotRanges()[0].min()) + " " + str(
-        model3D.segments()[i].QDotRanges()[0].max()) + "\n")
+    Model2D.write("\trangesQdot\t" + str(Qdot_min) + " " + str(Qdot_max) + "\n")
     Model2D.write("\tmass\t" + str(model3D.segments()[i].characteristics().mass() * 2) + "\n")
     Model2D.write("\tinertia\n\t\t"
                   + str(model3D.segments()[i].characteristics().inertia().to_array()[0][0] * 2) + "\t"
@@ -317,6 +355,8 @@ for i in range(10, 12):
     Model2D.write("\tmeshfile\t" + meshfile_name[i - 4] + "\n")
     Model2D.write("\tmeshrt\t0 0 " + str(meshrt_leg[i-10])+"\txyz\t 0 0 0\n")
     Model2D.write("endsegment\n\n")
+
+# Actuators Thigh and Leg
     Model2D.write(str(ActuatorGauss3P(
             str(List_actuator[0][i-10]),
             str(List_actuator[1][(i-10)*2]),
@@ -345,11 +385,12 @@ for i in range(10, 12):
             float(List_actuator[10][((i-10)*2+1)]),
             float(List_actuator[11][((i-10)*2+1)])
         )))
-# Foot
 
+# Markers Leg
+Model2D.write(str(Markers("BELOW_KNEE", segment[7], np.array([0, 0.07, -0.1575]))))
 
-Matrice_rotation_x = biorbd.Rotation.fromEulerAngles(np.array([np.pi/2, 0, 0]), 'xyz').to_array()
-
+# --- Foot --- #
+# Segment
 Model2D.write("segment\t" + segment[12 - 4] + "\n")
 Model2D.write("\tparent\t" + parent[12 - 6] + "\n")
 Model2D.write("\tRTinMatrix\t1\n")
@@ -362,8 +403,7 @@ Model2D.write("\tRT\n\t\t" + str(Matrice_rotation_x[0][0]) + " " + str(Matrice_r
 Model2D.write("\trotations\t x\n")
 Model2D.write("\trangesQ\t" + str(model3D.segments()[12].QRanges()[0].min()) + " " + str(
     model3D.segments()[12].QRanges()[0].max()) + "\n")
-Model2D.write("\trangesQdot\t" + str(model3D.segments()[12].QDotRanges()[0].min()) + " " + str(
-    model3D.segments()[12].QDotRanges()[0].max()) + "\n")
+Model2D.write("\trangesQdot\t" + str(Qdot_min) + " " + str(Qdot_max) + "\n")
 Model2D.write("\tmass\t" + str(model3D.segments()[12].characteristics().mass() * 2) + "\n")
 Model2D.write("\tinertia\n\t\t"
               + str(model3D.segments()[12].characteristics().inertia().to_array()[0][0] * 2) + "\t"
@@ -383,6 +423,7 @@ Model2D.write("\tmeshfile\t" + meshfile_name[12 - 4] + "\n")
 Model2D.write("\tmeshrt\t0 0 0\txyz\t0.014 -0.02 -0.022\n")
 Model2D.write("endsegment\n\n")
 
+# Actuators Foot
 Model2D.write(str(ActuatorGauss3P(
     str(List_actuator[0][12-10]),
     str(List_actuator[1][(12-10)*2]),
@@ -411,8 +452,11 @@ Model2D.write(str(ActuatorGauss3P(
     float(List_actuator[10][((12-10)*2+1)]),
     float(List_actuator[11][((12-10)*2+1)]))))
 
-Model2D.write(str(Markers("BELOW_KNEE", segment[7], np.array([0, 0.07, -0.1575]))))
+# Markers Foot
 Model2D.write(str(Markers("FOOT", segment[8], np.array([0, -0.05, -0.12]))))
+Model2D.write(str(Markers("ANKLE", segment[8], np.array([0, 0, 0]))))
+
+# Contact Foot
 Model2D.write("contact\tFoot_Heel\n")
 Model2D.write("\tparent\t" + parent[7] + "\n")
 Model2D.write("\tposition\t0.00000000000   -0.0300000000    0.05000000000\n")
@@ -424,8 +468,6 @@ Model2D.write("\tparent\t" + parent[7] + "\n")
 Model2D.write("\tposition\t0.00000000000   -0.0300000000   -0.15000000000\n")
 Model2D.write("\taxis\tyz\n")
 Model2D.write("endcontact\n")
-
-
 
 # Close the txt file
 Model2D.close()
