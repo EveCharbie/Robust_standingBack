@@ -19,6 +19,7 @@ Phase 5: Landing
 - objectives functions: minimize velocity CoM
 
 """
+
 # --- Import package --- #
 
 import numpy as np
@@ -45,6 +46,8 @@ from bioptim import (
     Solver,
 )
 
+nb_phase = 5
+
 # --- Prepare ocp --- #
 
 
@@ -53,9 +56,13 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # --- Options --- #
     # BioModel path
     bio_model = (BiorbdModel(biorbd_model_path[0]), BiorbdModel(biorbd_model_path[1]), BiorbdModel(biorbd_model_path[2]), BiorbdModel(biorbd_model_path[3]), BiorbdModel(biorbd_model_path[4]))
-    tau_min, tau_max, tau_init = -1000, 1000, 0
+    #tau_min, tau_max, tau_init = -1000, 1000, 0
+    tau_min = [0, 0, 0, -325.531, -138, -981.1876, -735.3286, -343.9806]
+    tau_max = [0, 0, 0, 325.531, 138, 981.1876, 735.3286, 343.9806]
+    tau_init = 0
     dof_mapping = BiMappingList()
     dof_mapping.add("tau", [None, None, None, 0, 1, 2, 3, 4], [3, 4, 5, 6, 7])
+
 
     # --- Objectives functions ---#
     # Add objective functions
@@ -63,17 +70,16 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
     # Phase 1 (Propulsion): Maximize velocity CoM + Minimize time (less important)
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_COM_VELOCITY, node=Node.END, weight=-1, phase=0, axes=Axis.Z)
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=1000, phase=0, min_bound=0.1, max_bound=0.3)
+    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=100000, phase=0, min_bound=0.1, max_bound=0.3)
 
     # Phase 2 (Take-off): Max time and height CoM
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=-1000, phase=1, min_bound=0.2, max_bound=0.5)
+    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=-100000, phase=1, min_bound=0.2, max_bound=0.5)
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_COM_POSITION, node=Node.END,  weight=-10000, phase=1)
 
     # Phase 3 (Salto):  Rotation, Maximize
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=10, phase=2)
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=10, phase=2, min_bound=0.5, max_bound=1.5)
-    #objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_MARKERS, node=Node.ALL, weight=0.01, phase=2, reference_jcs=0) # derivative=True
-    # objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_MARKERS, node=Node.ALL, weight=1, phase=2, quadratic=True, reference_jcs=0)
+    # objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_MARKERS, node=Node.ALL, weight=0.01, phase=2, reference_jcs=0) # derivative=True
 
     # Phase 4 (Take-off after salto): Minimize time
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=-10, phase=3, min_bound=0.01, max_bound=0.3)
@@ -85,11 +91,11 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # --- Dynamics ---#
     # Dynamics
     dynamics = DynamicsList()
-    #dynamics.add(DynamicsFcn.TORQUE_DRIVEN, with_contact=True)
-    #dynamics.add(DynamicsFcn.TORQUE_DRIVEN)
-    #dynamics.add(DynamicsFcn.TORQUE_DRIVEN)
-    #dynamics.add(DynamicsFcn.TORQUE_DRIVEN)
-    #dynamics.add(DynamicsFcn.TORQUE_DRIVEN, with_contact=True)
+    dynamics.add(DynamicsFcn.TORQUE_DRIVEN, with_contact=True)
+    dynamics.add(DynamicsFcn.TORQUE_DRIVEN)
+    dynamics.add(DynamicsFcn.TORQUE_DRIVEN)
+    dynamics.add(DynamicsFcn.TORQUE_DRIVEN)
+    dynamics.add(DynamicsFcn.TORQUE_DRIVEN, with_contact=True)
 
     #dynamics.add(DynamicsFcn.TORQUE_ACTIVATIONS_DRIVEN, with_contact=True)
     #dynamics.add(DynamicsFcn.TORQUE_ACTIVATIONS_DRIVEN)
@@ -115,7 +121,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         min_bound=min_bound,
         max_bound=max_bound,
         node=Node.START,
-        contact_index=2,
+        contact_index=1,
         phase=0)
 
     # Phase 3 (constraint contact between two markers during phase 3)
@@ -189,41 +195,25 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
     # Initial guess
     x_init = InitialGuessList()
-    x_init.add(pose_at_first_node + [0] * n_qdot)
-    x_init.add(pose_at_first_node + [0] * n_qdot)
-    x_init.add(pose_at_first_node + [0] * n_qdot)
-    x_init.add(pose_at_first_node + [0] * n_qdot)
-    x_init.add(pose_at_first_node + [0] * n_qdot)
+    for x in range(nb_phase):
+        x_init.add(pose_at_first_node + [0] * n_qdot)
+    #x_init.add(pose_at_first_node + [0] * n_qdot)
+    #x_init.add(pose_at_first_node + [0] * n_qdot)
+    #x_init.add(pose_at_first_node + [0] * n_qdot)
+    #x_init.add(pose_at_first_node + [0] * n_qdot)
 
     # Define control path constraint
     u_bounds = BoundsList()
-    u_bounds.add(
-        [tau_min] * (bio_model[0].nb_tau-3),
-        [tau_max] * (bio_model[0].nb_tau-3),
-    )
-    u_bounds.add(
-        [tau_min] * (bio_model[1].nb_tau-3),
-        [tau_max] * (bio_model[1].nb_tau-3),
-    )
-    u_bounds.add(
-        [tau_min] * (bio_model[2].nb_tau-3),
-        [tau_max] * (bio_model[2].nb_tau-3),
-    )
-    u_bounds.add(
-        [tau_min] * (bio_model[3].nb_tau-3),
-        [tau_max] * (bio_model[3].nb_tau-3),
-    )
-    u_bounds.add(
-        [tau_min] * (bio_model[4].nb_tau-3),
-        [tau_max] * (bio_model[4].nb_tau-3),
-    )
+    for j in range(0, nb_phase):
+        u_bounds.add(
+            [tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
+            [tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]],
+        )
 
     u_init = InitialGuessList()
-    u_init.add([tau_init] * (bio_model[0].nb_tau-3))
-    u_init.add([tau_init] * (bio_model[1].nb_tau-3))
-    u_init.add([tau_init] * (bio_model[2].nb_tau-3))
-    u_init.add([tau_init] * (bio_model[3].nb_tau-3))
-    u_init.add([tau_init] * (bio_model[4].nb_tau - 3))
+
+    for j in range(0, nb_phase):
+        u_init.add([tau_init] * (bio_model[j].nb_tau-3))
 
     return OptimalControlProgram(
         bio_model=bio_model,
@@ -244,11 +234,11 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
 def main():
     ocp = prepare_ocp(
-        biorbd_model_path=("/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_2C_5M_RotX_elbow.bioMod",
-                           "/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_0C_5M_RotX_elbow.bioMod",
-                           "/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_0C_5M_RotX_elbow.bioMod",
-                           "/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_0C_5M_RotX_elbow.bioMod",
-                           "/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_2C_5M_RotX_elbow.bioMod"),
+        biorbd_model_path=("/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_8Dof_1C_5M.bioMod",
+                           "/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_8Dof_0C_5M.bioMod",
+                           "/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_8Dof_0C_5M.bioMod",
+                           "/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_8Dof_0C_5M.bioMod",
+                           "/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_8Dof_2C_5M.bioMod"),
         phase_time=(0.5, 0.3, 1, 0.2, 0.2),
         n_shooting=(50, 30, 100, 20, 20),
         min_bound=50,
@@ -259,25 +249,28 @@ def main():
 
     # --- Solve the program --- #
     solver = Solver.IPOPT(show_online_optim=True, show_options=dict(show_bounds=True))
-    solver.set_maximum_iterations(1500)
+    solver.set_maximum_iterations(1000)
     sol = ocp.solve(solver)
 
 # --- Show results --- #
     sol.animate()
     sol.print_cost()
-    sol.graphs()
+    sol.graphs(show_bounds=True)
 
 # --- Save results --- #
-    ocp.save(sol, f"Salto_5phases_V5_states.bo", stand_alone=True)
-    with open(f"Salto_5phases_V5_states.bo", "wb") as file:
+    movement = "Salto"
+    version = 7
+
+    ocp.save(sol, str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + "_states.bo", stand_alone=True)
+    with open(str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + "_states.bo", "wb") as file:
         pickle.dump(sol.states, file)
 
-    ocp.save(sol, f"Salto_5phases_V5_controls.bo", stand_alone=True)
-    with open(f"Salto_5phases_V5_controls.bo", "wb") as file:
+    ocp.save(sol, str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + "_controls.bo", stand_alone=True)
+    with open(str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + "_controls.bo", "wb") as file:
         pickle.dump(sol.controls, file)
 
-    ocp.save(sol, f"Salto_5phases_V5_parameters.bo", stand_alone=True)
-    with open(f"Salto_5phases_V5_parameters.bo", "wb") as file:
+    ocp.save(sol, str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + "_parameters.bo", stand_alone=True)
+    with open(str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + "_parameters.bo", "wb") as file:
         pickle.dump(sol.parameters, file)
 
 # --- Open file pickle --- #
@@ -289,5 +282,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
