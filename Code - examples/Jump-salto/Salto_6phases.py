@@ -142,7 +142,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         min_bound=min_bound,
         max_bound=max_bound,
         node=Node.START,
-        contact_index=2,
+        contact_index=1,
         phase=1)
 
     # Phase 3 (constraint contact between two markers during phase 3)
@@ -287,7 +287,7 @@ def main():
 
 # --- Save results --- #
     movement = "Salto"
-    version = 14
+    version = 1
 
     ocp.save(sol, str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + "_states.bo", stand_alone=True)
     with open(str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + "_states.bo", "wb") as file:
