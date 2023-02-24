@@ -372,6 +372,6 @@ endmarker
 
 contact	Foot_Toe
 	parent	Foot
-	position	0.00000000000   -0.0300000000   -0.15000000000
+	position	0.00000000000   -0.0300000000   -0.20000000000
 	axis	yz
 endcontact
