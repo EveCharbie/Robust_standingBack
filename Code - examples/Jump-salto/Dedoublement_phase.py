@@ -79,6 +79,11 @@ from bioptim import (
     Solver,
 )
 
+# --- Parameters --- #
+movement = "Salto"
+version = 1
+nb_phase = 11
+
 
 # --- Save results --- #
 def save_results(sol, c3d_file_path):
@@ -453,10 +458,6 @@ def main():
     sol.graphs(show_bounds=True)
 
 # --- Save results --- #
-    movement = "Salto"
-    version = 1
-    nb_phase = 11
-
     save_results(sol, str(movement) + "_" + str(nb_phase) + "phases_V" + str(version))
 
 
