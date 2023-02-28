@@ -101,7 +101,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     tau_init = 0
     dof_mapping = BiMappingList()
     dof_mapping.add("tau", [None, None, None, 0, 1, 2, 3, 4], [3, 4, 5, 6, 7])
-    #dof_mapping.add("residual_tau", [None, None, None, 0, 1, 2, 3, 4], [3, 4, 5, 6, 7])
+    dof_mapping.add("residual_tau", [None, None, None, 0, 1, 2, 3, 4], [3, 4, 5, 6, 7])
 
 
     # --- Objectives functions ---#
@@ -146,12 +146,12 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # --- Dynamics ---#
     # Dynamics
     dynamics = DynamicsList()
-    dynamics.add(DynamicsFcn.TORQUE_DRIVEN, with_contact=True)
-    dynamics.add(DynamicsFcn.TORQUE_DRIVEN, with_contact=True)
-    dynamics.add(DynamicsFcn.TORQUE_DRIVEN)
-    dynamics.add(DynamicsFcn.TORQUE_DRIVEN)
-    dynamics.add(DynamicsFcn.TORQUE_DRIVEN)
-    dynamics.add(DynamicsFcn.TORQUE_DRIVEN, with_contact=True)
+    dynamics.add(DynamicsFcn.TORQUE_ACTIVATIONS_DRIVEN, with_contact=True, with_residual_torque=True)
+    dynamics.add(DynamicsFcn.TORQUE_ACTIVATIONS_DRIVEN, with_contact=True, with_residual_torque=True)
+    dynamics.add(DynamicsFcn.TORQUE_ACTIVATIONS_DRIVEN, with_residual_torque=True)
+    dynamics.add(DynamicsFcn.TORQUE_ACTIVATIONS_DRIVEN, with_residual_torque=True)
+    dynamics.add(DynamicsFcn.TORQUE_ACTIVATIONS_DRIVEN, with_residual_torque=True)
+    dynamics.add(DynamicsFcn.TORQUE_ACTIVATIONS_DRIVEN, with_contact=True, with_residual_torque=True)
 
 
     # --- Constraints ---#
@@ -327,14 +327,14 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     u_bounds = BoundsList()
     for j in range(0, nb_phase):
         u_bounds.add(
-            [tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
-            [tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]],
+            [-1] * (bio_model[j].nb_tau - 3) + [tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
+            [1] * (bio_model[j].nb_tau - 3) + [tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]],
         )
 
     u_init = InitialGuessList()
 
     for j in range(0, nb_phase):
-        u_init.add([tau_init] * (bio_model[j].nb_tau-3))
+        u_init.add([tau_init] * (bio_model[j].nb_tau-3) * 2)
 
     return OptimalControlProgram(
         bio_model=bio_model,
