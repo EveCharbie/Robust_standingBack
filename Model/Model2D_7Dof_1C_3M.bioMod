@@ -1,0 +1,322 @@
+version 4
+
+gravity 0 0 -9.81
+
+segment	Pelvis
+	RT -0.1 0 0	xyz 0 0 0.8
+	translations yz
+	rotations	 x
+	rangesQ
+		-2.5 2.5
+		 -1.0 3.0
+		-3.0 3.0
+	rangesQdot	-31.42 31.42
+		-31.42 31.42
+		-31.42 31.42
+	mass	11.58
+	inertia
+		0.0692	0.0	0.0
+		0.0	0.1254	0.0
+		0.0	0.0	0.1123
+	com	0.0	0.0	0.1044
+endsegment
+
+actuator	 Pelvis
+	type	Constant
+	dof	TransY
+	direction	positive
+	Tmax	0.0
+endactuator
+actuator	 Pelvis
+	type	Constant
+	dof	TransY
+	direction	negative
+	Tmax	0.0
+endactuator
+actuator	 Pelvis
+	type	Constant
+	dof	TransZ
+	direction	positive
+	Tmax	0.0
+endactuator
+actuator	 Pelvis
+	type	Constant
+	dof	TransZ
+	direction	negative
+	Tmax	0.0
+endactuator
+actuator	 Pelvis
+	type	Constant
+	dof	RotX
+	direction	positive
+	Tmax	0.0
+endactuator
+actuator	 Pelvis
+	type	Constant
+	dof	RotX
+	direction	negative
+	Tmax	0.0
+endactuator
+segment	Thorax
+	parent	Pelvis
+	RT 0 0 0	xyz 0.0 -0.0515404739 0.1813885235
+	mass	20.46
+	inertia
+		0.5204	0.0	0.0
+		0.0	0.6185	0.0
+		0.0	0.0	0.2343
+	com	0.0	0.0	0.1767
+endsegment
+
+segment	Head
+	parent	Thorax
+	RT 0 0 0	xyz 0.0 0.0435036145 0.3479414452
+	mass	5.12
+	inertia
+		0.0881	0.0	0.0
+		0.0	0.0881	0.0
+		0.0	0.0	0.0156
+	com	0.0	0.0	0.0853
+endsegment
+
+segment	Arm
+	parent	Thorax
+	RTinMatrix	1
+	RT
+		1  0  0 0.0
+		0 1 0 0.023425367
+		0 0  1 0.211508031
+		0 0 0 1
+	rotations	 x
+	rangesQ	-0.7 3.1
+	rangesQdot	-31.42 31.42
+	mass	4.72
+	inertia
+		0.03770325476957999	0.0	0.0
+		0.0	0.03770325476957999	0.0
+		0.0	0.0	0.005996554197399041
+	com	0.0	0.0	-0.1427
+endsegment
+
+actuator	 Arm
+	type	Gauss3p
+	dof	RotX
+	direction	positive
+	Tmax	225.6214
+	T0	178.1222
+	wmax	1000
+	wc	400
+	amin	0.878
+	wr	40
+	w1	-6.275
+	r	109.6679
+	qopt	-41.0307
+endactuator
+actuator	 Arm
+	type	Gauss3p
+	dof	RotX
+	direction	negative
+	Tmax	325.531
+	T0	256.9982
+	wmax	812.5
+	wc	325.0
+	amin	0.9678
+	wr	40.0
+	w1	-90.0
+	r	103.9095
+	qopt	-101.6627
+endactuator
+segment	Forearm
+	parent	Arm
+	RTinMatrix	1
+	RT
+		1  0  0 0.0
+		0 1 0 -0.000261286
+		0 0  1 -0.338601867
+		0 0 0 1
+	mass	2.52
+	inertia
+		0.013022885689772144	0.0	0.0
+		0.0	0.013154165656146893	0.0
+		0.0	0.0	0.0019576149660600886
+	com	0.0	0.0	-0.1264
+endsegment
+
+segment	Hand
+	parent	Forearm
+	RTinMatrix	1
+	RT
+		1  0  0 0.0
+		0 1 0 0.001217047
+		0 0  1 -0.265871926
+		0 0 0 1
+	mass	1.12
+	inertia
+		0.0027648635147748315	0.0	0.0
+		0.0	0.0031487689115472926	0.0
+		0.0	0.0	0.0006717710781510774
+	com	0.01927061	-0.007717575	-0.051481325
+endsegment
+
+marker	 CENTER_HAND
+	parent	Hand
+	position 0.0 0.025 -0.0655
+	technical 1
+endmarker
+segment	Thigh
+	parent	Pelvis
+	RTinMatrix	1
+	RT
+		1  0  0 0.0
+		0 1 0 0.0
+		0 0 1 0.0
+		0 0 0 1
+	rotations	 x
+	rangesQ	-0.4 2.6
+	rangesQdot	-31.42 31.42
+	mass	18.98
+	inertia
+		0.3444	0.0	0.0
+		0.0	0.3444	0.0
+		0.0	0.0	0.0674
+	com	0.0	0.0	-0.2017
+endsegment
+
+actuator	 Thigh
+	type	Gauss3p
+	dof	RotX
+	direction	positive
+	Tmax	440.7662
+	T0	314.833
+	wmax	475.0
+	wc	190.0
+	amin	0.99
+	wr	40.0
+	w1	-90.0
+	r	56.4021
+	qopt	25.6939
+endactuator
+actuator	 Thigh
+	type	Gauss3p
+	dof	RotX
+	direction	negative
+	Tmax	981.1876
+	T0	774.6218
+	wmax	562.5
+	wc	225.0
+	amin	0.9692
+	wr	40.0
+	w1	-90.0
+	r	48.6999
+	qopt	72.5836
+endactuator
+segment	Leg
+	parent	Thigh
+	RTinMatrix	1
+	RT
+		1  0  0 0.0
+		0 1 0 1.7e-08
+		0 0 1 -0.462839073
+		0 0 0 1
+	rotations	 x
+	rangesQ	-2.3 0.02
+	rangesQdot	-31.42 31.42
+	mass	8.36
+	inertia
+		0.1702	0.0	0.0
+		0.0	0.1702	0.0
+		0.0	0.0	0.0122
+	com	0.0	0.0	-0.2026
+endsegment
+
+actuator	 Leg
+	type	Gauss3p
+	dof	RotX
+	direction	negative
+	Tmax	735.3286
+	T0	550.1452
+	wmax	1437.5
+	wc	575.0
+	amin	0.99
+	wr	40.0
+	w1	-90.0
+	r	31.7218
+	qopt	61.7303
+endactuator
+actuator	 Leg
+	type	Gauss3p
+	dof	RotX
+	direction	positive
+	Tmax	355.9388
+	T0	254.242
+	wmax	950.0
+	wc	380.0
+	amin	0.99
+	wr	40.0
+	w1	-89.9997
+	r	57.037
+	qopt	33.2908
+endactuator
+segment	Foot
+	parent	Leg
+	RTinMatrix	1
+	RT
+		1.0 0.0 0.0 0.0
+		0.0 6.123233995736766e-17 -1.0 3.36e-07
+		0.0 1.0 6.123233995736766e-17 -0.427480971
+		0 0 0 1
+	rotations	 x
+	rangesQ	-0.7 0.7
+	rangesQdot	-31.42 31.42
+	mass	2.32
+	inertia
+		0.0178	0.0	0.0
+		0.0	0.0022	0.0
+		0.0	0.0	0.0176
+	com	0.0	0.0	-0.0757
+endsegment
+
+actuator	 Foot
+	type	Gauss3p
+	dof	RotX
+	direction	positive
+	Tmax	107.646
+	T0	74.4896
+	wmax	2375.0
+	wc	375.0
+	amin	0.9263
+	wr	40.0
+	w1	-90.0
+	r	58.9832
+	qopt	0.7442
+endactuator
+actuator	 Foot
+	type	Gauss3p
+	dof	RotX
+	direction	negative
+	Tmax	343.9806
+	T0	245.7004
+	wmax	2000.0
+	wc	800.0
+	amin	0.99
+	wr	40.0
+	w1	-90.0
+	r	21.8717
+	qopt	12.6824
+endactuator
+marker	 BELOW_KNEE
+	parent	Leg
+	position 0.0 0.07 -0.1575
+	technical 1
+endmarker
+marker	 FOOT
+	parent	Foot
+	position 0.0 -0.03 -0.12
+	technical 1
+endmarker
+
+contact	Foot_Toe
+	parent	Foot
+	position	0.00000000000   -0.0300000000   -0.15000000000
+	axis	yz
+endcontact
