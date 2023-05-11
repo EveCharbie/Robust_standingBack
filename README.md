@@ -23,7 +23,7 @@ After this, we want a code who produce two different techniques of backward some
 one in 6 phases and an other with a waiting phase (i.e. phase 2) between the propulsion phase and the take-of phase.
 These two methods have the same results for the preparation of propulsion and the propulsion phase.
 
-![Robustness](pictures/dedoublement_phases.png)
+![Robustness](pictures/Dedoublement_phase.png "Method for inducing robustness")
 
 
 For all this steps, we list all the results of the simulation of jump and salto into a [Google Sheets](
