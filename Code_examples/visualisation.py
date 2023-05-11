@@ -5,7 +5,6 @@ import numpy as np
 
 # --- Function visualisation with a pickle file --- #
 
-
 def get_created_data_from_pickle(file: str):
     with open(file, "rb") as f:
         while True:
