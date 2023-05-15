@@ -26,11 +26,12 @@ def get_created_data_from_pickle(file: str):
 
 
 # --- Parameters --- #
-name_file_model = "/home/mickael/Documents/Anais/Robust_standingBack-main/Model/Model2D_8Dof_2C_5M.bioMod"
+# name_file_model = "/home/mickael/Documents/Anais/Robust_standingBack-main/Model/Model2D_8Dof_2C_5M.bioMod"
+name_file_model = "/home/lim/Documents/Anais/Robust_standingBack/data_analysis/EmCo_close_loop.bioMod"
 name_file_model_2 = "/home/mickael/Documents/Anais/Robust_standingBack/Model/Model2D_8Dof_2C_5M_2model.bioMod"
 name_file_movement = ("/home/mickael/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Salto_close_loop_7phases_V1.pkl")
 
-Movement = True
+Movement = False
 Dedoublement_phase = False
 
 # --- Visualisation -- #

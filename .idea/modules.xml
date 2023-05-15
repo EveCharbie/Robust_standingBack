@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/Robust_standingBack.iml" filepath="$PROJECT_DIR$/.idea/Robust_standingBack.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../biorbd/.idea/biorbd.iml" filepath="$PROJECT_DIR$/../biorbd/.idea/biorbd.iml" />
     </modules>
   </component>
 </project>

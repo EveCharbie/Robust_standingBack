@@ -103,11 +103,12 @@ for file in os.listdir(trials_folder_path):
         
     # Inverse dynamics - TODO: Anais
     # Tau vs closed loop -> Tau
-    
+    Tau = model.InverseDynamics(q_recons, qdot_recons, qddot_recons)
+
     # Save the results
     save_path = 'reconstructions/' + file[:-4] + '.pkl'
     with open(save_path, 'wb') as f:
-        data = {'q_recons': q_recons, 'qdot_recons': qdot_recons, 'qddot_recons': qddot_recons, "time_vector": time_vector}
+        data = {'q_recons': q_recons, 'qdot_recons': qdot_recons, 'qddot_recons': qddot_recons, "tau_estimate": Tau, "time_vector": time_vector}
         pickle.dump(data, f)
         
     if FLAG_ANIMATE:
