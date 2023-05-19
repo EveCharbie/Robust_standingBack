@@ -49,6 +49,3 @@ def save_results_with_pickle(sol, c3d_file_path):
 
     with open(f"{c3d_file_path}", "wb") as file:
         pickle.dump(data, file)
-
-
-

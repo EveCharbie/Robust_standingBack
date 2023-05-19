@@ -1,159 +1,153 @@
 import os
+import ezc3d
+import pandas as pd
+from scipy import signal
+from pyomeca import Markers, Analogs
+import matplotlib.pyplot as plt
 import pickle
 import numpy as np
-import scipy.optimize
-from scipy.interpolate import interp1d
-
 import biorbd
-import bioviz
-import ezc3d
 
 
-def reorder_markers(markers, model_labels, c3d_marker_labels):
+### --- Functions --- ###
+### --- Synchronisation insoles with motion capture --- ###
+# load file (Insoles + MC)
 
-    labels_index = []
-    missing_markers_index = []
-    for index_model, model_label in enumerate(model_labels):
-        missing_markers_bool = True
-        for index_c3d, c3d_label in enumerate(c3d_marker_labels):
-            if model_label == c3d_label:
-                labels_index.append(index_c3d)
-                missing_markers_bool = False
-        if missing_markers_bool:
-            labels_index.append(index_model)
-            missing_markers_index.append(index_model)
-
-    markers_reordered = np.zeros((3, 94, markers.shape[2]))
-    for index, label_index in enumerate(labels_index):
-        if index in missing_markers_index:
-            markers_reordered[:, index, :] = np.nan
-        else:
-            markers_reordered[:, index, :] = markers[:, label_index, :]
-
-    return markers_reordered
-
-
-def reconstruct_trial(data_filename, model):
-    # load the c3d trial
-    c3d = ezc3d.c3d(data_filename)
-    markers = c3d['data']['points'][:3, :, :] / 1000  # XYZ1 x markers x time_frame
-    c3d_marker_labels = c3d['parameters']['POINT']['LABELS']['value'][:94]
-    model_labels = [label.to_string() for label in model.markerNames()]
-    markers_reordered = reorder_markers(markers, model_labels, c3d_marker_labels)
-    # markers_reordered[np.isnan(markers_reordered)] = 0.0  # Remove NaN
-
-    # Dispatch markers in biorbd structure so EKF can use it
-    markersOverFrames = []
-    for i in range(markers_reordered.shape[2]):
-        markersOverFrames.append([biorbd.NodeSegment(m) for m in markers_reordered[:, :, i].T])
-
-    # Create a Kalman filter structure
-    frequency = c3d['header']['points']['frame_rate']  # Hz
-    # params = biorbd.KalmanParam(frequency=frequency, noiseFactor=1e-10, errorFactor=1e-5)
-    params = biorbd.KalmanParam(frequency=frequency)
-    kalman = biorbd.KalmanReconsMarkers(model, params)
-
-    def distance_markers(q, *args):
-        distances_ignoring_missing_markers = []
-        markers_estimated = np.array([marker.to_array() for marker in model.markers(q)]).T
-        for i in range(markers_reordered.shape[1]):
-            if markers_reordered[0, i, 0] != 0:
-                distances_ignoring_missing_markers.append(
-                    np.sqrt(np.sum((markers_estimated[:, i] - markers_reordered[:, i, 0]) ** 2)))
-        return np.sum(distances_ignoring_missing_markers)
-
-    # # Genereate a good guess for the kalman filter
-    Q_init = np.zeros(model.nbQ())
-    # res = scipy.optimize.minimize(distance_markers, Q_init)
-    # Q_init = res.x
-
-    kalman.setInitState(Q_init, np.zeros(model.nbQ()), np.zeros(model.nbQ()))
-
-    # Perform the kalman filter for each frame (the first frame is much longer than the next)
-    Q = biorbd.GeneralizedCoordinates(model)
-    Qdot = biorbd.GeneralizedVelocity(model)
-    Qddot = biorbd.GeneralizedAcceleration(model)
-
-    q_recons = np.ndarray((model.nbQ(), len(markersOverFrames)))
-    qdot_recons = np.ndarray((model.nbQdot(), len(markersOverFrames)))
-    qddot_recons = np.ndarray((model.nbQddot(), len(markersOverFrames)))
-    for i, targetMarkers in enumerate(markersOverFrames):
-        kalman.reconstructFrame(model, targetMarkers, Q, Qdot, Qddot)
-        q_recons[:, i] = Q.to_array()
-        qdot_recons[:, i] = Qdot.to_array()
-        qddot_recons[:, i] = Qddot.to_array()
-
-    time_vector = np.arange(0, (len(qddot_recons[0, :])+0.5) * 1/frequency, 1/frequency)
-
-    return q_recons, qdot_recons, qddot_recons, time_vector
-
-def normalize(param):
-    normalize_param = np.zeros(shape=(param.shape[0], param.shape[1]))
-    max_param = max(param(axis=0))
-    min_param = min(param(axis=0))
-    for i in range(param.shape[1]):
-         normalize_param[i] = (param[i] - min_param) / (max_param - min_param)
-    return normalize_param
-
-
-def comparison(sol1, sol2, param):
-
-    # Interpolation to have the same shape
-    if len(sol1['time_vector']) > len(sol2['time_vector']):
-        step = sol1['time_vector'][-1] / len(sol1['time_vector'])
-        for nb_Dof in range(sol2['param'].shape[0]):
-            interpol_time_2 = interp1d(sol2['time_vector'], sol2['param'][nb_Dof, :], kind="linear")
-            sol2['time_vector'] = interpol_time_2(np.arange(sol2['param'][0], sol2['param'][-1], step))
-
-    elif len(sol2['time_vector']) > len(sol1['time_vector']):
-        step = sol2['time_vector'][-1] / len(sol2['time_vector'])
-        for nb_Dof in range(sol2['param'].shape[0]):
-            interpol_time_2 = interp1d(sol1['time_vector'], sol1['param'][nb_Dof, :], kind="linear")
-            sol1['time_vector'] = interpol_time_2(np.arange(sol1['param'][0], sol1['param'][-1], step))
-    else:
-        pass
-
-    # Time_vector in %
-    sol1['norm_time_vector'] = np.arange(0, 100, 100/len(sol1['time_vector']))
-    sol2['norm_time_vector'] = np.arange(0, 100, 100 / len(sol2['time_vector']))
-
-    # Normalize data in %
-
-    # Statistics
-        # SPM for each Dof and each param(Comparison data 1D)
-
-
-
-
-    return
-
-# --------------------------------------------------------------
-
-FLAG_ANIMATE = False
-
-# load the model
+trials_folder_path_insole = "/home/lim/Anais/CollecteStandingBack/EmCo_insoles_rename"
+trials_folder_path_MotionCapture = "/home/lim/Anais/CollecteStandingBack/EmCo_motion_capture/EmCo/29_04_2023"
 model_path = "EmCo.bioMod"
 model = biorbd.Model(model_path)
+Condition = ["salto_control_pre", "salto_control_post"]  #'salto_control_pre',
 
-trials_folder_path = 'c3d'
-for file in os.listdir(trials_folder_path):
+for i in range(len(Condition)):  # Create a function if everything works
+    files_MotionCapture = [
+        file
+        for file in os.listdir(trials_folder_path_MotionCapture)
+        if file.startswith(Condition[i]) and file.endswith(".c3d")
+    ]
+    files_insole_R = [
+        file
+        for file in os.listdir(trials_folder_path_insole)
+        if file.startswith(Condition[i]) and file.endswith("_R.CSV")
+    ]
+    files_insole_L = [
+        file
+        for file in os.listdir(trials_folder_path_insole)
+        if file.startswith(Condition[i]) and file.endswith("_L.CSV")
+    ]
 
-    complete_file = trials_folder_path + '/' + file
-    # Kalman filter
-    q_recons, qdot_recons, qddot_recons, time_vector = reconstruct_trial(complete_file, model)
-        
-    # Inverse dynamics - TODO: Anais
-    # Tau vs closed loop -> Tau
-    Tau = model.InverseDynamics(q_recons, qdot_recons, qddot_recons)
+    if len(files_MotionCapture) == len(files_insole_L) == len(files_insole_R):
+        for i in range(len(files_MotionCapture) - 1):
+            # Open .c3d
+            path_c3d = str(trials_folder_path_MotionCapture) + "/" + files_MotionCapture[i]
+            markers = Markers.from_c3d(path_c3d)
+            markers = markers[:3, 0:96, :]
+            freq_MotionCapture = markers.rate
+            analog = Analogs.from_c3d(path_c3d)
 
-    # Save the results
-    save_path = 'reconstructions/' + file[:-4] + '.pkl'
-    with open(save_path, 'wb') as f:
-        data = {'q_recons': q_recons, 'qdot_recons': qdot_recons, 'qddot_recons': qddot_recons, 'tau_estimate': Tau, 'time_vector': time_vector}
-        pickle.dump(data, f)
-        
-    if FLAG_ANIMATE:
-        b = bioviz.Viz(loaded_model=model)
-        b.load_movement(q_recons)
-        b.exec()
+            # Open CSV insole
+            insole_R = pd.read_csv(
+                str(trials_folder_path_insole) + "/" + str(files_MotionCapture[1][:-4]) + "_R.CSV",
+                sep=",",
+                decimal=".",
+                low_memory=False,
+                header=0,
+                na_values="NaN",
+            )
+            insole_L = pd.read_csv(
+                str(trials_folder_path_insole) + "/" + str(files_MotionCapture[1][:-4]) + "_L.CSV",
+                sep=",",
+                decimal=".",
+                low_memory=False,
+                header=0,
+                na_values="NaN",
+            )
+            insole_R, insole_L = insole_R.iloc[3:, :], insole_L.iloc[3:, :]
+            insole_R.reset_index(drop=True, inplace=True)
+            insole_L.reset_index(drop=True, inplace=True)
+            insole_R["Total"] = insole_R.iloc[:, 1:-1].sum(axis=1)
+            insole_L["Total"] = insole_L.iloc[:, 1:-1].sum(axis=1)
+            freq_insoles = round(insole_R.shape[0] / float(insole_R.iloc[-1, 0]))
 
+            # Find the pics after begin close loop constraints
+            # Insoles
+            peaks_total, _ = signal.find_peaks(insole_R["Total"], height=90)
+            mins_total, _ = signal.find_peaks(insole_R["Total"] * -1, height=-25, distance=200)
+            begin_movement_insole = max([x for x in mins_total if x < peaks_total[0]])
+            peaks_sync, _ = signal.find_peaks(insole_R["Sync"], height=900)
+            first_peak_movement_insole = min([x for x in peaks_sync if x > begin_movement_insole])
+
+            # Motion capture (Find n°frame of peak ==> distance marker hand and genou < value and stable)
+            # Calulate middle hand (MIDMETAC3D markers.loc['x', 'MIDMETAC3D'], METAC2D markers[0][37], METAC5D markers[0][38]) [en x et y]
+            middle_hand = (
+                abs(
+                    markers.loc[["x", "y"], "MIDMETAC3D"]
+                    + markers.loc[["x", "y"], "METAC2D"]
+                    + markers.loc[["x", "y"], "METAC5D"]
+                )
+            ) / 3
+
+            # Calculate middle knee (CONDEXTD markers[0][53], CONDINTD markers[0][54]) [ en x et y]
+            middle_knee = (abs(markers.loc[["x", "y"], "CONDINTD"] + markers.loc[["x", "y"], "CONDEXTD"])) / 2
+
+            # Calculate distance between middle hand and knee
+            distance_knee_hand = np.sqrt(
+                ((middle_hand.loc["x"] - middle_knee.loc["x"]) * (middle_hand.loc["x"] - middle_knee.loc["x"]))
+                + ((middle_hand.loc["y"] - middle_knee.loc["y"]) * (middle_hand.loc["y"] - middle_knee.loc["y"]))
+            )
+            # Find first minima
+            begin_movement_MotionCapture = np.argmin(distance_knee_hand.to_numpy())
+            peaks_sync_MotionCapture, _ = signal.find_peaks(analog.loc["Time.1"], height=1)
+            first_peak_movement_MotionCapture = min(
+                [x for x in peaks_sync_MotionCapture if x > begin_movement_MotionCapture]
+            )
+
+            # Cut data to be synchronize
+            # Cut the end
+            peak_to_last_markers = markers.shape[2] - first_peak_movement_MotionCapture
+            peak_to_last_insoles = round(
+                (insole_R.shape[0] - first_peak_movement_insole) / 2 - 0.8
+            )  # Peak for a frequency at 200Hz
+            diff_peak_to_last = abs(peak_to_last_markers - peak_to_last_insoles)
+            diff_peak = abs(first_peak_movement_MotionCapture - round(first_peak_movement_insole / 2 - 0.8))
+
+            if peak_to_last_insoles > peak_to_last_markers:
+                insole_R = insole_R.loc[0 : (insole_R.shape[0] - diff_peak_to_last * 2), :]
+                insole_L = insole_L.loc[0 : (insole_L.shape[0] - diff_peak_to_last * 2), :]
+            elif peak_to_last_insoles < peak_to_last_markers:
+                distance_knee_hand = distance_knee_hand.to_numpy()[0 : (analog.shape[1] - diff_peak_to_last)]
+                analog = analog.to_numpy()[:, 0 : (analog.shape[1] - diff_peak_to_last)]
+                markers = markers.to_numpy()[:, :, 0 : (markers.shape[2] - diff_peak_to_last)]
+            else:
+                pass
+
+                # Cut the beginning
+            if first_peak_movement_insole / 2 > first_peak_movement_MotionCapture:
+                insole_R = insole_R.loc[diff_peak * 2 :, :]
+                insole_L = insole_L.loc[diff_peak * 2 :, :]
+            elif first_peak_movement_insole / 2 < first_peak_movement_MotionCapture:
+                distance_knee_hand = distance_knee_hand.to_numpy()[diff_peak:]
+                analog = analog.to_numpy()[:, diff_peak:]
+                markers = markers.to_numpy()[:, :, diff_peak:]
+            else:
+                pass
+
+            # Visualisation
+            # Creation vecteur temps
+            insole_R["Time"] = np.arange(0, insole_R.shape[0] * 1 / 400, 1 / 400)
+            vector_time_marker = np.arange(0, distance_knee_hand.shape[0] * 1 / 200, 1 / 200)
+            # Plot
+            plt.plot(insole_R["Time"], insole_R["Total"], "o", label="Total_pression_insoles")
+            plt.plot(vector_time_marker, distance_knee_hand, "s", label="Distance_knee_main")
+            plt.legend()
+            plt.show()
+
+        # Return file sync
+    else:
+        print("The number of file for the motion capture and the insoles is not the same")
+
+### --- Integration markers to model --- ###
+
+### --- Represent insoles by a cylinder --- ###
+
+### --- Vectoriel sum of cell of insoles --- ###

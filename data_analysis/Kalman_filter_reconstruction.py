@@ -1,7 +1,7 @@
 import os
 import pickle
 import numpy as np
-import scipy.optimize
+from scipy.interpolate import interp1d
 
 import biorbd
 import bioviz
@@ -35,8 +35,8 @@ def reorder_markers(markers, model_labels, c3d_marker_labels):
 def reconstruct_trial(data_filename, model):
     # load the c3d trial
     c3d = ezc3d.c3d(data_filename)
-    markers = c3d['data']['points'][:3, :, :] / 1000  # XYZ1 x markers x time_frame
-    c3d_marker_labels = c3d['parameters']['POINT']['LABELS']['value'][:94]
+    markers = c3d["data"]["points"][:3, :, :] / 1000  # XYZ1 x markers x time_frame
+    c3d_marker_labels = c3d["parameters"]["POINT"]["LABELS"]["value"][:94]
     model_labels = [label.to_string() for label in model.markerNames()]
     markers_reordered = reorder_markers(markers, model_labels, c3d_marker_labels)
     # markers_reordered[np.isnan(markers_reordered)] = 0.0  # Remove NaN
@@ -47,7 +47,7 @@ def reconstruct_trial(data_filename, model):
         markersOverFrames.append([biorbd.NodeSegment(m) for m in markers_reordered[:, :, i].T])
 
     # Create a Kalman filter structure
-    frequency = c3d['header']['points']['frame_rate']  # Hz
+    frequency = c3d["header"]["points"]["frame_rate"]  # Hz
     # params = biorbd.KalmanParam(frequency=frequency, noiseFactor=1e-10, errorFactor=1e-5)
     params = biorbd.KalmanParam(frequency=frequency)
     kalman = biorbd.KalmanReconsMarkers(model, params)
@@ -58,7 +58,8 @@ def reconstruct_trial(data_filename, model):
         for i in range(markers_reordered.shape[1]):
             if markers_reordered[0, i, 0] != 0:
                 distances_ignoring_missing_markers.append(
-                    np.sqrt(np.sum((markers_estimated[:, i] - markers_reordered[:, i, 0]) ** 2)))
+                    np.sqrt(np.sum((markers_estimated[:, i] - markers_reordered[:, i, 0]) ** 2))
+                )
         return np.sum(distances_ignoring_missing_markers)
 
     # # Genereate a good guess for the kalman filter
@@ -82,9 +83,48 @@ def reconstruct_trial(data_filename, model):
         qdot_recons[:, i] = Qdot.to_array()
         qddot_recons[:, i] = Qddot.to_array()
 
-    time_vector = np.arange(0, (len(qddot_recons[0, :])+0.5) * 1/frequency, 1/frequency)
+    time_vector = np.arange(0, (len(qddot_recons[0, :]) + 0.5) * 1 / frequency, 1 / frequency)
 
     return q_recons, qdot_recons, qddot_recons, time_vector
+
+
+def normalize(param):
+    normalize_param = np.zeros(shape=(param.shape[0], param.shape[1]))
+    max_param = max(param(axis=0))
+    min_param = min(param(axis=0))
+    for i in range(param.shape[1]):
+        normalize_param[i] = (param[i] - min_param) / (max_param - min_param)
+    return normalize_param
+
+
+def comparison(sol1, sol2, param):
+
+    # Interpolation to have the same shape
+    if len(sol1["time_vector"]) > len(sol2["time_vector"]):
+        step = sol1["time_vector"][-1] / len(sol1["time_vector"])
+        for nb_Dof in range(sol2["param"].shape[0]):
+            interpol_time_2 = interp1d(sol2["time_vector"], sol2["param"][nb_Dof, :], kind="linear")
+            sol2["time_vector"] = interpol_time_2(np.arange(sol2["param"][0], sol2["param"][-1], step))
+
+    elif len(sol2["time_vector"]) > len(sol1["time_vector"]):
+        step = sol2["time_vector"][-1] / len(sol2["time_vector"])
+        for nb_Dof in range(sol2["param"].shape[0]):
+            interpol_time_2 = interp1d(sol1["time_vector"], sol1["param"][nb_Dof, :], kind="linear")
+            sol1["time_vector"] = interpol_time_2(np.arange(sol1["param"][0], sol1["param"][-1], step))
+    else:
+        pass
+
+    # Time_vector in %
+    sol1["norm_time_vector"] = np.arange(0, 100, 100 / len(sol1["time_vector"]))
+    sol2["norm_time_vector"] = np.arange(0, 100, 100 / len(sol2["time_vector"]))
+
+    # Normalize data in %
+
+    # Statistics
+    # SPM for each Dof and each param(Comparison data 1D)
+
+    return
+
 
 # --------------------------------------------------------------
 
@@ -94,25 +134,30 @@ FLAG_ANIMATE = False
 model_path = "EmCo.bioMod"
 model = biorbd.Model(model_path)
 
-trials_folder_path = 'c3d'
+trials_folder_path = "c3d"
 for file in os.listdir(trials_folder_path):
 
-    complete_file = trials_folder_path + '/' + file
+    complete_file = trials_folder_path + "/" + file
     # Kalman filter
     q_recons, qdot_recons, qddot_recons, time_vector = reconstruct_trial(complete_file, model)
-        
+
     # Inverse dynamics - TODO: Anais
     # Tau vs closed loop -> Tau
     Tau = model.InverseDynamics(q_recons, qdot_recons, qddot_recons)
 
     # Save the results
-    save_path = 'reconstructions/' + file[:-4] + '.pkl'
-    with open(save_path, 'wb') as f:
-        data = {'q_recons': q_recons, 'qdot_recons': qdot_recons, 'qddot_recons': qddot_recons, "tau_estimate": Tau, "time_vector": time_vector}
+    save_path = "reconstructions/" + file[:-4] + ".pkl"
+    with open(save_path, "wb") as f:
+        data = {
+            "q_recons": q_recons,
+            "qdot_recons": qdot_recons,
+            "qddot_recons": qddot_recons,
+            "tau_estimate": Tau,
+            "time_vector": time_vector,
+        }
         pickle.dump(data, f)
-        
+
     if FLAG_ANIMATE:
         b = bioviz.Viz(loaded_model=model)
         b.load_movement(q_recons)
         b.exec()
-
