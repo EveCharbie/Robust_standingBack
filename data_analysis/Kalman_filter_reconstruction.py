@@ -1,8 +1,6 @@
 import os
 import pickle
 import numpy as np
-from scipy.interpolate import interp1d
-
 import biorbd
 import bioviz
 import ezc3d
@@ -88,76 +86,40 @@ def reconstruct_trial(data_filename, model):
     return q_recons, qdot_recons, qddot_recons, time_vector
 
 
-def normalize(param):
-    normalize_param = np.zeros(shape=(param.shape[0], param.shape[1]))
-    max_param = max(param(axis=0))
-    min_param = min(param(axis=0))
-    for i in range(param.shape[1]):
-        normalize_param[i] = (param[i] - min_param) / (max_param - min_param)
-    return normalize_param
-
-
-def comparison(sol1, sol2, param):
-
-    # Interpolation to have the same shape
-    if len(sol1["time_vector"]) > len(sol2["time_vector"]):
-        step = sol1["time_vector"][-1] / len(sol1["time_vector"])
-        for nb_Dof in range(sol2["param"].shape[0]):
-            interpol_time_2 = interp1d(sol2["time_vector"], sol2["param"][nb_Dof, :], kind="linear")
-            sol2["time_vector"] = interpol_time_2(np.arange(sol2["param"][0], sol2["param"][-1], step))
-
-    elif len(sol2["time_vector"]) > len(sol1["time_vector"]):
-        step = sol2["time_vector"][-1] / len(sol2["time_vector"])
-        for nb_Dof in range(sol2["param"].shape[0]):
-            interpol_time_2 = interp1d(sol1["time_vector"], sol1["param"][nb_Dof, :], kind="linear")
-            sol1["time_vector"] = interpol_time_2(np.arange(sol1["param"][0], sol1["param"][-1], step))
-    else:
-        pass
-
-    # Time_vector in %
-    sol1["norm_time_vector"] = np.arange(0, 100, 100 / len(sol1["time_vector"]))
-    sol2["norm_time_vector"] = np.arange(0, 100, 100 / len(sol2["time_vector"]))
-
-    # Normalize data in %
-
-    # Statistics
-    # SPM for each Dof and each param(Comparison data 1D)
-
-    return
-
-
 # --------------------------------------------------------------
 
-FLAG_ANIMATE = False
+FLAG_ANIMATE = True
+FLAG_SAVE = False
 
 # load the model
 model_path = "EmCo.bioMod"
 model = biorbd.Model(model_path)
 
-trials_folder_path = "c3d"
+trials_folder_path = "/home/lim/Anais/CollecteStandingBack/EmCo_motion_capture/EmCo/29_04_2023"
 for file in os.listdir(trials_folder_path):
+    if file.startswith("calib_static_insoles") and file.endswith(".c3d"):
+        complete_file = trials_folder_path + "/" + file
+        # Kalman filter
+        q_recons, qdot_recons, qddot_recons, time_vector = reconstruct_trial(complete_file, model)
 
-    complete_file = trials_folder_path + "/" + file
-    # Kalman filter
-    q_recons, qdot_recons, qddot_recons, time_vector = reconstruct_trial(complete_file, model)
+        # Inverse dynamics - TODO: Anais
+        # Tau vs closed loop -> Tau
+        # Tau = model.InverseDynamics(q_recons, qdot_recons, qddot_recons)
 
-    # Inverse dynamics - TODO: Anais
-    # Tau vs closed loop -> Tau
-    Tau = model.InverseDynamics(q_recons, qdot_recons, qddot_recons)
+        # Save the results
+        if FLAG_SAVE:
+            save_path = str(trials_folder_path[:-11]) + "/reconstructions/" + file[:-4] + ".pkl"
+            with open(save_path, "wb") as f:
+                data = {
+                    "q_recons": q_recons,
+                    "qdot_recons": qdot_recons,
+                    "qddot_recons": qddot_recons,
+                    # "tau_estimate": Tau,
+                    "time_vector": time_vector,
+                }
+                pickle.dump(data, f)
 
-    # Save the results
-    save_path = "reconstructions/" + file[:-4] + ".pkl"
-    with open(save_path, "wb") as f:
-        data = {
-            "q_recons": q_recons,
-            "qdot_recons": qdot_recons,
-            "qddot_recons": qddot_recons,
-            "tau_estimate": Tau,
-            "time_vector": time_vector,
-        }
-        pickle.dump(data, f)
-
-    if FLAG_ANIMATE:
-        b = bioviz.Viz(loaded_model=model)
-        b.load_movement(q_recons)
-        b.exec()
+        if FLAG_ANIMATE:
+            b = bioviz.Viz(loaded_model=model)
+            b.load_movement(q_recons)
+            b.exec()
