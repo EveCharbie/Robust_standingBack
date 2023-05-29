@@ -30,6 +30,7 @@ class Markers:
         rt += f"endmarker\n"
         return rt
 
+
 # --------------------------------------------------------------
 
 FLAG_ANIMATE = True
@@ -42,7 +43,7 @@ model = biorbd.Model(model_path)
 c3d_file = "/home/lim/Anais/CollecteStandingBack/EmCo_motion_capture/EmCo/29_04_2023/markers_insoles_R_1.c3d"
 # c3d_file = "/home/lim/Anais/CollecteStandingBack/EmCo_motion_capture/EmCo/29_04_2023/salto_control_post_2.c3d"
 c3d = ezc3d.c3d(c3d_file)
-markers = c3d["data"]["points"][:3, :, :] / 1000 # XYZ1 x markers x time_frame
+markers = c3d["data"]["points"][:3, :, :] / 1000  # XYZ1 x markers x time_frame
 c3d_marker_labels = c3d["parameters"]["POINT"]["LABELS"]["value"][:]
 
 if FLAG_CREATE:
@@ -54,11 +55,11 @@ if FLAG_CREATE:
 
     for index, word in enumerate(c3d_marker_labels):
         marker_model.append((word, index))
-        if 'insole' in word:
-            if 'G' in word:
+        if "insole" in word:
+            if "G" in word:
                 markers_insoles_L.append(word)
                 index_insoles_L.append(index)
-            if 'D' in word:
+            if "D" in word:
                 markers_insoles_R.append(word)
                 index_insoles_R.append(index)
 
@@ -74,12 +75,24 @@ if FLAG_CREATE:
     mean_markers = np.nanmean(markers, axis=2)
 
     # # create numpy array difference distance CONTEXTG (97) and CONTEXTD (80) and insoles markers
-    diff_knee_insole_R = pd.DataFrame(0, index=np.arange(insoles_R.shape[1]), columns=['x', 'y', 'z'], )
-    row_name_mapping_R = {old_name: new_name[8:] for old_name, new_name in zip(diff_knee_insole_R.index, markers_insoles_R)} # Create a dictionary mapping old row names to new row names
+    diff_knee_insole_R = pd.DataFrame(
+        0,
+        index=np.arange(insoles_R.shape[1]),
+        columns=["x", "y", "z"],
+    )
+    row_name_mapping_R = {
+        old_name: new_name[8:] for old_name, new_name in zip(diff_knee_insole_R.index, markers_insoles_R)
+    }  # Create a dictionary mapping old row names to new row names
     diff_knee_insole_R = diff_knee_insole_R.rename(index=row_name_mapping_R)
 
-    diff_knee_insole_L = pd.DataFrame(0, index=np.arange(insoles_L.shape[1]), columns=['x', 'y', 'z'], )
-    row_name_mapping_L = {old_name: new_name[8:] for old_name, new_name in zip(diff_knee_insole_L.index, markers_insoles_L)} # Create a dictionary mapping old row names to new row names
+    diff_knee_insole_L = pd.DataFrame(
+        0,
+        index=np.arange(insoles_L.shape[1]),
+        columns=["x", "y", "z"],
+    )
+    row_name_mapping_L = {
+        old_name: new_name[8:] for old_name, new_name in zip(diff_knee_insole_L.index, markers_insoles_L)
+    }  # Create a dictionary mapping old row names to new row names
     diff_knee_insole_L = diff_knee_insole_L.rename(index=row_name_mapping_L)
 
     for j in range(mean_insole_R.shape[1]):
@@ -108,12 +121,28 @@ if FLAG_CREATE:
     # Markers JambeD (idx=12)
     model_insoles.write("\t//Markers\n")
     for i in range(insoles_R.shape[1]):
-        model_insoles.write((str(Markers(pos_insole_R.index[i], model.segments()[12].name().to_string(), pos_insole_R.iloc[i].to_numpy()))))
+        model_insoles.write(
+            (
+                str(
+                    Markers(
+                        pos_insole_R.index[i], model.segments()[12].name().to_string(), pos_insole_R.iloc[i].to_numpy()
+                    )
+                )
+            )
+        )
 
     # Markers JambeG (idx=15)
     model_insoles.write("\t//Markers\n")
     for i in range(insoles_L.shape[1]):
-        model_insoles.write((str(Markers(pos_insole_L.index[i], model.segments()[15].name().to_string(), pos_insole_L.iloc[i].to_numpy()))))
+        model_insoles.write(
+            (
+                str(
+                    Markers(
+                        pos_insole_L.index[i], model.segments()[15].name().to_string(), pos_insole_L.iloc[i].to_numpy()
+                    )
+                )
+            )
+        )
     model_insoles.close()
 
 
