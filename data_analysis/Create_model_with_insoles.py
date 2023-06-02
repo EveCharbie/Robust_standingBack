@@ -3,13 +3,11 @@ import biorbd
 import bioviz
 import ezc3d
 import pickle
-import pandas as pd
 from typing import Annotated, Literal, TypeVar
 import numpy.typing as npt
-import matplotlib.pyplot as plt
 
 
-### --- Functions --- ###
+# --- Functions --- #
 def format_vec(vec):
     return ("{} " * len(vec)).format(*vec)[:-1]
 
@@ -33,9 +31,9 @@ class Markers:
         return rt
 
 
-### --- Parameters --- ###
-FLAG_WRITE_BIOMOD = True
-FLAG_ANIMATE = False
+# --- Parameters --- #
+FLAG_WRITE_BIOMOD = False
+FLAG_ANIMATE = True
 
 # load the model
 model_path = "EmCo.bioMod"
@@ -43,7 +41,7 @@ name_file = "markers_insoles_R_1"
 c3d_file = "/home/lim/Anais/CollecteStandingBack/EmCo_motion_capture/EmCo/29_04_2023/"
 path_c3d_reconstructed = "/home/lim/Anais/CollecteStandingBack/EmCo_motion_capture/EmCo/reconstructions/"
 
-### --- Script --- ###
+# --- Script --- #
 # Model
 model = biorbd.Model(model_path)
 
@@ -86,21 +84,33 @@ mean_insole_L = np.nanmean(insoles_L, axis=2)
 mean_q_reconstructed = np.nanmean(reconstructed_data['q_recons'], axis=1)
 
 # Difference marqueurs insoles and GlobalJCS (knee_R = 33 ; knee_L = 39)
-JCS_knee_R = model.globalJCS(mean_q_reconstructed, 'JambeD').trans().to_array()
-JCS_knee_L = model.globalJCS(mean_q_reconstructed, 'JambeG').trans().to_array()
-insoles_knee_R = mean_insole_R - JCS_knee_R[:, np.newaxis]
-insoles_knee_L = mean_insole_L - JCS_knee_L[:, np.newaxis]
-insoles_knee_R[1] *= -1 # Inverse position in y
-insoles_knee_L[1] *= -1 # Inverse position in y
+# Matrice RT and translation of knee
+JCS_knee_R_RT = model.globalJCS(mean_q_reconstructed, 'JambeD').to_array()
+JCS_knee_L_RT = model.globalJCS(mean_q_reconstructed, 'JambeG').to_array()
+JCS_knee_R_trans = model.globalJCS(mean_q_reconstructed, 'JambeD').trans().to_array()
+JCS_knee_L_trans = model.globalJCS(mean_q_reconstructed, 'JambeG').trans().to_array()
+
+# Initialize array (3x12)
+insoles_knee_R = np.zeros(shape=(mean_insole_R.shape[0], mean_insole_R.shape[1]))
+insoles_knee_L = np.zeros(shape=(mean_insole_L.shape[0], mean_insole_L.shape[1]))
+
+# Position markers in the knee reference
+insoles_knee_L_trans = mean_insole_L - JCS_knee_L_trans[:, np.newaxis]
+insoles_knee_R_trans = mean_insole_R - JCS_knee_R_trans[:, np.newaxis]
+
+# Orientation markers in the knee reference
+for i in range(insoles_knee_R.shape[1]):
+    insoles_knee_R[:, i] = np.dot(JCS_knee_R_RT[:3, :3], insoles_knee_R_trans[:, i])
+    insoles_knee_L[:, i] = np.dot(JCS_knee_L_RT[:3, :3], insoles_knee_L_trans[:, i])
 
 # Write on the .BioMod
 if FLAG_WRITE_BIOMOD:
-    model_insoles = open(str(model_path), "a")
+    model_path = open(str(model_path), "a")
 
     # Markers JambeD (idx=12)
-    model_insoles.write("\n\t\t//Markers\n")
+    model_path.write("\n\t\t//Markers\n")
     for i in range(insoles_knee_R.shape[1]):
-        model_insoles.write(
+        model_path.write(
             (
                 str(
                     Markers(
@@ -112,7 +122,7 @@ if FLAG_WRITE_BIOMOD:
 
     # Markers JambeG (idx=15)
     for i in range(insoles_knee_L.shape[1]):
-        model_insoles.write(
+        model_path.write(
             (
                 str(
                     Markers(
@@ -121,8 +131,10 @@ if FLAG_WRITE_BIOMOD:
                 )
             )
         )
-    model_insoles.close()
+    model_path.close()
 
+# Animate the model
 if FLAG_ANIMATE:
+    model = biorbd.Model(model_path)
     b = bioviz.Viz(loaded_model=model)
     b.exec()
