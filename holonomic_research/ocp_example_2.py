@@ -47,7 +47,6 @@ def custom_dynamic(
     controls: MX | SX,
     parameters: MX | SX,
     nlp: NonLinearProgram,
-    my_additional_factor=1,
 ) -> DynamicsEvaluation:
     """
     The custom dynamics function that provides the derivative of the states: dxdt = f(x, u, p)
@@ -62,57 +61,21 @@ def custom_dynamic(
         The parameters acting on the system
     nlp: NonLinearProgram
         A reference to the phase
-    my_additional_factor: int
-        An example of an extra parameter sent by the user
 
     Returns
     -------
     The derivative of the states in the tuple[MX | SX] format
     """
-    # V0 Version 0
-    # q = DynamicsFunctions.get(nlp.states["q"], states)
-    # qdot = DynamicsFunctions.get(nlp.states["qdot"], states)
-    # tau = DynamicsFunctions.get(nlp.controls["tau"], controls)
-    #
-    # # compute v from u
-    # u = nlp.model.partitioned_q(q)[:nlp.model.nb_independent_joint]
-    # v = nlp.model.compute_v_from_u(u, MX.zeros(len(nlp.model.dependent_joint_index)))
-    # q_final = nlp.model.q_from_u_and_v(u, v)
-    #
-    # Bvu = nlp.model.coupling_matrix(q)
-    # udot = nlp.model.partitioned_q(qdot)[:nlp.model.nb_independent_joints]
-    # vdot = Bvu @ udot
-    # qdot_final = nlp.model.q_from_u_and_v(udot, vdot)
-    #
-    # uddot = nlp.model.constrained_forward_dynamics_independent(u, udot, tau)
-    # vddot = Bvu @ uddot + nlp.model.biais_vector(q, qdot)
-    # qddot_final = nlp.model.q_from_u_and_v(uddot, vddot)
-    #
-    # return DynamicsEvaluation(dxdt=vertcat(qdot_final, qddot_final), defects=None)
 
-    # V0 Version 1
     u = DynamicsFunctions.get(nlp.states["u"], states)
     udot = DynamicsFunctions.get(nlp.states["udot"], states)
-    # v = DynamicsFunctions.get(nlp.states["v"], states)
-    # vdot = DynamicsFunctions.get(nlp.states["vdot"], states)
     tau = DynamicsFunctions.get(nlp.controls["tau"], controls)
-
-    v_computed = nlp.model.compute_v_from_u(u)
-
-    q = nlp.model.q_from_u_and_v(u, v_computed)
-    Bvu = nlp.model.coupling_matrix(q)
-
-    vdot = Bvu @ udot
-    qdot_final = nlp.model.q_from_u_and_v(udot, vdot)
-
     uddot = nlp.model.forward_dynamics_constrained_independent(u, udot, tau)
-    vddot = Bvu @ uddot + nlp.model.biais_vector(q, qdot_final)
-    # qddot_final = nlp.model.q_from_u_and_v(uddot, vddot)
 
     return DynamicsEvaluation(dxdt=vertcat(udot, uddot), defects=None)
 
 
-def custom_configure(ocp: OptimalControlProgram, nlp: NonLinearProgram, my_additional_factor=1):
+def custom_configure(ocp: OptimalControlProgram, nlp: NonLinearProgram):
     """
     Tell the program which variables are states and controls.
     The user is expected to use the ConfigureProblem.configure_xxx functions.
@@ -123,39 +86,21 @@ def custom_configure(ocp: OptimalControlProgram, nlp: NonLinearProgram, my_addit
         A reference to the ocp
     nlp: NonLinearProgram
         A reference to the phase
-    my_additional_factor: int
-        An example of an extra parameter sent by the user
     """
 
-    # ConfigureProblem.configure_q(ocp, nlp, as_states=True, as_controls=False)
-    # ConfigureProblem.configure_qdot(ocp, nlp, as_states=True, as_controls=False)
-
-    name_u = [nlp.model.name_dof[i] for i in range(nlp.model.nb_independent_joint)]
+    name_u = [nlp.model.name_dof[i] for i in range(nlp.model.nb_independent_joints)]
     axes_idx = ConfigureProblem._apply_phase_mapping(ocp, nlp, "u")
     ConfigureProblem.configure_new_variable(
         "u", name_u, ocp, nlp, True, False, False, axes_idx=axes_idx
     )
-    # name_v = [nlp.model.name_dof[i] for i in range(nlp.model.nb_independent_joint, nlp.model.nb_dof)]
-    # axes_idx = ConfigureProblem._apply_phase_mapping(ocp, nlp, "v")
-    # ConfigureProblem.configure_new_variable(
-    #     "v", name_v, ocp, nlp, True, False, False, axes_idx=axes_idx
-    # )
 
     name = "udot"
     name_qdot = ConfigureProblem._get_kinematics_based_names(nlp, "qdot")
-    name_udot = [name_qdot[i] for i in range(nlp.model.nb_independent_joint)]
+    name_udot = [name_qdot[i] for i in range(nlp.model.nb_independent_joints)]
     axes_idx = ConfigureProblem._apply_phase_mapping(ocp, nlp, name)
     ConfigureProblem.configure_new_variable(
         name, name_udot, ocp, nlp, True, False, False, axes_idx=axes_idx
     )
-
-    # name = "vdot"
-    # name_qdot = ConfigureProblem._get_kinematics_based_names(nlp, "qdot")
-    # name_vdot = [name_qdot[i] for i in range(nlp.model.nb_independent_joint, nlp.model.nb_dof)]
-    # axes_idx = ConfigureProblem._apply_phase_mapping(ocp, nlp, name)
-    # ConfigureProblem.configure_new_variable(
-    #     name, name_vdot, ocp, nlp, True, False, False, axes_idx=axes_idx
-    # )
 
     ConfigureProblem.configure_tau(ocp, nlp, as_states=False, as_controls=True)
     ConfigureProblem.configure_dynamics_function(ocp, nlp, custom_dynamic, expand=False)
@@ -252,14 +197,8 @@ def prepare_ocp(
         constraint_jacobian=constraint_jacobian,
         constraint_double_derivative=constraint_double_derivative,
     )
-    bio_model.dependent_joint_index = [1, 2]
-    bio_model.independent_joint_index = [0, 3]
+    bio_model.set_dependencies(independent_joint_index=[0, 3], dependent_joint_index=[1, 2])
 
-    # bio_model.stabilization = True
-    # gamma = 50
-    # bio_model.alpha = gamma ^ 2
-    # bio_model.beta = 2 * gamma
-    # Problem parameters
     n_shooting = 100
     final_time = 1
 
@@ -270,22 +209,12 @@ def prepare_ocp(
 
     # Dynamics
     dynamics = DynamicsList()
-    if custom_dynamics:
-        dynamics.add(custom_configure, dynamic_function=custom_dynamic, expand=False)
-    else:
-        dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand=True)
+    dynamics.add(custom_configure, dynamic_function=custom_dynamic, expand=False)
 
-    # Constraints
+    # Path Constraints
     constraints = ConstraintList()
-    # constraints.add(
-    #     ConstraintFcn.SUPERIMPOSE_MARKERS, node=Node.START, first_marker="marker_1", second_marker="marker_3"
-    # )
-    # constraints.add(
-    #     ConstraintFcn.SUPERIMPOSE_MARKERS_VELOCITY, node=Node.START, first_marker="marker_1", second_marker="marker_3"
-    # )
 
-    # Path constraint
-    # x_bounds = bio_model.bounds_from_ranges(["q", "qdot"])
+    # Boundaries
     mapping = BiMappingList()
     mapping.add("q", [0, None, None, 1], [0, 3])
     mapping.add("qdot", [0, None, None, 1], [0, 3])
