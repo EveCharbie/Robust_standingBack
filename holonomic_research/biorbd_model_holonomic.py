@@ -7,8 +7,8 @@ from biorbd_casadi import (
     GeneralizedTorque,
     GeneralizedAcceleration,
 )
-from casadi import SX, MX, vertcat, horzcat, norm_fro, Function, solve
-from bioptim import Bounds, BiMapping, BiMappingList, BiorbdModel
+from casadi import MX, DM, vertcat, horzcat, Function, solve, rootfinder, inv_minor, inv
+from bioptim import BiorbdModel
 
 
 class BiorbdModelCustomHolonomic(BiorbdModel):
@@ -26,6 +26,17 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
         self.stabilization = False
         self.alpha = 0.01
         self.beta = 0.01
+        self.dependent_joint_index = []
+        self.independent_joint_index = []
+
+    @property
+    def nb_independent_joint(self):
+        return len(self.independent_joint_index)
+
+    @property
+    def nb_dependent_joint(self):
+        return len(self.dependent_joint_index)
+
 
     def add_holonomic_constraint(
         self,
@@ -75,7 +86,7 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
 
     def constrained_forward_dynamics(self, q, qdot, tau, external_forces=None, f_contacts=None) -> MX:
         """
-        Compute the forward dynamics of the model
+        Compute the forward dynamics of the model, with full implicit formulation
 
         Parameters
         ----------
@@ -131,6 +142,324 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
         x = solve(mass_matrix_augmented, tau_augmented, "symbolicqr")
 
         return x[: self.nb_qddot]
+
+    def partitioned_mass_matrix(self, q):
+        """
+
+        Parameters
+        ----------
+        q: MX
+            The generalized coordinates
+
+        Returns
+        -------
+        MX
+            The partitioned mass matrix, reorder in function independent and dependent joints
+        """
+        # u: independent
+        # v: dependent
+        mass_matrix = self.model.massMatrix(q).to_mx()
+        mass_matrix_uu = mass_matrix[self.independent_joint_index, self.independent_joint_index]
+        mass_matrix_uv = mass_matrix[self.independent_joint_index, self.dependent_joint_index]
+        mass_matrix_vu = mass_matrix[self.dependent_joint_index, self.independent_joint_index]
+        mass_matrix_vv = mass_matrix[self.dependent_joint_index, self.dependent_joint_index]
+
+        first_line = horzcat(mass_matrix_uu, mass_matrix_uv)
+        second_line = horzcat(mass_matrix_vu, mass_matrix_vv)
+
+        return vertcat(first_line, second_line)
+
+    def partitioned_non_linear_effect(self, q, qdot, f_ext=None, f_contacts=None):
+        """
+
+        Parameters
+        ----------
+        q: MX
+            The generalized coordinates
+        qdot: MX
+            The generalized velocities
+
+        """
+
+        non_linear_effect = self.model.NonLinearEffect(q, qdot, f_ext=None, f_contacts=None).to_mx()
+        non_linear_effect_u = non_linear_effect[self.independent_joint_index]
+        non_linear_effect_v = non_linear_effect[self.dependent_joint_index]
+
+        return vertcat(non_linear_effect_u, non_linear_effect_v)
+
+    def partitioned_q(self, q):
+        """
+
+        Parameters
+        ----------
+        q: MX
+            The generalized coordinates
+
+        Returns
+        -------
+        MX
+            The partitioned q, reorder in function independent and dependent joints
+        """
+        q_u = q[self.independent_joint_index]
+        q_v = q[self.dependent_joint_index]
+
+        return vertcat(q_u, q_v)
+
+    def  partitioned_qdot(self, qdot):
+        """
+
+        Parameters
+        ----------
+        qdot: MX
+            The generalized velocities
+
+        Returns
+        -------
+        MX
+            The partitioned qdot, reorder in function independent and dependent joints
+        """
+        qdot_u = qdot[self.independent_joint_index]
+        qdot_v = qdot[self.dependent_joint_index]
+
+        return vertcat(qdot_u, qdot_v)
+
+    def partitioned_tau(self, tau):
+        """
+
+        Parameters
+        ----------
+        tau: MX
+            The generalized torques
+
+        Returns
+        -------
+        MX
+            The partitioned tau, reorder in function independent and dependent joints
+        """
+        tau_u = tau[self.independent_joint_index]
+        tau_v = tau[self.dependent_joint_index]
+
+        return vertcat(tau_u, tau_v)
+
+    def partitioned_constrained_jacobian(self,q):
+        """
+
+        Parameters
+        ----------
+        q: MX
+            The generalized coordinates
+
+        Returns
+        -------
+        MX
+            The partitioned constrained jacobian, reorder in function independent and dependent joints
+        """
+        constrained_jacobian = self.holonomic_constraints_jacobian(q)
+        constrained_jacobian_u = constrained_jacobian[:, self.independent_joint_index]
+        constrained_jacobian_v = constrained_jacobian[:, self.dependent_joint_index]
+
+        return horzcat(constrained_jacobian_u, constrained_jacobian_v)
+
+    def forward_dynamics_constrained_independent(self, u, udot, tau, external_forces=None, f_contacts=None) -> MX:
+        """
+        This is the forward dynamics of the model, but only for the independent joints
+
+        Parameters
+        ----------
+        u: MX
+            The generalized coordinates
+        udot: MX
+            The generalized velocities
+        tau: MX
+            The generalized torques
+        external_forces: MX
+            The external forces
+        f_contacts: MX
+            The contact forces
+
+        Returns
+        -------
+        MX
+            The generalized accelerations
+        """
+
+        # compute v from u
+        v = self.compute_v_from_u(u)
+        q = self.q_from_u_and_v(u, v)
+
+        Bvu = self.coupling_matrix(q)
+        vdot = Bvu @ udot
+        qdot = self.q_from_u_and_v(udot, vdot)
+
+        partitioned_mass_matrix = self.partitioned_mass_matrix(q)
+        m_uu = partitioned_mass_matrix[:self.nb_independent_joint, :self.nb_independent_joint]
+        m_uv = partitioned_mass_matrix[:self.nb_independent_joint, self.nb_independent_joint:]
+        m_vu = partitioned_mass_matrix[self.nb_independent_joint:, :self.nb_independent_joint]
+        m_vv = partitioned_mass_matrix[self.nb_independent_joint:, self.nb_independent_joint:]
+
+        modified_mass_matrix = m_uu + m_uv @ Bvu + Bvu.T @ m_vu + Bvu.T @ m_vv @ Bvu
+        second_term = m_uv + Bvu.T @ m_vv
+
+        # compute the non linear effect
+        non_linear_effect = self.partitioned_non_linear_effect(q, qdot, external_forces, f_contacts)
+        non_linear_effect_u = non_linear_effect[:self.nb_independent_joint]
+        non_linear_effect_v = non_linear_effect[self.nb_independent_joint:]
+
+        modified_non_linear_effect = non_linear_effect_u + Bvu.T @ non_linear_effect_v
+
+        # compute the tau
+        partitioned_tau = self.partitioned_tau(tau)
+        tau_u = partitioned_tau[:self.nb_independent_joint]
+        tau_v = partitioned_tau[self.nb_independent_joint:]
+
+        modified_generalized_forces = tau_u + Bvu.T @ tau_v
+
+        uddot = inv(modified_mass_matrix) @ \
+                (modified_generalized_forces
+                 - second_term @ self.biais_vector(q, qdot)
+                 - modified_non_linear_effect
+                 )
+
+        return uddot
+
+    def coupling_matrix(self, q: MX) -> MX:
+        """
+        Compute the coupling matrix
+        """
+
+        J = self.partitioned_constrained_jacobian(q)
+        Jv = J[:, self.nb_independent_joint:]
+        Jv_inv = inv(Jv) # inv_minor otherwise ?
+
+        Ju = J[:, :self.nb_independent_joint]
+
+        return -Jv_inv @ Ju
+
+    def biais_vector(self, q: MX, qdot: MX) -> MX:
+        """
+        Compute the biais vector
+        """
+        J = self.partitioned_constrained_jacobian(q)
+        Jv = J[:, self.nb_independent_joint:]
+        Jv_inv = inv(Jv) # inv_minor otherwise ?
+
+        return Jv_inv @ self.holonomic_constraints_jacobian(qdot) @ qdot
+
+    def q_from_u_and_v(self, u: MX, v: MX) -> MX:
+        """
+        Compute the generalized coordinates from the independent and dependent joints
+
+        Parameters
+        ----------
+        u: MX
+            The independent joints
+        v: MX
+            The dependent joints
+
+        Returns
+        -------
+        MX
+            The generalized coordinates
+        """
+        # use self.independent_joint_index and self.dependent_joint_index
+        # to reorder u and v
+        # then concatenate them
+        q = MX() if isinstance(u, MX) else DM()
+        for i in range(self.nb_q):
+            if i in self.independent_joint_index:
+                q = vertcat(q, u[self.independent_joint_index.index(i)])
+            else:
+                q = vertcat(q, v[self.dependent_joint_index.index(i)])
+
+        return q
+
+    def compute_v_from_u(self, u, v_init=None):
+        """
+        Compute the dependent joint from the independent joint
+
+        Parameters
+        ----------
+        u: MX
+            The generalized coordinates
+        v_init: MX
+            The initial guess for the dependent joint
+
+        Returns
+        -------
+        MX
+            The dependent joint
+        """
+
+        decision_variables = MX.sym("decision_variables", len(self.dependent_joint_index))
+        q = self.q_from_u_and_v(u, decision_variables)
+        mx_residuals = self.holonomic_constraints(q)
+
+        residuals = Function(
+            "final_states_residuals",
+            [decision_variables, u],
+            [mx_residuals],
+        ).expand()
+
+        # Create an implicit function instance to solve the system of equations
+        opts = {"abstol": 1e-10}
+        ifcn = rootfinder("ifcn", "newton", residuals, opts)
+        v_opt = ifcn(
+            MX() if v_init is None else v_init,
+            u,
+        )
+
+        return v_opt
+
+    def compute_v_from_u_numeric(self, u, v_init=None):
+        """
+        Compute the dependent joint from the independent joint
+
+        Parameters
+        ----------
+        u: MX
+            The generalized coordinates
+        v_init: MX
+            The initial guess for the dependent joint
+
+        Returns
+        -------
+        MX
+            The dependent joint
+        """
+
+        decision_variables = MX.sym("decision_variables", len(self.dependent_joint_index))
+        q = self.q_from_u_and_v(u, decision_variables)
+        mx_residuals = self.holonomic_constraints(q)
+
+        residuals = Function(
+            "final_states_residuals",
+            [decision_variables],
+            [mx_residuals],
+        ).expand()
+
+        # Create an implicit function instance to solve the system of equations
+        opts = {"abstol": 1e-10}
+        ifcn = rootfinder("ifcn", "newton", residuals, opts)
+        v_opt = ifcn(
+           v_init,
+        )
+
+        return v_opt
+
+    def partitioned_forward_dynamics(self, u, udot, tau, external_forces=None, f_contacts=None) -> MX:
+
+
+        # compute v from u
+        v = self.compute_v_from_u(u)
+        q = self.q_from_u_and_v(u, v)
+
+        Bvu = self.coupling_matrix(q)
+        qdot = Bvu @ udot
+
+        uddot = self.forward_dynamics_constrained_independent(u, udot, tau, external_forces, f_contacts)
+        vddot = Bvu @ uddot + self.biais_vector(q, qdot)
+
+        return vertcat(uddot, vddot)
 
     def dae_inverse_dynamics(
         self, q, qdot, qddot, tau, lagrange_multipliers, external_forces=None, f_contacts=None
