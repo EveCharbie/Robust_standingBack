@@ -277,11 +277,8 @@ def main():
     # --- Show results --- #
     # sol.animate()
     q = np.zeros((4, 101))
-    qi = 0
     for i, ui in enumerate(sol.states["u"].T):
-        vi = bio_model.compute_v_from_u_numeric(ui,
-                                                v_init=np.zeros(2) if i == 0 else qi,
-                                                ).toarray()
+        vi = bio_model.compute_v_from_u_numeric(ui, v_init=np.zeros(2)).toarray()
         qi = bio_model.q_from_u_and_v(ui[:, np.newaxis], vi).toarray().squeeze()
         q[:, i] = qi
 

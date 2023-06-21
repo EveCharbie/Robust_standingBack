@@ -10,32 +10,30 @@ More specifically this example reproduces the behavior of the DynamicsFcn.TORQUE
 import platform
 
 from casadi import MX, SX, vertcat, Function, jacobian
-import sys
-sys.path.append("/home/mickael/Documents/Anais/Robust_standingBack/bioptim")
-# from bioptim import (
-#     Node,
-#     OptimalControlProgram,
-#     DynamicsList,
-#     ConfigureProblem,
-#     DynamicsFcn,
-#     DynamicsFunctions,
-#     Objective,
-#     ObjectiveFcn,
-#     ObjectiveList,
-#     ConstraintList,
-#     ConstraintFcn,
-#     Bounds,
-#     InitialGuess,
-#     OdeSolver,
-#     OdeSolverBase,
-#     NonLinearProgram,
-#     Solver,
-#     DynamicsEvaluation,
-#     BiMapping,
-#     BiMappingList,
-#     SelectionMapping,
-#     Dependency,
-# )
+from bioptim import (
+    Node,
+    OptimalControlProgram,
+    DynamicsList,
+    ConfigureProblem,
+    DynamicsFcn,
+    DynamicsFunctions,
+    Objective,
+    ObjectiveFcn,
+    ObjectiveList,
+    ConstraintList,
+    ConstraintFcn,
+    Bounds,
+    InitialGuess,
+    OdeSolver,
+    OdeSolverBase,
+    NonLinearProgram,
+    Solver,
+    DynamicsEvaluation,
+    BiMapping,
+    BiMappingList,
+    SelectionMapping,
+    Dependency,
+)
 from biorbd import marker_index
 from biorbd_casadi import RotoTrans
 import numpy as np

@@ -13,7 +13,6 @@ from casadi import MX, DM, vertcat, horzcat, Function, solve, rootfinder, inv_mi
 from bioptim import BiorbdModel
 import numpy as np
 
-
 class BiorbdModelCustomHolonomic(BiorbdModel):
     """
     This class allows to define a biorbd model with custom holonomic constraints,
@@ -31,7 +30,6 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
         self.beta = 0.01
         self._dependent_joint_index = []
         self._independent_joint_index = [i for i in range(self.nb_q)]
-
     def set_dependencies(self, dependent_joint_index: list, independent_joint_index: list):
         """ Set the dependencies between the joints of the model """
         if len(dependent_joint_index) + len(independent_joint_index) != self.nb_q:
@@ -399,6 +397,7 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
 
         return q
 
+<<<<<<< HEAD
     def compute_v_from_u_explicit_numeric(self, u: MX):
         """
         Compute the dependent joint from the independent joint,
@@ -541,6 +540,8 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
         )
         return vertcat(theta1, theta2)
 
+=======
+>>>>>>> main
     def compute_v_from_u(self, u: MX):
         """
         Compute the dependent joint from the independent joint,
@@ -571,6 +572,7 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
         ).expand()
 
         # Create an implicit function instance to solve the system of equations
+<<<<<<< HEAD
         opts = {"abstol": 1e-10,
                 # "print_iteration": True
                 }
@@ -581,6 +583,16 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
         )
 
         return fmod(v_opt + pi, 2 * pi) - pi
+=======
+        opts = {"abstol": 1e-10}
+        ifcn = rootfinder("ifcn", "newton", residuals, opts)
+        v_opt = ifcn(
+            MX(),
+            u,
+        )
+
+        return v_opt
+>>>>>>> main
 
     def compute_v_from_u_numeric(self, u: DM, v_init=None):
         """
@@ -625,17 +637,3 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
         )
 
         return fmod(v_opt + pi, 2 * pi) - pi
-
-    # def partitioned_forward_dynamics(self, u, udot, tau, external_forces=None, f_contacts=None) -> MX:
-    #     """ not used """
-    #     # compute v from u
-    #     v = self.compute_v_from_u(u)
-    #     q = self.q_from_u_and_v(u, v)
-    #
-    #     Bvu = self.coupling_matrix(q)
-    #     qdot = Bvu @ udot
-    #
-    #     uddot = self.forward_dynamics_constrained_independent(u, udot, tau, external_forces, f_contacts)
-    #     vddot = Bvu @ uddot + self.biais_vector(q, qdot)
-    #
-    #     return vertcat(uddot, vddot)
