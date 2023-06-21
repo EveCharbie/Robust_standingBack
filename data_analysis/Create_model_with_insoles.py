@@ -108,7 +108,7 @@ if FLAG_WRITE_BIOMOD:
     model_path = open(str(model_path), "a")
 
     # Markers JambeD (idx=12)
-    model_path.write("\n\t\t//Markers\n")
+    model_path.write("\njh\t\t//Markers\n")
     for i in range(insoles_knee_R.shape[1]):
         model_path.write(
             (

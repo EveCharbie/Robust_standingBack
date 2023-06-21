@@ -17,11 +17,11 @@ path_folder_save = "/home/lim/Anais/CollecteStandingBack"
 model_path = "EmCo.bioMod"
 model = biorbd.Model(model_path)
 Condition = [
-    # "salto_control_pre",
+    "salto_control_pre",
     "salto_control_post",
 ]
-FLAG_SAVE = True
-FLAG_GRAPH = True
+FLAG_SAVE = False
+FLAG_GRAPH = False
 
 ### --- Synchronisation insoles with motion capture --- ###
 
@@ -123,30 +123,28 @@ for number_condition in range(len(Condition)):  # Create a function if everythin
             # Cut data to be synchronize
             # Cut the end
             peak_to_last_markers = markers.shape[2] - first_peak_movement_MotionCapture
-            peak_to_last_insoles = round(
-                (insole_R.shape[0] - first_peak_movement_insole) / 2
-            )  # Peak for a frequency at 200Hz
+            peak_to_last_insoles = round(((insole_R.shape[0] - first_peak_movement_insole + 0.01) / 2))  # Peak for a frequency at 200Hz
             diff_peak_to_last = abs(peak_to_last_markers - peak_to_last_insoles)
             diff_peak = abs(first_peak_movement_MotionCapture - round(first_peak_movement_insole / 2))
 
             if peak_to_last_insoles > peak_to_last_markers:
-                # if ((insole_R.shape[0] - first_peak_movement_insole) / 2) % 2 == 0:
-                insole_R = insole_R.loc[0: (insole_R.shape[0] - diff_peak_to_last * 2), :]
-                insole_L = insole_L.loc[0: (insole_L.shape[0] - diff_peak_to_last * 2), :]
-                # else:
-                #     insole_R = insole_R.loc[0: (insole_R.shape[0] - diff_peak_to_last * 2) - 1, :]
-                #     insole_L = insole_L.loc[0: (insole_L.shape[0] - diff_peak_to_last * 2) - 1, :]
-            elif peak_to_last_insoles < peak_to_last_markers:
-                if ((insole_R.shape[0] - first_peak_movement_insole) / 2) % 2 == 0:
+                if peak_to_last_insoles % 2 == 0: # Insole pair
+                    insole_R = insole_R.loc[0: (insole_R.shape[0] - diff_peak_to_last * 2), :]
+                    insole_L = insole_L.loc[0: (insole_L.shape[0] - diff_peak_to_last * 2), :]
+
+                else:   # Insole impaire
+                    insole_R = insole_R.loc[0: (insole_R.shape[0] - diff_peak_to_last * 2) + 1, :]
+                    insole_L = insole_L.loc[0: (insole_L.shape[0] - diff_peak_to_last * 2) + 1, :]
+
+            elif peak_to_last_insoles / 2 < peak_to_last_markers:
+                if peak_to_last_insoles % 2 == 0:
                     distance_knee_hand_L = distance_knee_hand_L[0: (analog.shape[1] - diff_peak_to_last)].to_numpy()
                     analog = analog[:, 0: (analog.shape[1] - diff_peak_to_last)].to_numpy()
                     markers = markers[:, :, 0: (markers.shape[2] - diff_peak_to_last)].to_numpy()
                 else:
-                    distance_knee_hand_L = distance_knee_hand_L[
-                        0: (analog.shape[1] - (diff_peak_to_last + 1))
-                    ].to_numpy()
-                    analog = analog[:, 0: (analog.shape[1] - (diff_peak_to_last + 1))].to_numpy()
-                    markers = markers[:, :, 0: (markers.shape[2] - (diff_peak_to_last + 1))].to_numpy()
+                    distance_knee_hand_L = distance_knee_hand_L[0: (analog.shape[1] - diff_peak_to_last)].to_numpy()
+                    analog = analog[:, 0: (analog.shape[1] - diff_peak_to_last)].to_numpy()
+                    markers = markers[:, :, 0: (markers.shape[2] - diff_peak_to_last)].to_numpy()
                     insole_R = insole_R.loc[0: insole_R.shape[0] - 2, :]
                     insole_L = insole_L.loc[0: insole_L.shape[0] - 2, :]
             else:
@@ -154,11 +152,16 @@ for number_condition in range(len(Condition)):  # Create a function if everythin
 
                 # Cut the beginning
             if first_peak_movement_insole / 2 > first_peak_movement_MotionCapture:
-                insole_R = insole_R.loc[diff_peak * 2:, :]
-                insole_L = insole_L.loc[diff_peak * 2:, :]
+                if (first_peak_movement_insole / 2) % 2 == 0:
+                    insole_R = insole_R.loc[diff_peak * 2:, :]
+                    insole_L = insole_L.loc[diff_peak * 2:, :]
+                else:
+                    insole_R = insole_R.loc[(diff_peak * 2):, :]    # Problem insole -1
+                    insole_L = insole_L.loc[(diff_peak * 2):, :]
+
                 # begin_movement_insole = begin_movement_insole - (diff_peak * 2)
                 # first_peak_movement_insole = first_peak_movement_insole - (diff_peak * 2)
-            elif first_peak_movement_insole / 2 < first_peak_movement_MotionCapture:    # Boucle pas bon
+            elif first_peak_movement_insole / 2 < first_peak_movement_MotionCapture:
                 if (first_peak_movement_insole / 2) % 2 == 0:
                     distance_knee_hand_L = distance_knee_hand_L[diff_peak:]
                     analog = analog[:, diff_peak:]
@@ -166,9 +169,9 @@ for number_condition in range(len(Condition)):  # Create a function if everythin
                     begin_movement_MotionCapture = begin_movement_MotionCapture - diff_peak
                     first_peak_movement_MotionCapture = first_peak_movement_MotionCapture - diff_peak
                 else:
-                    distance_knee_hand_L = distance_knee_hand_L[diff_peak + 1:]
-                    analog = analog[:, diff_peak + 1:]
-                    markers = markers[:, :, diff_peak + 1:]
+                    distance_knee_hand_L = distance_knee_hand_L[diff_peak:]
+                    analog = analog[:, diff_peak:]
+                    markers = markers[:, :, diff_peak:]
                     insole_R = insole_R.loc[2:, :]
                     insole_L = insole_L.loc[2:, :]
                     begin_movement_MotionCapture = begin_movement_MotionCapture - diff_peak
@@ -178,9 +181,18 @@ for number_condition in range(len(Condition)):  # Create a function if everythin
 
             # Visualisation and save fig
             # Creation vecteur temps
-            insole_R["Time"] = np.arange(0, insole_R.shape[0] * 1 / 400, 1 / 400)
-            insole_L["Time"] = np.arange(0, insole_L.shape[0] * 1 / 400, 1 / 400)
-            vector_time_marker = np.arange(0, distance_knee_hand_L.shape[0] * 1 / 200, 1 / 200)
+
+            print(
+                "Nom fichier:" + str(files_MotionCapture[i]),
+                "Markers shape:" + str(markers.shape),
+                "Analog shape:" + str(analog.shape),
+                "Insole_R shape:" + str(insole_R.shape),
+                "Insole_L shape:" + str(insole_L.shape),
+                "Diff:" + str(insole_R.shape[0] / 2 - markers.shape[2]),
+            )
+            # insole_R["Time"] = np.arange(0, insole_R.shape[0] / 400, 1 / 400)
+            # insole_L["Time"] = np.arange(0, insole_L.shape[0] / 400, 1 / 400)
+            # vector_time_marker = np.arange(0, distance_knee_hand_L.shape[0] * 1 / 200, 1 / 200)
 
             # Plot 1: Peak insole (subplot1) and peak motion capture (subplot2)
             if FLAG_GRAPH:
