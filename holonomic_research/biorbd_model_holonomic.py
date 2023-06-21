@@ -34,7 +34,7 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
         """ Set the dependencies between the joints of the model """
         if len(dependent_joint_index) + len(independent_joint_index) != self.nb_q:
             raise RuntimeError("The sum of the number of dependent and independent joints should be equal to the number of DoF of the model")
-        
+
         self._dependent_joint_index = dependent_joint_index
         self._independent_joint_index = independent_joint_index
 
@@ -397,7 +397,7 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
 
         return q
 
-<<<<<<< HEAD
+
     def compute_v_from_u_explicit_numeric(self, u: MX):
         """
         Compute the dependent joint from the independent joint,
@@ -540,8 +540,6 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
         )
         return vertcat(theta1, theta2)
 
-=======
->>>>>>> main
     def compute_v_from_u(self, u: MX):
         """
         Compute the dependent joint from the independent joint,
@@ -572,18 +570,17 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
         ).expand()
 
         # Create an implicit function instance to solve the system of equations
-<<<<<<< HEAD
-        opts = {"abstol": 1e-10,
-                # "print_iteration": True
-                }
-        ifcn = rootfinder("ifcn", "newton", residuals, opts)
-        v_opt = ifcn(
-            MX([1.5, -1.5]),
-            u,
-        )
+        # opts = {"abstol": 1e-10,
+        #         # "print_iteration": True
+        #         }
+        # ifcn = rootfinder("ifcn", "newton", residuals, opts)
+        # v_opt = ifcn(
+        #     MX([1.5, -1.5]),
+        #     u,
+        # )
 
-        return fmod(v_opt + pi, 2 * pi) - pi
-=======
+        # return fmod(v_opt + pi, 2 * pi) - pi
+
         opts = {"abstol": 1e-10}
         ifcn = rootfinder("ifcn", "newton", residuals, opts)
         v_opt = ifcn(
@@ -592,7 +589,7 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
         )
 
         return v_opt
->>>>>>> main
+
 
     def compute_v_from_u_numeric(self, u: DM, v_init=None):
         """

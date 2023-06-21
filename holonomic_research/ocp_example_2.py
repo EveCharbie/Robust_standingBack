@@ -37,7 +37,7 @@ from bioptim import (
 from biorbd import marker_index
 import numpy as np
 
-from holonomic_research.biorbd_model_holonomic import BiorbdModelCustomHolonomic
+from biorbd_model_holonomic import BiorbdModelCustomHolonomic
 
 def custom_dynamic(
     states: MX | SX,
