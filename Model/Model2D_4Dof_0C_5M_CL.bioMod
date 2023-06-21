@@ -1,0 +1,184 @@
+version 4
+
+gravity 0 0 -9.81
+
+segment	Pelvis
+	RT -0.1 0 0	xyz 0 0 0.8
+	mass	11.58
+	inertia
+		0.0692	0.0	0.0
+		0.0	0.1254	0.0
+		0.0	0.0	0.1123
+	com	0.0	0.0	0.1044
+	meshfile	mesh/pelvis.stl
+endsegment
+
+segment	Thorax
+	parent	Pelvis
+	RT 0 0 0	xyz 0.0 -0.0515404739 0.1813885235
+	mass	20.46
+	inertia
+		0.5204	0.0	0.0
+		0.0	0.6185	0.0
+		0.0	0.0	0.2343
+	com	0.0	0.0	0.1767
+	meshfile	mesh/thorax.stl
+endsegment
+
+segment	Head
+	parent	Thorax
+	RT 0 0 0	xyz 0.0 0.0435036145 0.3479414452
+	mass	5.12
+	inertia
+		0.0881	0.0	0.0
+		0.0	0.0881	0.0
+		0.0	0.0	0.0156
+	com	0.0	0.0	0.0853
+	meshfile	mesh/head.stl
+endsegment
+
+segment	Arm
+	parent	Thorax
+	RTinMatrix	1
+	RT
+		1  0  0 0.0
+		0 1 0 0.023425367
+		0 0  1 0.211508031
+		0 0 0 1
+	rotations	 x
+	rangesQ	-0.7 3.1
+	rangesQdot	-31.42 31.42
+	mass	4.72
+	inertia
+		0.03770325476957999	0.0	0.0
+		0.0	0.03770325476957999	0.0
+		0.0	0.0	0.005996554197399041
+	com	0.0	0.0	-0.1427
+	meshfile	mesh/arm.stl
+endsegment
+
+segment	Forearm
+	parent	Arm
+	RTinMatrix	1
+	RT
+		1  0  0 0.0
+		0 1 0 -0.000261286
+		0 0  1 -0.338601867
+		0 0 0 1
+	rotations	 x
+	rangesQ	0 2.09
+	rangesQdot	-31.42 31.42
+	mass	2.52
+	inertia
+		0.013022885689772144	0.0	0.0
+		0.0	0.013154165656146893	0.0
+		0.0	0.0	0.0019576149660600886
+	com	0.0	0.0	-0.1264
+	meshfile	mesh/fore_arm.stl
+	meshrt	0 0 0	xyz	0 0 0
+endsegment
+
+marker	 ELBOW
+	parent	Forearm
+	position 0 0 0
+	technical 1
+endmarker
+segment	Hand
+	parent	Forearm
+	RTinMatrix	1
+	RT
+		1  0  0 0.0
+		0 1 0 0.001217047
+		0 0  1 -0.265871926
+		0 0 0 1
+	mass	1.12
+	inertia
+		0.0027648635147748315	0.0	0.0
+		0.0	0.0031487689115472926	0.0
+		0.0	0.0	0.0006717710781510774
+	com	0.01927061	-0.007717575	-0.051481325
+	meshfile	mesh/hand.stl
+	meshrt	-1 0 0	xyz	0 0 0
+endsegment
+
+marker	 CENTER_HAND
+	parent	Hand
+	position 0.0 0.025 -0.0655
+	technical 1
+endmarker
+segment	Thigh
+	parent	Pelvis
+	RTinMatrix	1
+	RT
+		1  0  0 0.0
+		0 1 0 0.0
+		0 0 1 0.0
+		0 0 0 1
+	rotations	 x
+	rangesQ	-0.4 2.6
+	rangesQdot	-31.42 31.42
+	mass	18.98
+	inertia
+		0.3444	0.0	0.0
+		0.0	0.3444	0.0
+		0.0	0.0	0.0674
+	com	0.0	0.0	-0.2017
+	meshfile	mesh/thigh.stl
+	meshrt	0 0 0	xyz	 0 0 0
+endsegment
+
+segment	Leg
+	parent	Thigh
+	RTinMatrix	1
+	RT
+		1  0  0 0.0
+		0 1 0 1.7e-08
+		0 0 1 -0.462839073
+		0 0 0 1
+	rotations	 x
+	rangesQ	-2.3 0.02
+	rangesQdot	-31.42 31.42
+	mass	8.36
+	inertia
+		0.1702	0.0	0.0
+		0.0	0.1702	0.0
+		0.0	0.0	0.0122
+	com	0.0	0.0	-0.2026
+	meshfile	mesh/leg_right.stl
+	meshrt	0 0 1	xyz	 0 0 0
+endsegment
+
+marker	 BELOW_KNEE
+	parent	Leg
+	position 0.0 0.07 -0.1575
+	technical 1
+endmarker
+
+segment	Foot
+	parent	Leg
+	RTinMatrix	1
+	RT
+		1.0 0.0 0.0 0.0
+		0.0 6.123233995736766e-17 -1.0 3.36e-07
+		0.0 1.0 6.123233995736766e-17 -0.427480971
+		0 0 0 1
+	mass	2.32
+	inertia
+		0.0178	0.0	0.0
+		0.0	0.0022	0.0
+		0.0	0.0	0.0176
+	com	0.0	0.0	-0.0757
+	meshfile	mesh/foot.stl
+	meshrt	0 0 0	xyz	0.014 -0.02 -0.022
+endsegment
+marker	 FOOT
+	parent	Foot
+	position 0.0 -0.05 -0.12
+	technical 1
+endmarker
+marker	 ANKLE
+	parent	Foot
+	position 0 0 0
+	technical 1
+endmarker
+
