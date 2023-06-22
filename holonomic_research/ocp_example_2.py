@@ -37,7 +37,7 @@ from bioptim import (
 from biorbd import marker_index
 from biorbd_casadi import RotoTrans
 import numpy as np
-from biorbd_model_holonomic import BiorbdModelCustomHolonomic
+from .biorbd_model_holonomic import BiorbdModelCustomHolonomic
 
 
 def custom_dynamic(

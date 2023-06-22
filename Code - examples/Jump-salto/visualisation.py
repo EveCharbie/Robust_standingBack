@@ -146,9 +146,10 @@ def visualisation_dedoublement_phase(name_file_movement:str, name_file_model:str
 
 
 def visualisation_closed_loop(bio_model, sol, model_path):
-    q = np.zeros((4, 11))
+    q = np.zeros((bio_model.nb_q, sol.states["u"].shape[1]))
     for i, ui in enumerate(sol.states["u"].T):
-        vi = bio_model.compute_v_from_u_numeric(ui, v_init=DM(np.zeros(2))).toarray()
+        # vi = bio_model.compute_v_from_u_numeric(ui, v_init=DM(np.zeros(2))).toarray()
+        vi = bio_model.compute_v_from_u_explicit_numeric(ui).toarray()
         qi = bio_model.q_from_u_and_v(ui[:, np.newaxis], vi).toarray().squeeze()
         q[:, i] = qi
     visu = bioviz.Viz(model_path)
