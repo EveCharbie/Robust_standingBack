@@ -85,7 +85,7 @@ def intersection_ellipse_line(line_points, ellipse_center, a, b, theta, FLAG_PLO
         plt.plot(x_values, y_values, label='Droite')
         ax.scatter(h, k, color='red', label='centre ellipse')
         ax.scatter(x1, y1, color='orange', label='markers')
-        ax.scatter(intersection, color='blue', label='intersection')
+        ax.scatter(intersection[0], intersection[1], color='blue', label='intersection')
         ax.add_patch(ellipse)
         ax.set_aspect('equal')
         ax.set_xlabel(" Position in x")
@@ -290,14 +290,25 @@ def points_to_ellipse(data, fig_name, markers_name, FLAG_PLOT: False) -> list:
     return ellipse
 
 
-def minimize_distance(point1, point2):
+def minimize_distance(position_markers, ellipse_center, ellipse_axes, ellipse_angle):
+    # Position of the markers, center of the ellipse, axes of the ellipse, angle of the ellipse
+    x, y = position_markers[0], position_markers[1]
+    xc, yc = ellipse_center[0], ellipse_center[1]
+    a, b = ellipse_axes[0], ellipse_axes[1]
+    theta = ellipse_angle
+
     # Generate an initial guess for the optimization variables
-    x = cas.MX.sym("x", 2)
+    pos = cas.MX.sym("pos", 2)
 
+    f = 0
     # Objective (minimize distance between two points)
-    f = cas.sqrt((point1[0] - x[0])**2 + (point1[1] - x[1])**2) + cas.sqrt((point2[0] - x[0])**2 + (point2[1] - x[1])**2)
+    for markers in range(len(x)):
+        # f = cas.sqrt((x[0] - pos[0])**2 + (y[0] - pos[0])**2)
+        distance_marker_sensor = cas.sqrt((x[markers] - pos[0])**2 + (y[markers] - pos[1])**2)
+        distance_marker_center_ellipse = cas.sqrt((x[markers] - xc)**2 + (y[markers] - yc)**2)
+        f += cas.sin((distance_marker_sensor / distance_marker_center_ellipse))
 
-    nlp = {"x": x, "f": f}
+    nlp = {"x": pos, "f": f}
     opts = {"ipopt.print_level": 5}
     solver = cas.nlpsol("solver", "ipopt", nlp, opts)
     x0 = np.zeros(2)  # Initial guess for the optimization variables
@@ -305,16 +316,16 @@ def minimize_distance(point1, point2):
     sol = solver(x0=x0, lbx=[-np.inf, -np.inf], ubx=[np.inf, np.inf])
 
     if solver.stats()["success"]:
-        distance = float(sol["f"])
-        print("Distance minimale entre les points:", distance)
-        return distance
+        angle = float(sol["f"])
+        print("Angle en radian:", angle)
+        return angle
     else:
         print("Optimization did not converge")
         return None
 
 
 
-def find_tangent(ellipse_center, ellipse_axes, ellipse_angle, point, FLAG_PLOT=False):
+def find_tangent(ellipse_center, ellipse_axes, ellipse_angle, point, fig_name:str,  FLAG_PLOT=False):
     """
     Find the tangent of a point on the edge of a ellipse
     :param ellipse_center: Coordinate on x and y of the ellipse's center
@@ -366,12 +377,14 @@ def find_tangent(ellipse_center, ellipse_axes, ellipse_angle, point, FLAG_PLOT=F
         # Tracer la tangente
         ax.plot(t, tangent_line, color="blue", label="tangente")
         plt.legend()
-        plt.show()
+        plt.savefig("Figures/" + fig_name + ".svg")
+        fig.clf()
+        # plt.show()
 
     return slope_ellipse, slope
 
 
-def find_perpendiculaire_to_tangente(tangent_slope, point, ellipse_axes, ellipse_angle, ellipse_center, FLAG_PLOT=False):
+def find_perpendiculaire_to_tangente(tangent_slope, point, ellipse_axes, ellipse_angle, ellipse_center, fig_name:str, FLAG_PLOT=False):
     """
 
     :param tangent_slope: The slope of the tangent
@@ -417,7 +430,8 @@ def find_perpendiculaire_to_tangente(tangent_slope, point, ellipse_axes, ellipse
         # Tracer la perpendiculaire à la tangente
         ax.plot(t, perpendicular_line, color="orange", label="perpendiculaire")
         plt.legend()
-
+        plt.savefig("Figures/" + fig_name + ".svg")
+        fig.clf()
         plt.show()
 
     return perpendicular_line

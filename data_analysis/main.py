@@ -41,7 +41,9 @@ position_activation_R, position_activation_L, distance_activation_sensor_R, dist
                                                                                                                                path_file_info_insole="/home/lim/Anais/CollecteStandingBack/Access_sensor_positions/coordonnees_insoles",
                                                                                                                                FLAG_PLOT=False)
 
-distance_opti_L = minimize_distance(position_activation_L["value"][:, 1], markers_insole_L_xy[:, 10])
+distance_opti_L = minimize_distance(position_markers=markers_insole_L_xy, ellipse_center=center_ellipse_L, ellipse_axes=(parameters_ellipse_L[2]["a"], parameters_ellipse_L[2]["b"]),
+                                    ellipse_angle=parameters_ellipse_L[2]["angle"])
+print(distance_opti_L)
 
 # Faire la somme vectorielle des activations
 
@@ -58,19 +60,25 @@ for i in range(markers_insole_L_xy.shape[1]):
         ellipse_center=center_ellipse_L,
         a=parameters_ellipse_L[2]["a"]/2,
         b=parameters_ellipse_L[2]["b"]/2,
-        theta=parameters_ellipse_L[2]["angle"])
+        theta=parameters_ellipse_L[2]["angle"],
+        FLAG_PLOT=False,
+    )
 
     tangente = find_tangent(
         ellipse_center=center_ellipse_L,
         ellipse_axes=(parameters_ellipse_L[2]["a"], parameters_ellipse_L[2]["b"]),
         ellipse_angle=parameters_ellipse_L[2]["angle"],
         point=intersection,
+        FLAG_PLOT=False,
+        fig_name="Tangente_insole_L_" + str(i),
     )
     perpendiculaire = find_perpendiculaire_to_tangente(ellipse_center=center_ellipse_L,
                                                        ellipse_axes=(parameters_ellipse_L[2]["a"], parameters_ellipse_L[2]["b"]),
                                                        ellipse_angle=parameters_ellipse_L[2]["angle"],
                                                        point=intersection,
                                                        tangent_slope=tangente[0],
+                                                       FLAG_PLOT=True,
+                                                       fig_name="Perpendiculaire_insole_L_" + str(i)
                                                        )
 
     # Intervalles de valeurs de x pour le traçage
@@ -120,13 +128,17 @@ for i in range(markers_insole_R_xy.shape[1]):
         ellipse_axes=(parameters_ellipse_R[2]["a"], parameters_ellipse_R[2]["b"]),
         ellipse_angle=parameters_ellipse_R[2]["angle"],
         point=intersection,
+        FLAG_PLOT=True,
+        fig_name="Tangente_insole_R_" + str(i),
     )
     perpendiculaire = find_perpendiculaire_to_tangente(ellipse_center=center_ellipse_R,
                                                        ellipse_axes=(parameters_ellipse_R[2]["a"], parameters_ellipse_R[2]["b"]),
                                                        ellipse_angle=parameters_ellipse_R[2]["angle"],
                                                        point=intersection,
                                                        tangent_slope=tangente[0],
-                                                       FLAG_PLOT=False)
+                                                       FLAG_PLOT=True,
+                                                       fig_name="Perpendiculaire_insole_R_" + str(i),
+                                                       )
 
     # Intervalles de valeurs de x pour le traçage
     pos_x = abs(parameters_ellipse_R[2]['center_x_ellipse'] - markers_insole_R_xy[0, i])

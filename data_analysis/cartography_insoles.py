@@ -32,7 +32,7 @@ def distance_activation_sensor(coordonnes_insoles, position_activation, name_act
 
 
 # --- Cartography insoles --- #
-def cartography_insole(path_file_insole:str, path_file_info_insole: str, FLAG_PLOT=False):
+def cartography_insole(path_file_insole:str, path_file_info_insole: str, fig_name:str, FLAG_PLOT=False):
 
 
     insoles_coordonnees = pd.read_csv(
@@ -71,7 +71,7 @@ def cartography_insole(path_file_insole:str, path_file_info_insole: str, FLAG_PL
         axs[1].set_xlabel("Position X (mm)", fontsize=14)
         axs[1].set_ylabel("Position Y (mm)", fontsize=14)
         axs[1].title.set_text('Insole Left')
-        plt.savefig("Figures/Cartography_insoles.svg")
+        plt.savefig("Figures/" + fig_name + ".svg")
         fig.clf()
 
 
