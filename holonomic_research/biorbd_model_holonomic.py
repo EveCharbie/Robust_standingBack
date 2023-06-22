@@ -570,6 +570,19 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
             [mx_residuals],
         ).expand()
 
+        # Create an implicit function instance to solve the system of equations
+        # opts = {"abstol": 1e-10,
+        #         # "print_iteration": True
+        #         }
+        # ifcn = rootfinder("ifcn", "newton", residuals, opts)
+        # v_opt = ifcn(
+        #     MX([1.5, -1.5]),
+        #     u,
+        # )
+
+        # return fmod(v_opt + pi, 2 * pi) - pi
+
+
         opts = {"abstol": 1e-10}
         ifcn = rootfinder("ifcn", "newton", residuals, opts)
         v_opt = ifcn(
@@ -578,6 +591,7 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
         )
 
         return v_opt
+
 
     def compute_v_from_u_numeric(self, u: DM, v_init=None):
         """
