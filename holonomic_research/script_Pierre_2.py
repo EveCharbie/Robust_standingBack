@@ -1,11 +1,11 @@
 import casadi as cas
 import numpy as np
-from holonomic_research.ocp_example_2 import generate_close_loop_constraint
-from holonomic_research.biorbd_model_holonomic import BiorbdModelCustomHolonomic
+from ocp_example_2 import generate_close_loop_constraint
+from biorbd_model_holonomic import BiorbdModelCustomHolonomic
 import bioviz
 
 # BioModel path
-model_path = "/home/mickael/Documents/Anais/Robust_standingBack/Model/Model2D_4Dof_0C_5M_CL_V2.bioMod"
+model_path = "/home/mickael/Documents/Anais/Robust_standingBack/Robust_standingBack/Model/Model2D_4Dof_0C_5M_CL_V2.bioMod"
 bio_model = BiorbdModelCustomHolonomic(model_path)
 
 # Made up constraints

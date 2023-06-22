@@ -13,6 +13,7 @@ from casadi import MX, DM, vertcat, horzcat, Function, solve, rootfinder, inv_mi
 from bioptim import BiorbdModel
 import numpy as np
 
+
 class BiorbdModelCustomHolonomic(BiorbdModel):
     """
     This class allows to define a biorbd model with custom holonomic constraints,
@@ -30,11 +31,12 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
         self.beta = 0.01
         self._dependent_joint_index = []
         self._independent_joint_index = [i for i in range(self.nb_q)]
+
     def set_dependencies(self, dependent_joint_index: list, independent_joint_index: list):
         """ Set the dependencies between the joints of the model """
         if len(dependent_joint_index) + len(independent_joint_index) != self.nb_q:
             raise RuntimeError("The sum of the number of dependent and independent joints should be equal to the number of DoF of the model")
-        
+
         self._dependent_joint_index = dependent_joint_index
         self._independent_joint_index = independent_joint_index
 
@@ -397,7 +399,6 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
 
         return q
 
-<<<<<<< HEAD
     def compute_v_from_u_explicit_numeric(self, u: MX):
         """
         Compute the dependent joint from the independent joint,
@@ -540,8 +541,6 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
         )
         return vertcat(theta1, theta2)
 
-=======
->>>>>>> main
     def compute_v_from_u(self, u: MX):
         """
         Compute the dependent joint from the independent joint,
@@ -571,19 +570,6 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
             [mx_residuals],
         ).expand()
 
-        # Create an implicit function instance to solve the system of equations
-<<<<<<< HEAD
-        opts = {"abstol": 1e-10,
-                # "print_iteration": True
-                }
-        ifcn = rootfinder("ifcn", "newton", residuals, opts)
-        v_opt = ifcn(
-            MX([1.5, -1.5]),
-            u,
-        )
-
-        return fmod(v_opt + pi, 2 * pi) - pi
-=======
         opts = {"abstol": 1e-10}
         ifcn = rootfinder("ifcn", "newton", residuals, opts)
         v_opt = ifcn(
@@ -592,7 +578,6 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
         )
 
         return v_opt
->>>>>>> main
 
     def compute_v_from_u_numeric(self, u: DM, v_init=None):
         """
@@ -636,4 +621,4 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
            v_init,
         )
 
-        return fmod(v_opt + pi, 2 * pi) - pi
+        return v_opt #fmod(v_opt + pi, 2 * pi) - pi

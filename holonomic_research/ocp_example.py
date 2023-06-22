@@ -38,8 +38,8 @@ from biorbd import marker_index
 from biorbd_casadi import RotoTrans
 import numpy as np
 
-from biorbd_model_holonomic import BiorbdModelCustomHolonomic
-from graphs import constraints_graphs
+from holonomic_research.biorbd_model_holonomic import BiorbdModelCustomHolonomic
+from holonomic_research.graphs import constraints_graphs
 
 
 def custom_dynamic(

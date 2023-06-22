@@ -8,7 +8,7 @@ More specifically this example reproduces the behavior of the DynamicsFcn.TORQUE
 """
 
 import platform
-import sys
+
 from casadi import MX, SX, vertcat, Function, jacobian
 from bioptim import (
     Node,
@@ -35,9 +35,12 @@ from bioptim import (
     Dependency,
 )
 from biorbd import marker_index
+from biorbd_casadi import RotoTrans
 import numpy as np
 
 from holonomic_research.biorbd_model_holonomic import BiorbdModelCustomHolonomic
+from graphs import constraints_graphs
+
 
 def custom_dynamic(
     states: MX | SX,
@@ -260,7 +263,7 @@ def prepare_ocp(
         assume_phase_dynamics=True,
         variable_mappings=variable_bimapping,
         n_threads=8,
-    ) , bio_model
+    )
 
 
 def main():
