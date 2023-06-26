@@ -37,9 +37,7 @@ from bioptim import (
 from biorbd import marker_index
 from biorbd_casadi import RotoTrans
 import numpy as np
-
-from biorbd_model_holonomic import BiorbdModelCustomHolonomic
-from graphs import constraints_graphs
+from .biorbd_model_holonomic import BiorbdModelCustomHolonomic
 
 
 def custom_dynamic(
@@ -263,7 +261,7 @@ def prepare_ocp(
         assume_phase_dynamics=True,
         variable_mappings=variable_bimapping,
         n_threads=8,
-    ) , bio_model
+    )
 
 
 def main():

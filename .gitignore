@@ -127,7 +127,3 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-
-data_analysis/c3d/
-
-data_analysis/reconstructions/

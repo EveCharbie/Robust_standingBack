@@ -6,7 +6,7 @@ def constraints_graphs(ocp, sol):
 
     simple_derivative0 = []
     simple_derivative1 = []
-    for qi, qdoti in zip(sol.states["q"].T, sol.states["qdot"].T):
+    for qi, qdoti in zip(sol.states["u"].T, sol.states["udot"].T):
         print(ocp.nlp[0].model.holonomic_constraints_derivative(qi, qdoti))
         simple_derivative0.append(ocp.nlp[0].model.holonomic_constraints_derivative(qi, qdoti)[0].toarray()[0, 0])
         simple_derivative = np.array(simple_derivative0).squeeze()
@@ -16,7 +16,7 @@ def constraints_graphs(ocp, sol):
     double_derivative_0 = []
     double_derivative_1 = []
     # print(sol.controls["tau"])
-    for qi, qdoti, taui in zip(sol.states["q"].T, sol.states["qdot"].T, sol.controls["tau"].T):
+    for qi, qdoti, taui in zip(sol.states["u"].T, sol.states["udot"].T, sol.controls["tau"].T):
         qddoti = ocp.nlp[0].dynamics_func(np.hstack((qi, qdoti)), taui, 0)[ocp.nlp[0].model.nb_qdot :]
         # print(ocp.nlp[0].model.holonomic_constraints_double_derivative(qi, qdoti, qddoti))
         double_derivative_0.append(
@@ -33,7 +33,7 @@ def constraints_graphs(ocp, sol):
 
     fig, ax = plt.subplots(3, 1)
     # constraints
-    ax[0].plot(sol.time, ocp.nlp[0].model._holonomic_constraints[0](sol.states["q"]).T)
+    ax[0].plot(sol.time, ocp.nlp[0].model._holonomic_constraints[0](sol.states["u"]).T)
     ax[0].set_title("Holonomic constraints (position)")
     #
     ax[1].set_title("Holonomic constraints derivative (velocity)")
