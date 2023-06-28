@@ -11,28 +11,21 @@ import platform
 
 from casadi import MX, SX, vertcat, Function, jacobian
 from bioptim import (
-    Node,
     OptimalControlProgram,
     DynamicsList,
     ConfigureProblem,
-    DynamicsFcn,
     DynamicsFunctions,
-    Objective,
     ObjectiveFcn,
+    InitialGuessList,
     ObjectiveList,
     ConstraintList,
-    ConstraintFcn,
-    Bounds,
-    InitialGuess,
     OdeSolver,
+    BoundsList,
     OdeSolverBase,
     NonLinearProgram,
     Solver,
     DynamicsEvaluation,
-    BiMapping,
     BiMappingList,
-    SelectionMapping,
-    Dependency,
 )
 from biorbd import marker_index
 from biorbd_casadi import RotoTrans
@@ -214,9 +207,13 @@ def prepare_ocp(
 
     # Boundaries
     mapping = BiMappingList()
-    mapping.add("q", [0, None, None, 1], [0, 3])
-    mapping.add("qdot", [0, None, None, 1], [0, 3])
-    x_bounds = bio_model.bounds_from_ranges(["q", "qdot"], mapping=mapping)
+    mapping.add("q", to_second=[0, None, None, 1], to_first=[0, 3])
+    mapping.add("qdot", to_second=[0, None, None, 1], to_first=[0, 3])
+
+    x_bounds = BoundsList()
+    # x_bounds = bio_model.bounds_from_ranges(["q", "qdot"], mapping=mapping)
+    x_bounds.add("q", bounds=bio_model.bounds_from_ranges("q", mapping=mapping), phase=0)
+    x_bounds.add("qdot", bounds=bio_model.bounds_from_ranges("qdot", mapping=mapping), phase=0)
 
     # Initial guess
     # q_t0 = np.array([1.54, 1.54])  # change this line for automatic initial guess that satisfies the constraints
@@ -229,33 +226,44 @@ def prepare_ocp(
     # Translations between Seg0 and Seg1 at t0, calculated with cos and sin as Seg1 has no parent
     all_q_t0 = np.array([q_t0[0], q_t0[1], 0, 0])
 
-    x_init = InitialGuess(all_q_t0)
-    x_bounds[:, 0] = all_q_t0
-    x_bounds[0, -1] = - 1.54
-    x_bounds[1, -1] = 0
+    # x_init = InitialGuess(all_q_t0)
+    x_init = InitialGuessList()
+    x_init["q"] = np.array([q_t0[0], q_t0[1]])
+    x_init["qdot"] = np.array([0, 0])
 
+    # x_bounds[:, 0] = all_q_t0
+    # x_bounds[0, -1] = - 1.54
+    # x_bounds[1, -1] = 0
+
+    x_bounds["q"][:, 0] = np.array([q_t0[0], q_t0[1]])
+    x_bounds["qdot"][:, 0] = np.array([0, 0])
+    x_bounds["q"][0, -1] = - 1.54
+    x_bounds["q"][1, -1] = 0
     # Define control path constraint
     tau_min, tau_max, tau_init = -100, 100, 0
 
     variable_bimapping = BiMappingList()
-
     variable_bimapping.add("tau", to_second=[0, None, None, 1], to_first=[0, 3])
-    u_bounds = Bounds([tau_min]*2, [tau_max]*2)
-    u_init = InitialGuess([tau_init] * 2)
+
+    u_bounds = BoundsList()
+    u_bounds.add("tau", min_bound=[tau_min]*2, max_bound=[tau_max]*2, phase=0)
+
+    u_init = InitialGuessList()
+    u_init.add("tau", [tau_init] * 2, phase=0)
 
     # ------------- #
 
     return OptimalControlProgram(
-        bio_model,
-        dynamics,
-        n_shooting,
-        final_time,
-        x_init,
-        u_init,
-        x_bounds,
-        u_bounds,
-        objective_functions,
-        constraints,
+        bio_model=bio_model,
+        dynamics=dynamics,
+        n_shooting=n_shooting,
+        phase_time=final_time,
+        x_init=x_init,
+        u_init=u_init,
+        x_bounds=x_bounds,
+        u_bounds=u_bounds,
+        objective_functions=objective_functions,
+        constraints=constraints,
         ode_solver=ode_solver,
         use_sx=False,
         assume_phase_dynamics=True,
