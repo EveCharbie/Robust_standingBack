@@ -169,7 +169,7 @@ segment	Thigh
 		0 0 1 0.0
 		0 0 0 1
 	rotations	 x
-	rangesQ	1.93 2.6
+	rangesQ	-0.4 2.6
 	rangesQdot	-31.42 31.42
 	mass	18.98
 	inertia
@@ -190,7 +190,7 @@ segment	Leg
 		0 0 1 -0.462839073
 		0 0 0 1
 	rotations	 x
-	rangesQ	-2.3 -1.16
+	rangesQ	-2.3 0.02
 	rangesQdot	-31.42 31.42
 	mass	8.36
 	inertia

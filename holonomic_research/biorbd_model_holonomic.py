@@ -9,7 +9,7 @@ from biorbd_casadi import (
     GeneralizedAcceleration,
 )
 from biorbd import marker_index, segment_index
-from casadi import MX, DM, vertcat, horzcat, Function, solve, rootfinder, inv_minor, inv, fmod, pi
+from casadi import MX, DM, vertcat, horzcat, Function, solve, rootfinder, inv_minor, inv, fmod, pi, transpose
 from bioptim import BiorbdModel
 import numpy as np
 
@@ -371,7 +371,7 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
         Jv = J[:, self.nb_independent_joints:]
         Jv_inv = inv(Jv) # inv_minor otherwise ?
 
-        return Jv_inv @ self.holonomic_constraints_jacobian(qdot) @ qdot
+        return - Jv_inv @ self.holonomic_constraints_jacobian(qdot) @ qdot
 
     def q_from_u_and_v(self, u: MX, v: MX) -> MX:
         """
@@ -636,3 +636,54 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
         )
 
         return v_opt #fmod(v_opt + pi, 2 * pi) - pi
+
+    def compute_vdot(self, q, udot):
+        Bvu = self.coupling_matrix(q)
+        vdot = Bvu @ udot
+
+        return vdot
+
+    def compute_vddot(self, q, qdot, uddot):
+        Bvu = self.coupling_matrix(q)
+        biais = self.biais_vector(q, qdot)
+        vddot = Bvu @ uddot + biais
+
+        return vddot
+
+    def compute_lagrange_multipliers(self, q, qdot, uddot, tau, f_ext=None, f_contacts=None) -> MX:
+
+        J = self.partitioned_constrained_jacobian(q)
+        Jv = J[:, self.nb_independent_joints:]
+        Jv_transpose_inv = inv(transpose(Jv))  # inv_minor otherwise ?
+
+        partitioned_mass_matrix = self.partitioned_mass_matrix(q)
+        m_vu = partitioned_mass_matrix[self.nb_independent_joints:, :self.nb_independent_joints]
+        m_vv = partitioned_mass_matrix[self.nb_independent_joints:, self.nb_independent_joints:]
+
+        vddot = self.compute_vddot(q, qdot, uddot)
+
+        non_linear_effect = self.model.NonLinearEffect(q, qdot, f_ext=f_ext, f_contacts=f_contacts).to_mx()
+        non_linear_effect_v = non_linear_effect[self._dependent_joint_index]
+
+        partitioned_tau = self.partitioned_tau(tau)
+        tau_v = partitioned_tau[self.nb_independent_joints:]
+
+        lambdas = Jv_transpose_inv @ (m_vu @ uddot + m_vv @ vddot + non_linear_effect_v - tau_v)
+
+        return lambdas
+
+    def compute_external_force_holonomics_constraints(self, u, udot, tau) -> DM:
+
+        v = self.compute_v_from_u(u)
+        q = self.q_from_u_and_v(u, v)
+
+        vdot = self.compute_vdot(q, udot)
+        qdot = self.q_from_u_and_v(udot, vdot)
+
+        uddot = self.forward_dynamics_constrained_independent(u, udot, tau)
+
+        f_holonomics_constraints = self.compute_lagrange_multipliers(q, qdot, uddot, tau)
+        func = Function("lambdas", [], [f_holonomics_constraints])
+
+        return func
+
