@@ -33,9 +33,6 @@ name_file_movement = (
     "/home/mickael/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Salto_close_loop_7phases_V1.pkl"
 )
 
-Movement = False
-Dedoublement_phase = False
-
 # --- Visualisation -- #
 
 def visualisation_model(name_file_model):
@@ -144,14 +141,15 @@ def visualisation_dedoublement_phase(name_file_movement:str, name_file_model:str
         visu_3.load_movement(Q_3)
         visu_3.exec()
 
-
 def visualisation_closed_loop(bio_model, sol, model_path):
-    q = np.zeros((bio_model.nb_q, sol.states["u"].shape[1]))
-    for i, ui in enumerate(sol.states["u"].T):
+    q_0 = sol.states[0]["q"]
+    q_holo = np.zeros((bio_model[0].nb_q, sol.states[1]["u"].shape[1]))
+    for i, ui in enumerate(sol.states[1]["u"].T):
         # vi = bio_model.compute_v_from_u_numeric(ui, v_init=DM(np.zeros(2))).toarray()
-        vi = bio_model.compute_v_from_u_explicit_numeric(ui).toarray()
-        qi = bio_model.q_from_u_and_v(ui[:, np.newaxis], vi).toarray().squeeze()
-        q[:, i] = qi
+        vi = bio_model[1].compute_v_from_u_explicit_numeric(ui).toarray()
+        qi = bio_model[1].q_from_u_and_v(ui[:, np.newaxis], vi).toarray().squeeze()
+        q_holo[:, i] = qi
+    q = np.concatenate((q_0, q_holo), axis=1)
     visu = bioviz.Viz(model_path)
     visu.load_movement(q)
     visu.exec()

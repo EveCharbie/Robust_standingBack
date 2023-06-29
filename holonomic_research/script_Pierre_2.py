@@ -11,7 +11,7 @@ rotation_pelvis = True
 
 if rotation_pelvis is True:
     # BioModel path
-    model_path = "/home/mickael/Documents/Anais/Robust_standingBack/Model/Model2D_7Dof_0C_5M_CL.bioMod"
+    model_path = "/home/mickael/Documents/Anais/Robust_standingBack/Model/Model2D_4Dof_0C_5M_CL_V2.bioMod"
     bio_model = BiorbdModelCustomHolonomic(model_path)
 
     # Made up constraints
