@@ -33,10 +33,8 @@ name_file_movement = (
     "/home/mickael/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Salto_close_loop_7phases_V1.pkl"
 )
 
-Movement = False
-Dedoublement_phase = False
-
 # --- Visualisation -- #
+
 
 def visualisation_model(name_file_model):
     b = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
@@ -46,30 +44,30 @@ def visualisation_model(name_file_model):
 def visualisation_movement(name_file_movement):
     q, time_node = get_created_data_from_pickle(name_file_movement)
     if len(q) == 1:
-            visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
-            visu.load_movement(q)
-            visu.exec()
+        visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
+        visu.load_movement(q)
+        visu.exec()
 
     elif len(q) == 7:
-            Q = np.concatenate((q[0], q[1], q[2], q[3], q[4], q[5], q[6]), axis=1)
-            visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
-            visu.load_movement(Q)
-            visu.exec()
+        Q = np.concatenate((q[0], q[1], q[2], q[3], q[4], q[5], q[6]), axis=1)
+        visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
+        visu.load_movement(Q)
+        visu.exec()
 
     elif len(q) == 5:
-            Q = np.concatenate((q[0], q[1], q[2], q[3], q[4]), axis=1)
-            visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
-            visu.load_movement(Q)
-            visu.exec()
+        Q = np.concatenate((q[0], q[1], q[2], q[3], q[4]), axis=1)
+        visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
+        visu.load_movement(Q)
+        visu.exec()
 
     elif len(q) == 6:
-            Q = np.concatenate((q[0], q[1], q[2], q[3], q[4], q[5]), axis=1)
-            visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
-            visu.load_movement(Q)
-            visu.exec()
+        Q = np.concatenate((q[0], q[1], q[2], q[3], q[4], q[5]), axis=1)
+        visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
+        visu.load_movement(Q)
+        visu.exec()
 
 
-def visualisation_dedoublement_phase(name_file_movement:str, name_file_model:str, name_file_model_2:str):
+def visualisation_dedoublement_phase(name_file_movement: str, name_file_model: str, name_file_model_2: str):
     q, time_node = get_created_data_from_pickle(name_file_movement)
     if len(q) == 11:
         for i in range(0, len(q)):
@@ -93,9 +91,7 @@ def visualisation_dedoublement_phase(name_file_movement:str, name_file_model:str
         for i in range(7, 11):
             time_node[i] = time_node[i] - (time_Q7 - ecart)
         Q_2 = np.concatenate((q[0], q[1], q[7], q[8], q[9], q[10]), axis=1)
-        time_Q2 = np.concatenate(
-            (time_node[0], time_node[1], time_node[7], time_node[8], time_node[9], time_node[10])
-        )
+        time_Q2 = np.concatenate((time_node[0], time_node[1], time_node[7], time_node[8], time_node[9], time_node[10]))
         duree_Q2 = [time_Q2[i + 1] - time_Q2[i] for i in range(0, len(time_Q2) - 1)]
 
         # Interpolation simulation salto with errors timing
@@ -113,17 +109,13 @@ def visualisation_dedoublement_phase(name_file_movement:str, name_file_model:str
             Q2_interpolate[nb_Dof] = newy
 
         if Q1_interpolate.shape[1] < Q2_interpolate.shape[1]:
-            Q_add = np.zeros(
-                shape=(Q_1.shape[0], int(Q2_interpolate.shape[1] - Q1_interpolate.shape[1])), dtype=float
-            )
+            Q_add = np.zeros(shape=(Q_1.shape[0], int(Q2_interpolate.shape[1] - Q1_interpolate.shape[1])), dtype=float)
             for i in range(Q2_interpolate.shape[1] - Q1_interpolate.shape[1]):
                 Q_add[:, i] = Q1_interpolate[:, -1]
             Q1_interpolate_new = np.concatenate((Q1_interpolate, Q_add), axis=1)
 
         if Q2_interpolate.shape[1] < Q1_interpolate.shape[1]:
-            Q_add = np.zeros(
-                shape=(Q_1.shape[0], int(Q2_interpolate.shape[1] - Q1_interpolate.shape[1])), dtype=float
-            )
+            Q_add = np.zeros(shape=(Q_1.shape[0], int(Q2_interpolate.shape[1] - Q1_interpolate.shape[1])), dtype=float)
             for i in range(Q2_interpolate.shape[1] - Q1_interpolate.shape[1]):
                 Q_add[:, i] = Q1_interpolate[:, -1]
             Q1_interpolate_new = np.concatenate((Q1_interpolate, Q_add), axis=1)

@@ -64,6 +64,7 @@ name_folder_model = "/home/mickael/Documents/Anais/Robust_standingBack/Model"
 
 # --- Save results --- #
 
+
 def save_results(sol, c3d_file_path):
     """
     Solving the ocp
@@ -119,6 +120,7 @@ def save_results(sol, c3d_file_path):
     with open(f"{c3d_file_path}", "wb") as file:
         pickle.dump(data, file)
 
+
 # --- Prepare ocp --- #
 
 
@@ -126,7 +128,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound,
 
     if with_pelvis:
 
-        bio_model = (BiorbdModelCustomHolonomic(biorbd_model_path))
+        bio_model = BiorbdModelCustomHolonomic(biorbd_model_path)
 
         # Made up constraints
         constraint, constraint_jacobian, constraint_double_derivative = generate_close_loop_constraint(
@@ -187,36 +189,40 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound,
 
         # Initial guess
         x_init = InitialGuessList()
-        x_init.add(np.array([pose_salto_tendu + [0] * n_independent, pose_salto_groupe + [0] * n_independent]).T,
-                   interpolation=InterpolationType.LINEAR)
+        x_init.add(
+            np.array([pose_salto_tendu + [0] * n_independent, pose_salto_groupe + [0] * n_independent]).T,
+            interpolation=InterpolationType.LINEAR,
+        )
 
         # Define control path constraint
         u_bounds = BoundsList()
-        u_bounds.add([tau_min[3], tau_min[4], tau_min[5], tau_min[6]],
-                     [tau_max[3], tau_max[4], tau_max[5], tau_max[6]])
+        u_bounds.add([tau_min[3], tau_min[4], tau_min[5], tau_min[6]], [tau_max[3], tau_max[4], tau_max[5], tau_max[6]])
 
         u_init = InitialGuessList()
         u_init.add([tau_init] * (bio_model.nb_tau - 3))
 
-        return OptimalControlProgram(
-            bio_model=bio_model,
-            dynamics=dynamics,
-            n_shooting=n_shooting,
-            phase_time=phase_time,
-            x_init=x_init,
-            u_init=u_init,
-            x_bounds=x_bounds,
-            u_bounds=u_bounds,
-            objective_functions=objective_functions,
-            constraints=constraints,
-            variable_mappings=mapping,
-            n_threads=32,
-            assume_phase_dynamics=True,
-            # use_sx=True,
-        ), bio_model
+        return (
+            OptimalControlProgram(
+                bio_model=bio_model,
+                dynamics=dynamics,
+                n_shooting=n_shooting,
+                phase_time=phase_time,
+                x_init=x_init,
+                u_init=u_init,
+                x_bounds=x_bounds,
+                u_bounds=u_bounds,
+                objective_functions=objective_functions,
+                constraints=constraints,
+                variable_mappings=mapping,
+                n_threads=32,
+                assume_phase_dynamics=True,
+                # use_sx=True,
+            ),
+            bio_model,
+        )
 
     else:
-        bio_model = (BiorbdModelCustomHolonomic(biorbd_model_path))
+        bio_model = BiorbdModelCustomHolonomic(biorbd_model_path)
 
         # Made up constraints
         constraint, constraint_jacobian, constraint_double_derivative = generate_close_loop_constraint(
@@ -282,32 +288,36 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound,
 
         # Initial guess
         x_init = InitialGuessList()
-        x_init.add(np.array([pose_salto_tendu + [0] * n_independent, pose_salto_groupe + [0] * n_independent]).T,
-                   interpolation=InterpolationType.LINEAR)
+        x_init.add(
+            np.array([pose_salto_tendu + [0] * n_independent, pose_salto_groupe + [0] * n_independent]).T,
+            interpolation=InterpolationType.LINEAR,
+        )
 
         # Define control path constraint
         u_bounds = BoundsList()
-        u_bounds.add([tau_min[0], tau_min[1], tau_min[2], tau_min[3]],
-                     [tau_max[0], tau_max[1], tau_max[2], tau_max[3]])
+        u_bounds.add([tau_min[0], tau_min[1], tau_min[2], tau_min[3]], [tau_max[0], tau_max[1], tau_max[2], tau_max[3]])
 
         u_init = InitialGuessList()
         u_init.add([tau_init] * bio_model.nb_tau)
 
-        return OptimalControlProgram(
-            bio_model=bio_model,
-            dynamics=dynamics,
-            n_shooting=n_shooting,
-            phase_time=phase_time,
-            x_init=x_init,
-            u_init=u_init,
-            x_bounds=x_bounds,
-            u_bounds=u_bounds,
-            objective_functions=objective_functions,
-            constraints=constraints,
-            variable_mappings=mapping,
-            n_threads=32,
-            assume_phase_dynamics=True,
-        ), bio_model
+        return (
+            OptimalControlProgram(
+                bio_model=bio_model,
+                dynamics=dynamics,
+                n_shooting=n_shooting,
+                phase_time=phase_time,
+                x_init=x_init,
+                u_init=u_init,
+                x_bounds=x_bounds,
+                u_bounds=u_bounds,
+                objective_functions=objective_functions,
+                constraints=constraints,
+                variable_mappings=mapping,
+                n_threads=32,
+                assume_phase_dynamics=True,
+            ),
+            bio_model,
+        )
 
 
 # --- Load model --- #
@@ -337,7 +347,7 @@ def main():
     solver.set_constraint_tolerance(1e-15)
     sol = ocp.solve(solver)
 
-# --- Show results --- #
+    # --- Show results --- #
 
     save_results(sol, str(movement) + "_" + "with_pelvis" + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl")
     sol.print_cost()
@@ -349,6 +359,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-

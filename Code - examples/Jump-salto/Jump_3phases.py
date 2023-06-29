@@ -4,21 +4,28 @@ Phase 1: Propulsion
 - one contact (toe)
 - objectives functions: maximize velocity of CoM and minimize time of flight
 
+
 Phase 2: Phase in air
 - zero contact (in the air)
 - objectives functions: maximize height of CoM and maximize time of flight
+
 
 Phase 3: Landing
 - two contact
 - objectives functions: minimize velocity CoM and minimize state qdot
 
 
+
+
 """
 # --- Import package --- #
+
 
 import numpy as np
 import pickle
 import sys
+
+
 sys.path.append("/home/lim/Documents/Anais/bioviz")
 sys.path.append("/home/lim/Documents/Anais/bioptim")
 from bioptim import (
@@ -40,6 +47,7 @@ from bioptim import (
     Solver,
 )
 
+
 # --- Prepare ocp --- #
 
 
@@ -47,7 +55,11 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
     # --- Options --- #
     # BioModel path
-    bio_model = (BiorbdModel(biorbd_model_path[0]), BiorbdModel(biorbd_model_path[1]), BiorbdModel(biorbd_model_path[2]))
+    bio_model = (
+        BiorbdModel(biorbd_model_path[0]),
+        BiorbdModel(biorbd_model_path[1]),
+        BiorbdModel(biorbd_model_path[2]),
+    )
     tau_min, tau_max, tau_init = -1000, 1000, 0
     dof_mapping = BiMappingList()
     dof_mapping.add("tau", [None, None, None, 0, 1, 2, 3], [3, 4, 5, 6])
@@ -81,7 +93,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         max_bound=max_bound,
         node=Node.START,
         contact_index=1,
-        phase=0)
+        phase=0,
+    )
 
     constraints.add(
         ConstraintFcn.TRACK_CONTACT_FORCES,
@@ -89,7 +102,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         max_bound=max_bound,
         node=Node.END,
         contact_index=1,
-        phase=2)
+        phase=2,
+    )
 
     constraints.add(
         ConstraintFcn.TRACK_CONTACT_FORCES,
@@ -97,14 +111,23 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         max_bound=max_bound,
         node=Node.END,
         contact_index=2,
-        phase=2)
+        phase=2,
+    )
 
     # Path constraint
     n_q = bio_model[0].nb_q
     n_qdot = n_q
 
     # Contraint position
-    pose_at_first_node = [-0.19, -0.43, -1.01, 0.0044735684524460015, 2.5999996919248574, -2.299999479653955, 0.6999990764981876]
+    pose_at_first_node = [
+        -0.19,
+        -0.43,
+        -1.01,
+        0.0044735684524460015,
+        2.5999996919248574,
+        -2.299999479653955,
+        0.6999990764981876,
+    ]
     pose_landing = [0.0, 0.14, 0.0, 3.1, 0.0, 0.0, 0.0]
 
     # Initialize x_bounds
@@ -130,22 +153,22 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Define control path constraint
     u_bounds = BoundsList()
     u_bounds.add(
-        [tau_min] * (bio_model[0].nb_tau-3),
-        [tau_max] * (bio_model[0].nb_tau-3),
+        [tau_min] * (bio_model[0].nb_tau - 3),
+        [tau_max] * (bio_model[0].nb_tau - 3),
     )
     u_bounds.add(
-        [tau_min] * (bio_model[1].nb_tau-3),
-        [tau_max] * (bio_model[1].nb_tau-3),
+        [tau_min] * (bio_model[1].nb_tau - 3),
+        [tau_max] * (bio_model[1].nb_tau - 3),
     )
     u_bounds.add(
-        [tau_min] * (bio_model[2].nb_tau-3),
-        [tau_max] * (bio_model[2].nb_tau-3),
+        [tau_min] * (bio_model[2].nb_tau - 3),
+        [tau_max] * (bio_model[2].nb_tau - 3),
     )
 
     u_init = InitialGuessList()
-    u_init.add([tau_init] * (bio_model[0].nb_tau-3))
-    u_init.add([tau_init] * (bio_model[1].nb_tau-3))
-    u_init.add([tau_init] * (bio_model[2].nb_tau-3))
+    u_init.add([tau_init] * (bio_model[0].nb_tau - 3))
+    u_init.add([tau_init] * (bio_model[1].nb_tau - 3))
+    u_init.add([tau_init] * (bio_model[2].nb_tau - 3))
 
     return OptimalControlProgram(
         bio_model=bio_model,
@@ -159,16 +182,20 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         objective_functions=objective_functions,
         constraints=constraints,
         variable_mappings=dof_mapping,
-        n_threads=3)
+        n_threads=3,
+    )
+
 
 # --- Load model --- #
 
 
 def main():
     ocp = prepare_ocp(
-        biorbd_model_path=("/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_1C_3M.bioMod",
-                           "/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_0C_3M.bioMod",
-                           "/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_2C_3M.bioMod"),
+        biorbd_model_path=(
+            "/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_1C_3M.bioMod",
+            "/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_0C_3M.bioMod",
+            "/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_2C_3M.bioMod",
+        ),
         phase_time=(0.3, 1, 0.3),
         n_shooting=(30, 100, 30),
         min_bound=50,
@@ -181,20 +208,19 @@ def main():
     solver.set_maximum_iterations(1000)
     sol = ocp.solve(solver)
 
-# --- Show results --- #
+    # --- Show results --- #
     sol.animate()
     sol.print_cost()
     sol.graphs()
 
+
 # --- Save results --- #
-    #del sol.ocp
-    #with open(.....) as f:
-    #    pickle.dump()
-    #with open(f"Results_jump_3phases_sansrecep") as file:
-    #    states, controls, parameters = pickle.load(file)
+# del sol.ocp
+# with open(.....) as f:
+#    pickle.dump()
+# with open(f"Results_jump_3phases_sansrecep") as file:
+#    states, controls, parameters = pickle.load(file)
 
 
 if __name__ == "__main__":
     main()
-
-

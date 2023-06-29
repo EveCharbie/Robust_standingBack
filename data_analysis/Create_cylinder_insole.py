@@ -7,10 +7,477 @@ from matplotlib.patches import Ellipse
 from copy import copy
 from scipy.optimize import fsolve
 import math
-from cartography_insoles import position_activation
-
 
 # --- Functions --- #
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+from scipy import signal
+
+# --- Functions --- #
+def lissage(signal_brut, L):
+    """
+
+    :param signal_brut: signal
+    :param L: step for smoothing
+    :return: signal smoothing
+    """
+    res = np.copy(signal_brut)  # duplication des valeurs
+    for i in range(1, len(signal_brut) - 1):  # toutes les valeurs sauf la première et la dernière
+        L_g = min(i, L)  # nombre de valeurs disponibles à gauche
+        L_d = min(len(signal_brut) - i - 1, L)  # nombre de valeurs disponibles à droite
+        Li = min(L_g, L_d)
+        res[i] = np.sum(signal_brut[i - Li : i + Li + 1]) / (2 * Li + 1)
+    return res
+
+
+def distance_activation_sensor(coordonnes_insoles, position_activation, name_activation):
+    distance = {
+        "value": abs(position_activation[:, np.newaxis] - coordonnes_insoles),
+        "activation_name": name_activation,
+    }
+
+    return distance
+
+
+def find_activation_sensor(distance_sensor_y, position_activation_y):
+    index_post = []
+    index_pre = []
+    for valeur_proche in position_activation_y:
+        differences = [abs(x - valeur_proche) for x in distance_sensor_y]
+        index_proche_1 = int(min(range(len(differences)), key=differences.__getitem__))
+        index_pre.append(index_proche_1)
+        differences[index_proche_1] = float("inf")  # Exclure la première différence minimale
+        index_proche_2 = int(min(range(len(differences)), key=differences.__getitem__))
+        index_post.append(index_proche_2)
+
+    pourcentage = []
+    for i in range(len(index_post)):
+        pourcentage.append(
+            abs(distance_sensor_y[index_pre[i]] - position_activation_y[i])
+            / abs(distance_sensor_y[index_pre[i]] - distance_sensor_y[index_post[i]])
+        )
+
+    resume = {
+        "index_pre": index_pre,
+        "index_post": index_post,
+        "pourcentage": pourcentage,
+    }
+
+    return resume
+
+
+# --- Cartography insoles --- #
+def cartography_insole(file_insole, file_info_insole, fig_name: str, FLAG_PLOT=False):
+
+    sensor_45 = file_insole.columns[
+        1:-1
+    ].to_list()  #  List sensor on the insole size 45 (without columns Sync and Time)
+    coordonnees_insole_45 = file_info_insole.loc[0:7, sensor_45]
+
+    # Plot : Insoles
+    if FLAG_PLOT:
+        fig, axs = plt.subplots(2)
+        fig.suptitle("Insoles cartography")
+
+        # Subplot 1 : insoles R
+        axs[0].plot(coordonnees_insole_45.iloc[7, :], coordonnees_insole_45.iloc[6, :], "ro")
+        axs[0].set_ylabel("Position Y (mm)", fontsize=14)
+        axs[0].title.set_text("Insole Right")
+
+        # Subplot 2 : insoles L
+        axs[1].plot(coordonnees_insole_45.iloc[5, :], coordonnees_insole_45.iloc[4, :], "ro")
+        axs[1].set_xlabel("Position X (mm)", fontsize=14)
+        axs[1].set_ylabel("Position Y (mm)", fontsize=14)
+        axs[1].title.set_text("Insole Left")
+        plt.savefig("Figures/" + fig_name + ".svg")
+        fig.clf()
+
+
+# Find all the activation
+# Load insoles
+def position_activation(file_insole_R, file_insole_L, file_info_insole, FLAG_PLOT=False):
+    """
+
+    :param file_insole_R: File of the right insole
+    :param file_insole_L: File of the left insole
+    :param file_info_insole: File with the information of the insole (coordinate sensor insole)
+    :param FLAG_PLOT: if you want the plot related to the detection of the activation position on the insole
+    :return: The position of activation for the right and the left insoles, and the distance between a reference activation and all the sensor
+    """
+
+    # Baseline activation
+    mean_sensor_R_baseline = file_insole_R.iloc[200:1500, :].mean(axis=0)
+    mean_sensor_L_baseline = file_insole_L.iloc[200:1500, :].mean(axis=0)
+    markers_insole_R_baseline = file_insole_R.iloc[:, :] - mean_sensor_R_baseline
+    markers_insole_L_baseline = file_insole_L.iloc[:, :] - mean_sensor_L_baseline
+
+    # Find sensors who were activated
+    sensor_min_max_R = pd.DataFrame(
+        [markers_insole_R_baseline.max(), markers_insole_R_baseline.min()],
+        index=[0, 1],
+        columns=markers_insole_R_baseline.columns.tolist(),
+    )
+    sensor_min_max_L = pd.DataFrame(
+        [markers_insole_L_baseline.max(), markers_insole_L_baseline.min()],
+        index=[0, 1],
+        columns=markers_insole_L_baseline.columns.tolist(),
+    )
+
+    filtered_sensor_min_max_R = sensor_min_max_R.loc[
+        :, (sensor_min_max_R.iloc[0] > 1.5) & (sensor_min_max_R.iloc[1] > -0.3)
+    ]
+    filtered_sensor_min_max_L = sensor_min_max_L.loc[
+        :, (sensor_min_max_L.iloc[0] > 1.5) & (sensor_min_max_L.iloc[1] >= -0.3)
+    ]
+
+    # Total activation
+    markers_insole_R_baseline_total = markers_insole_R_baseline.loc[:, filtered_sensor_min_max_R.columns.to_list()].sum(
+        axis=1
+    )
+    markers_insole_L_baseline_total = markers_insole_L_baseline.loc[:, filtered_sensor_min_max_L.columns.to_list()].sum(
+        axis=1
+    )
+
+    peaks_L, properties_L = signal.find_peaks(
+        markers_insole_L_baseline_total, distance=400, plateau_size=1, height=1.5, width=20
+    )
+    peaks_R, properties_R = signal.find_peaks(
+        markers_insole_R_baseline_total, distance=300, plateau_size=1, height=1.5, width=20
+    )
+
+    if FLAG_PLOT:
+        fig, axes = plt.subplots(nrows=2, ncols=1)
+        fig.suptitle(" Totale activation insole right and left")
+        axes[0].plot(markers_insole_R_baseline_total, color="green")
+        axes[0].plot(peaks_R, markers_insole_R_baseline_total[peaks_R], "x", color="red", label="Peak insole right")
+        axes[0].set_ylabel("Pressure (N/cm2)", fontsize=14)
+        axes[0].legend(loc="upper left")
+        axes[0].set_title("Insole right")
+
+        axes[1].plot(markers_insole_L_baseline_total)
+        axes[1].plot(peaks_L, markers_insole_L_baseline_total[peaks_L], "x", label="Peak insole left")
+        axes[1].set_ylabel("Pressure (N/cm2)", fontsize=14)
+        axes[1].set_xlabel("Time", fontsize=14)
+        axes[1].legend(loc="upper left")
+        axes[1].set_title("Insole left")
+        fig.tight_layout()
+        plt.savefig("Figures/insoles_totale_activation_markers.svg")
+        fig.clf()
+
+    position_activation_R = np.zeros(shape=(2, peaks_R.shape[0]))
+    position_activation_L = np.zeros(shape=(2, peaks_L.shape[0]))
+    position_activation_R_ref = np.zeros(shape=(2, peaks_R.shape[0]))
+    position_activation_L_ref = np.zeros(shape=(2, peaks_L.shape[0]))
+
+    for i in range(peaks_R.shape[0]):
+        # Take 10 frames before and after the peak and find sensors activated
+        insole_R_activate_peak = markers_insole_R_baseline.loc[:, filtered_sensor_min_max_R.columns.to_list()][
+            peaks_R[i] - 10 : peaks_R[i] + 10
+        ]
+        # Sélection des colonnes où les valeurs sont supérieures à zéro
+        colonnes_sup_zero_R = insole_R_activate_peak.loc[:, (insole_R_activate_peak > 0).any()]
+        coordonnees_R = file_info_insole.loc[:, colonnes_sup_zero_R.columns.to_list()]
+        poids_R = np.mean(colonnes_sup_zero_R, axis=0)
+        position_activation_R[0, i] = np.average(coordonnees_R.iloc[6, :], axis=0, weights=poids_R)  #   Position x
+        position_activation_R[1, i] = np.average(coordonnees_R.iloc[7, :], axis=0, weights=poids_R)  #   Position y
+        position_activation_R_ref[:, i] = file_info_insole.iloc[6:8, 0] - position_activation_R[:, i]
+
+    for i in range(peaks_L.shape[0]):
+        insole_L_activate_peak = markers_insole_L_baseline.loc[:, filtered_sensor_min_max_L.columns.to_list()][
+            peaks_L[i] - 10 : peaks_L[i] + 10
+        ]
+        colonnes_sup_zero_L = insole_L_activate_peak.loc[:, (insole_L_activate_peak > 0).any()]
+        coordonnees_L = file_info_insole.loc[:, colonnes_sup_zero_L.columns.to_list()]
+        poids_L = np.mean(colonnes_sup_zero_L, axis=0)
+
+        position_activation_L[0, i] = np.average(coordonnees_L.iloc[4, :], axis=0, weights=poids_L)  #   Position x
+        position_activation_L[1, i] = np.average(coordonnees_L.iloc[5, :], axis=0, weights=poids_L)  #   Position y
+        position_activation_L_ref[:, i] = file_info_insole.iloc[6:8, 0] - position_activation_L[:, i]
+
+    distance_sensor_y = distance_between_line_sensors(file_info_insole)
+
+    activation_R = find_activation_sensor(distance_sensor_y, position_activation_R_ref[1, :])
+    activation_L = find_activation_sensor(distance_sensor_y, position_activation_L_ref[1, :])
+
+    # Plot position markers semelles
+    if FLAG_PLOT:
+        fig, axs = plt.subplots(2)
+        fig.suptitle("Insoles cartography")
+
+        # Subplot 1 : insoles R
+        axs[0].plot(file_info_insole.iloc[7, :], file_info_insole.iloc[6, :], "ro")
+        axs[0].plot(position_activation_R[1, :], position_activation_R[0, :], "bo")
+        axs[0].set_ylabel("Position Y (mm)", fontsize=14)
+        axs[0].title.set_text("Insole Right")
+
+        # Subplot 2 : insoles L
+        axs[1].plot(file_info_insole.iloc[5, :], file_info_insole.iloc[4, :], "ro")
+        axs[1].plot(position_activation_L[1, :], position_activation_L[0, :], "bo")
+        axs[1].set_xlabel("Position X (mm)", fontsize=14)
+        axs[1].set_ylabel("Position Y (mm)", fontsize=14)
+        axs[1].title.set_text("Insole Left")
+        fig.tight_layout()
+        plt.savefig("Figures/insoles_position_markers.svg")
+        fig.clf()
+
+    if FLAG_PLOT:
+
+        # Subplot 1 : insoles R
+        plt.plot(file_info_insole.iloc[7, :], file_info_insole.iloc[6, :], "ro")
+        plt.plot(
+            position_activation_R[1, 0],
+            position_activation_R[0, 0],
+            marker="o",
+            markersize=20,
+            markerfacecolor="green",
+            label="Activation_1",
+        )
+        plt.plot(
+            position_activation_R[1, 1],
+            position_activation_R[0, 1],
+            marker="o",
+            markersize=20,
+            markerfacecolor="blue",
+            label="Activation_2",
+        )
+        plt.plot(
+            position_activation_R[1, 2],
+            position_activation_R[0, 2],
+            marker="o",
+            markersize=20,
+            markerfacecolor="orange",
+            label="Activation_3",
+        )
+        plt.plot(
+            position_activation_R[1, 3],
+            position_activation_R[0, 3],
+            marker="o",
+            markersize=20,
+            markerfacecolor="red",
+            label="Activation_4",
+        )
+        plt.plot(
+            position_activation_R[1, 4],
+            position_activation_R[0, 4],
+            marker="o",
+            markersize=20,
+            markerfacecolor="brown",
+            label="Activation_5",
+        )
+        plt.plot(
+            position_activation_R[1, 5],
+            position_activation_R[0, 5],
+            marker="o",
+            markersize=20,
+            markerfacecolor="pink",
+            label="Activation_6",
+        )
+        plt.plot(
+            position_activation_R[1, 6],
+            position_activation_R[0, 6],
+            marker="o",
+            markersize=20,
+            markerfacecolor="gray",
+            label="Activation_7",
+        )
+        plt.plot(
+            position_activation_R[1, 7],
+            position_activation_R[0, 7],
+            marker="o",
+            markersize=20,
+            markerfacecolor="olive",
+            label="Activation_8",
+        )
+        plt.plot(
+            position_activation_R[1, 8],
+            position_activation_R[0, 8],
+            marker="o",
+            markersize=20,
+            markerfacecolor="purple",
+            label="Activation_9",
+        )
+        plt.plot(
+            position_activation_R[1, 9],
+            position_activation_R[0, 9],
+            marker="o",
+            markersize=20,
+            markerfacecolor="cyan",
+            label="Activation_10",
+        )
+        plt.ylabel("Position Y (mm)", fontsize=14)
+        plt.xlabel("Position X (mm)", fontsize=14)
+        plt.legend()
+        plt.savefig("Figures/insoles_position_activation_R.svg")
+        plt.clf()
+
+        plt.plot(file_info_insole.iloc[5, :], file_info_insole.iloc[4, :], "ro")
+        plt.plot(
+            position_activation_L[1, 0],
+            position_activation_L[0, 0],
+            marker="o",
+            markersize=20,
+            markerfacecolor="green",
+            label="Activation_1",
+        )
+        plt.plot(
+            position_activation_L[1, 1],
+            position_activation_L[0, 1],
+            marker="o",
+            markersize=20,
+            markerfacecolor="blue",
+            label="Activation_2",
+        )
+        plt.plot(
+            position_activation_L[1, 2],
+            position_activation_L[0, 2],
+            marker="o",
+            markersize=20,
+            markerfacecolor="orange",
+            label="Activation_3",
+        )
+        plt.plot(
+            position_activation_L[1, 3],
+            position_activation_L[0, 3],
+            marker="o",
+            markersize=20,
+            markerfacecolor="red",
+            label="Activation_4",
+        )
+        plt.plot(
+            position_activation_L[1, 4],
+            position_activation_L[0, 4],
+            marker="o",
+            markersize=20,
+            markerfacecolor="brown",
+            label="Activation_4",
+        )
+        plt.plot(
+            position_activation_L[1, 5],
+            position_activation_L[0, 5],
+            marker="o",
+            markersize=20,
+            markerfacecolor="pink",
+            label="Activation_5",
+        )
+        plt.plot(
+            position_activation_L[1, 6],
+            position_activation_L[0, 6],
+            marker="o",
+            markersize=20,
+            markerfacecolor="gray",
+            label="Activation_6",
+        )
+        plt.plot(
+            position_activation_L[1, 7],
+            position_activation_L[0, 7],
+            marker="o",
+            markersize=20,
+            markerfacecolor="olive",
+            label="Activation_7",
+        )
+        plt.plot(
+            position_activation_L[1, 8],
+            position_activation_L[0, 8],
+            marker="o",
+            markersize=20,
+            markerfacecolor="purple",
+            label="Activation_8",
+        )
+        plt.plot(
+            position_activation_L[1, 9],
+            position_activation_L[0, 9],
+            marker="o",
+            markersize=20,
+            markerfacecolor="cyan",
+            label="Activation_9",
+        )
+        plt.plot(
+            position_activation_L[1, 10],
+            position_activation_L[0, 10],
+            marker="o",
+            markersize=20,
+            markerfacecolor="black",
+            label="Activation_10",
+        )
+        plt.ylabel("Position Y (mm)", fontsize=14)
+        plt.xlabel("Position X (mm)", fontsize=14)
+        plt.legend()
+        plt.savefig("Figures/insoles_position_activation_L.svg")
+        plt.clf()
+
+    activation_R = {
+        "value": position_activation_R,
+        "value_ref": position_activation_R_ref,
+        "activation": activation_R,
+        "distance_sensor_y": distance_sensor_y,
+        "name_activation": [
+            "insole_R_2_up",
+            "insole_R_3_up",
+            "insole_R_4_up",
+            "insole_R_5_up",
+            "insole_R_6_up",
+            "insole_R_7_mid",
+            "insole_R_6_down",
+            "insole_R_5_down",
+            "insole_R_4_down",
+            "insole_R_2_down",
+        ],
+    }
+
+    activation_L = {
+        "value": position_activation_L,
+        "value_ref": position_activation_L_ref,
+        "activation": activation_L,
+        "distance_sensor_y": distance_sensor_y,
+        "name_activation": [
+            "insole_L_1_mid",
+            "insole_L_2_up",
+            "insole_L_3_up",
+            "insole_L_5_up",
+            "insole_L_6_up",
+            "insole_L_7_mid",
+            "insole_L_6_down",
+            "insole_L_5_down",
+            "insole_L_4_down",
+            "insole_L_3_down",
+            "insole_L_2_down",
+        ],
+    }
+
+    # Optimisation distance marker et sensor
+    # distance_activation_sensor_R = []
+    # distance_activation_sensor_L = []
+    # for i in range(activation_R["value"].shape[1]):
+    #     distance_activation_sensor_R.append(distance_activation_sensor(file_info_insole.iloc[6:8, :], activation_R["value"][:, i], activation_R["name_activation"][i]))
+    #
+    # for i in range(activation_L["value"].shape[1]):
+    #     distance_activation_sensor_L.append(distance_activation_sensor(file_info_insole.iloc[4:6, :],
+    #                                                               activation_L["value"][:, i], activation_L["name_activation"][i]))
+
+    print("ok")
+
+    return activation_R, activation_L  # , distance_activation_sensor_R, distance_activation_sensor_L
+
+
+def change_ref_marker(data):
+    new_data = np.zeros((data.shape[0]))
+    for i in range(data.shape[0]):
+        if i == 0:
+            new_data[i] = data[i] - data[i]
+        else:
+            new_data[i] = data[i] - data[i - 1]
+    return new_data
+
+
+def distance_between_line_sensors(info_insole):
+    distance_line_sensors_y = np.unique(info_insole.iloc[7, :], axis=0)
+    distance_between_sensor = []
+    for i in range(distance_line_sensors_y.shape[0]):
+        distance_between_sensor.append(distance_line_sensors_y[i] - distance_line_sensors_y[0])
+    return distance_between_sensor
+
 
 def norm_2D(pointA, pointB) -> float:
     """
@@ -19,9 +486,7 @@ def norm_2D(pointA, pointB) -> float:
     :param pointB: A other point with a coordinate on x and y
     :return: The distance between this two points
     """
-    norm = np.sqrt(
-        ((pointA[0] - pointB[0]) ** 2) + ((pointA[1] - pointB[1]) ** 2)
-    )
+    norm = np.sqrt(((pointA[0] - pointB[0]) ** 2) + ((pointA[1] - pointB[1]) ** 2))
     return norm
 
 
@@ -56,8 +521,11 @@ def intersection_ellipse_line(line_points, ellipse_center, a, b, theta, FLAG_PLO
     def equations(vars):
         x, y = vars
 
-        eq1 = (x * np.cos(theta) + y * np.sin(theta)) ** 2 / a ** 2 + (
-                y * np.cos(theta) - x * np.sin(theta)) ** 2 / b ** 2 - 1
+        eq1 = (
+            (x * np.cos(theta) + y * np.sin(theta)) ** 2 / a**2
+            + (y * np.cos(theta) - x * np.sin(theta)) ** 2 / b**2
+            - 1
+        )
         eq2 = y - y1 - m * (x - x1)
         return [eq1, eq2]
 
@@ -66,9 +534,7 @@ def intersection_ellipse_line(line_points, ellipse_center, a, b, theta, FLAG_PLO
     intersection = x + h, y + k
 
     if FLAG_PLOT:
-        ellipse = Ellipse(xy=(h, k),
-                          width=a, height=b,
-                          angle=theta * 180 / np.pi, facecolor='orange', alpha=0.5)
+        ellipse = Ellipse(xy=(h, k), width=a, height=b, angle=theta * 180 / np.pi, facecolor="orange", alpha=0.5)
 
         func_droite = equation_droite((x1, y1), (x2, y2))
         # Intervalles de valeurs de x pour le traçage
@@ -82,18 +548,17 @@ def intersection_ellipse_line(line_points, ellipse_center, a, b, theta, FLAG_PLO
         # new_ellipse = copy(ellipse_L)
         fig, ax = plt.subplots()
         fig.suptitle("Representation insole and markers")
-        plt.plot(x_values, y_values, label='Droite')
-        ax.scatter(h, k, color='red', label='centre ellipse')
-        ax.scatter(x1, y1, color='orange', label='markers')
-        ax.scatter(intersection[0], intersection[1], color='blue', label='intersection')
+        plt.plot(x_values, y_values, label="Droite")
+        ax.scatter(h, k, color="red", label="centre ellipse")
+        ax.scatter(x1, y1, color="orange", label="markers")
+        ax.scatter(intersection[0], intersection[1], color="blue", label="intersection")
         ax.add_patch(ellipse)
-        ax.set_aspect('equal')
+        ax.set_aspect("equal")
         ax.set_xlabel(" Position in x")
         ax.set_ylabel(" Position in y")
         plt.legend()
         plt.grid(True)
         fig.clf()
-
 
     # Ramener les coordonnées des points d'intersection à l'original
     return intersection
@@ -110,7 +575,7 @@ def equation_droite(pointA, pointB):
     xB, yB = pointB
 
     # Variables symboliques
-    x = cas.MX.sym('x')
+    x = cas.MX.sym("x")
 
     # Calcule de la pente (m)
     m = (yB - yA) / (xB - xA)
@@ -122,7 +587,7 @@ def equation_droite(pointA, pointB):
     y = m * x + b
 
     # Création fonction casadi
-    func = cas.Function('f', [x], [y])
+    func = cas.Function("f", [x], [y])
     return func
 
 
@@ -156,8 +621,12 @@ def points_to_ellipse(data, fig_name, markers_name, FLAG_PLOT: False) -> list:
         index_marker_parameter["marker_" + str(position[i])] = find_index_by_name(markers_name, position[i])
     for i in range(len(index_doublon)):
         index_marker_parameter["marker_" + str(index_doublon[i])] = find_index_by_name(markers_name, index_doublon[i])
-        norm.append(norm_2D(data[index_marker_parameter["marker_" + str(index_doublon[i])][0], :],
-                            data[index_marker_parameter["marker_" + str(index_doublon[i])][1], :]))
+        norm.append(
+            norm_2D(
+                data[index_marker_parameter["marker_" + str(index_doublon[i])][0], :],
+                data[index_marker_parameter["marker_" + str(index_doublon[i])][1], :],
+            )
+        )
     print(norm)
 
     # Generate an initial guess for the ellipse parameters
@@ -182,8 +651,8 @@ def points_to_ellipse(data, fig_name, markers_name, FLAG_PLOT: False) -> list:
     centers_index = [
         [index_marker_parameter["marker_up"], "up"],
         [index_marker_parameter["marker_down"], "down"],
-        [index_marker_parameter["marker_up"] + index_marker_parameter[
-             "marker_down"], "up_down"]]
+        [index_marker_parameter["marker_up"] + index_marker_parameter["marker_down"], "up_down"],
+    ]
 
     ellipse = []
 
@@ -192,7 +661,6 @@ def points_to_ellipse(data, fig_name, markers_name, FLAG_PLOT: False) -> list:
         centers = data[centers_index[i][0], :]
         mean_centers = np.mean(centers, axis=0)
         x0 = np.array([theta_gauss, width_gauss, height_gauss, mean_centers[0], mean_centers[1]])
-
 
         # Objective (minimize squared distance between points and ellipse boundary)
         f = 0
@@ -206,15 +674,20 @@ def points_to_ellipse(data, fig_name, markers_name, FLAG_PLOT: False) -> list:
             xct = xc * cos_angle - yc * sin_angle
             yct = xc * sin_angle + yc * cos_angle
 
-            f += ((xct ** 2 / (((ellipse_param[1]) / 2) ** 2)) + (yct ** 2 / (((ellipse_param[2]) / 2) ** 2))
-                  - cas.sqrt(xc ** 2 + yc ** 2)) ** 2
-
+            f += (
+                (xct**2 / (((ellipse_param[1]) / 2) ** 2))
+                + (yct**2 / (((ellipse_param[2]) / 2) ** 2))
+                - cas.sqrt(xc**2 + yc**2)
+            ) ** 2
 
         nlp = {"x": ellipse_param, "f": f}
         opts = {"ipopt.print_level": 5}
         solver = cas.nlpsol("solver", "ipopt", nlp, opts)
-        sol = solver(x0=x0, lbx=[-np.pi, 0, 0, mean_centers[0] - 0.5, mean_centers[1] - 0.5],
-                     ubx=[np.pi, 0.2, 0.3, mean_centers[0] + 0.5, mean_centers[1] + 0.5])
+        sol = solver(
+            x0=x0,
+            lbx=[-np.pi, 0, 0, mean_centers[0] - 0.5, mean_centers[1] - 0.5],
+            ubx=[np.pi, 0.2, 0.3, mean_centers[0] + 0.5, mean_centers[1] + 0.5],
+        )
 
         if solver.stats()["success"]:
             success_out = True
@@ -234,7 +707,6 @@ def points_to_ellipse(data, fig_name, markers_name, FLAG_PLOT: False) -> list:
             "angle": theta_opt,
             "index_markers": centers_index[i][0],
             "type_markers": centers_index[i][1],
-
         }
         print("Paramètres optimaux de l'ellipse: \t" + fig_name)
         print("Type ellipse: " + str(centers_index[i][1]))
@@ -251,30 +723,56 @@ def points_to_ellipse(data, fig_name, markers_name, FLAG_PLOT: False) -> list:
         fig.suptitle("Representation insole and markers")
 
         # Creation de l'ellipse
-        ellipse_up = Ellipse(xy=(ellipse[0]["center_x_ellipse"], ellipse[0]["center_y_ellipse"]),
-                             width=ellipse[0]["a"]/2, height=ellipse[0]["b"]/2,
-                             angle=ellipse[0]["angle"]*180/np.pi, facecolor='red', alpha=0.5)
-        ellipse_down = Ellipse(xy=(ellipse[1]["center_x_ellipse"], ellipse[1]["center_y_ellipse"]),
-                               width=ellipse[1]["a"]/2, height=ellipse[1]["b"]/2,
-                               angle=ellipse[1]["angle"]*180/np.pi, facecolor='blue', alpha=0.5)
-        ellipse_all = Ellipse(xy=(ellipse[2]["center_x_ellipse"], ellipse[2]["center_y_ellipse"]),
-                              width=ellipse[2]["a"]/2, height=ellipse[2]["b"]/2,
-                              angle=ellipse[2]["angle"]*180/np.pi, facecolor='orange', alpha=0.5)
+        ellipse_up = Ellipse(
+            xy=(ellipse[0]["center_x_ellipse"], ellipse[0]["center_y_ellipse"]),
+            width=ellipse[0]["a"] / 2,
+            height=ellipse[0]["b"] / 2,
+            angle=ellipse[0]["angle"] * 180 / np.pi,
+            facecolor="red",
+            alpha=0.5,
+        )
+        ellipse_down = Ellipse(
+            xy=(ellipse[1]["center_x_ellipse"], ellipse[1]["center_y_ellipse"]),
+            width=ellipse[1]["a"] / 2,
+            height=ellipse[1]["b"] / 2,
+            angle=ellipse[1]["angle"] * 180 / np.pi,
+            facecolor="blue",
+            alpha=0.5,
+        )
+        ellipse_all = Ellipse(
+            xy=(ellipse[2]["center_x_ellipse"], ellipse[2]["center_y_ellipse"]),
+            width=ellipse[2]["a"] / 2,
+            height=ellipse[2]["b"] / 2,
+            angle=ellipse[2]["angle"] * 180 / np.pi,
+            facecolor="orange",
+            alpha=0.5,
+        )
 
         # Integration markers
-        up_markers = ax.plot(data[index_marker_parameter["marker_up"], 0],
-                             data[index_marker_parameter["marker_up"], 1], 'ro', label="markers up")
-        down_markers = ax.plot(data[index_marker_parameter["marker_down"], 0],
-                               data[index_marker_parameter["marker_down"], 1], 'bo', label="markers down")
-        mid_markers = ax.plot(data[index_marker_parameter["marker_mid"], 0],
-                              data[index_marker_parameter["marker_mid"], 1], 'go', label="markers mid")
-
+        up_markers = ax.plot(
+            data[index_marker_parameter["marker_up"], 0],
+            data[index_marker_parameter["marker_up"], 1],
+            "ro",
+            label="markers up",
+        )
+        down_markers = ax.plot(
+            data[index_marker_parameter["marker_down"], 0],
+            data[index_marker_parameter["marker_down"], 1],
+            "bo",
+            label="markers down",
+        )
+        mid_markers = ax.plot(
+            data[index_marker_parameter["marker_mid"], 0],
+            data[index_marker_parameter["marker_mid"], 1],
+            "go",
+            label="markers mid",
+        )
 
         # Ajout de l'ellipse aux axes
         ax.add_patch(ellipse_up)
         ax.add_patch(ellipse_down)
         ax.add_patch(ellipse_all)
-        ax.set_aspect('equal')
+        ax.set_aspect("equal")
 
         # Définition des parametres des axes
         # ax.set_xlim((center_x_opt - width_opt) - 0.1, (center_x_opt + width_opt) + 0.1)
@@ -290,42 +788,133 @@ def points_to_ellipse(data, fig_name, markers_name, FLAG_PLOT: False) -> list:
     return ellipse
 
 
-def minimize_distance(position_markers, ellipse_center, ellipse_axes, ellipse_angle):
-    # Position of the markers, center of the ellipse, axes of the ellipse, angle of the ellipse
-    x, y = position_markers[0], position_markers[1]
-    xc, yc = ellipse_center[0], ellipse_center[1]
-    a, b = ellipse_axes[0], ellipse_axes[1]
-    theta = ellipse_angle
+def minimize_distance(
+    position_markers,
+    position_activation,
+    coordonnees_insole_45_y,
+    ellipse_center,
+    ellipse_axes,
+    ellipse_angle,
+    FLAG_PLOT=False,
+):
+    """
 
-    # Generate an initial guess for the optimization variables
-    pos = cas.MX.sym("pos", 2)
+    Parameters
+    ----------
+    position_markers_y: position markers in y, nedd to be referenced to the first activation of the insole
+    ellipse_center: Value of the center of the ellipse
+    ellipse_axes: Value of the axes of the ellipse (a and b)
+    ellipse_angle: Angle of the ellipse
+
+    Returns: angle optimized to put the activation on the insole
+    -------
+
+    """
+    # TODO: change insole ref to put the zero on the first line
+    x, y = change_ref_marker(position_markers[0]), change_ref_marker(position_markers[1])
+
+    # TODO: compute the "Y position"on the sensors on the insole
+    # insole_sensors = np.linspace(0, 0.3, 18)  # To be changed
+    insole_sensors = coordonnees_insole_45_y
+
+    # Optimization variables
+    angle_to_put_zero = cas.MX.sym("angle_to_put_zero", 1)
+    x_sensors = cas.MX.sym("x_sensors", 18)  # nly for implicit constraint
+    y_sensors = cas.MX.sym("y_sensors", 18 - 1)  # nly for implicit constraint
 
     f = 0
-    # Objective (minimize distance between two points)
-    for markers in range(len(x)):
-        # f = cas.sqrt((x[0] - pos[0])**2 + (y[0] - pos[0])**2)
-        distance_marker_sensor = cas.sqrt((x[markers] - pos[0])**2 + (y[markers] - pos[1])**2)
-        distance_marker_center_ellipse = cas.sqrt((x[markers] - xc)**2 + (y[markers] - yc)**2)
-        f += cas.sin((distance_marker_sensor / distance_marker_center_ellipse))
+    g = []
+    lbg = []
+    ubg = []
 
-    nlp = {"x": pos, "f": f}
+    cos_angle = cas.cos(np.pi - ellipse_angle)
+    sin_angle = cas.sin(np.pi - ellipse_angle)
+
+    xc_0 = x_sensors[0] - ellipse_center[0]
+    yc_0 = x_sensors[0] * cas.tan(angle_to_put_zero) - ellipse_center[1]
+
+    xct = xc_0 * cos_angle - yc_0 * sin_angle
+    yct = xc_0 * sin_angle + yc_0 * cos_angle
+
+    g += [
+        (
+            (xct**2 / (((ellipse_axes[0]) / 2) ** 2))
+            + (yct**2 / (((ellipse_axes[1]) / 2) ** 2))
+            - cas.sqrt(xc_0**2 + yc_0**2)
+        )
+        ** 2
+    ]
+    lbg += [1]
+    ubg += [1]
+
+    # Objective (minimize distance between two points)
+    for i_sensor in range(1, 18):
+
+        cos_angle = cas.cos(np.pi - ellipse_angle)
+        sin_angle = cas.sin(np.pi - ellipse_angle)
+
+        xc = x_sensors[i_sensor] - ellipse_center[0]
+        yc = y_sensors[i_sensor - 1] - ellipse_center[1]
+
+        xct = xc * cos_angle - yc * sin_angle
+        yct = xc * sin_angle + yc * cos_angle
+
+        g += [
+            (
+                (xct**2 / (((ellipse_axes[0]) / 2) ** 2))
+                + (yct**2 / (((ellipse_axes[1]) / 2) ** 2))
+                - cas.sqrt(xc**2 + yc**2)
+            )
+            ** 2
+        ]
+        lbg += [1]
+        ubg += [1]
+
+        # TODO: make sure it goes in the right direction, regarde si on prend le bonne indice
+        tata = cas.MX.zeros(2)
+        tata[0] = xc - xc_0
+        tata[1] = yc - yc_0
+        g += [cas.norm_2(insole_sensors[i_sensor] - insole_sensors[i_sensor - 1]) - (cas.norm_2(tata))]
+        lbg += [0]
+        ubg += [0]
+
+        xc_0 = xc
+        yc_0 = yc
+
+    # TODO change for real values + loop
+    #  disons que la premiere activation se trouve exactement entre le sensor 3 et 4
+    markers = 0
+    activation_position = cas.MX.zeros(2)
+    for i in range(len(position_activation["index_pre"])):
+        activation_position[0] = x_sensors[position_activation["index_pre"][i]] + position_activation["pourcentage"][
+            i
+        ] * (x_sensors[position_activation["index_post"][i]] - x_sensors[position_activation["index_pre"][i]])
+        activation_position[1] = y_sensors[position_activation["index_pre"][i]] + position_activation["pourcentage"][
+            i
+        ] * (y_sensors[position_activation["index_post"][i]] - y_sensors[position_activation["index_pre"][i]])
+        distance_marker_sensor = cas.sqrt(
+            (x[markers] - activation_position[0]) ** 2 + (y[markers] - activation_position[1]) ** 2
+        )
+        f += distance_marker_sensor
+
+    nlp = {"x": cas.vertcat(angle_to_put_zero, x_sensors, y_sensors), "f": f, "g": cas.vertcat(*g)}
     opts = {"ipopt.print_level": 5}
     solver = cas.nlpsol("solver", "ipopt", nlp, opts)
-    x0 = np.zeros(2)  # Initial guess for the optimization variables
+    x0 = np.zeros((18 * 2,))  # Initial guess for the optimization variables
 
-    sol = solver(x0=x0, lbx=[-np.inf, -np.inf], ubx=[np.inf, np.inf])
+    sol = solver(x0=x0, lbx=[-np.inf] * 18 * 2, ubx=[np.inf] * 18 * 2, lbg=lbg, ubg=ubg)
+    # if FLAG_PLOT: # Dessiner l'ellipse,  # Mettre les markers, # Mettre les points d'activation, # Mettre les activations estimées
 
     if solver.stats()["success"]:
-        angle = float(sol["f"])
-        print("Angle en radian:", angle)
-        return angle
+        output_variables = float(sol["x"])
+        print("output_variables", output_variables)
+        return output_variables
     else:
         print("Optimization did not converge")
         return None
 
 
-
-def find_tangent(ellipse_center, ellipse_axes, ellipse_angle, point, fig_name:str,  FLAG_PLOT=False):
+def find_tangent(ellipse_center, ellipse_axes, ellipse_angle, point, fig_name: str, FLAG_PLOT=False):
     """
     Find the tangent of a point on the edge of a ellipse
     :param ellipse_center: Coordinate on x and y of the ellipse's center
@@ -344,14 +933,16 @@ def find_tangent(ellipse_center, ellipse_axes, ellipse_angle, point, fig_name:st
     y1 = -(x - cx) * np.sin(ellipse_angle) + (y - cy) * np.cos(ellipse_angle)
 
     # Coefficients pour l'équation de la tangente
-    A = x1 / a ** 2
-    B = y1 / b ** 2
+    A = x1 / a**2
+    B = y1 / b**2
 
     # Slope of the tangent line in the ellipse's coordinate system
     slope_ellipse = -A / B
 
     # Convert the slope back to the original coordinate system
-    slope = (slope_ellipse * np.cos(ellipse_angle) - np.sin(ellipse_angle)) / (np.cos(ellipse_angle) + slope_ellipse * np.sin(ellipse_angle))
+    slope = (slope_ellipse * np.cos(ellipse_angle) - np.sin(ellipse_angle)) / (
+        np.cos(ellipse_angle) + slope_ellipse * np.sin(ellipse_angle)
+    )
 
     if FLAG_PLOT:
         # Generate points for the tangent line
@@ -363,16 +954,14 @@ def find_tangent(ellipse_center, ellipse_axes, ellipse_angle, point, fig_name:st
         fig.suptitle("Representation insole and the tangente of a one marker")
 
         # Tracer l'ellipse
-        ellipse = Ellipse(xy=(cx, cy),
-                             width=a, height=b,
-                             angle=ellipse_angle * 180 / np.pi, facecolor='red', alpha=0.5)
+        ellipse = Ellipse(xy=(cx, cy), width=a, height=b, angle=ellipse_angle * 180 / np.pi, facecolor="red", alpha=0.5)
         ax.add_patch(ellipse)
-        ax.set_aspect('equal')
+        ax.set_aspect("equal")
         ax.set_xlabel(" Position in x")
         ax.set_ylabel(" Position in y")
 
         # Tracer le point d'intersection
-        ax.scatter(x, y, color='blue', label='intersection')
+        ax.scatter(x, y, color="blue", label="intersection")
 
         # Tracer la tangente
         ax.plot(t, tangent_line, color="blue", label="tangente")
@@ -384,7 +973,9 @@ def find_tangent(ellipse_center, ellipse_axes, ellipse_angle, point, fig_name:st
     return slope_ellipse, slope
 
 
-def find_perpendiculaire_to_tangente(tangent_slope, point, ellipse_axes, ellipse_angle, ellipse_center, fig_name:str, FLAG_PLOT=False):
+def find_perpendiculaire_to_tangente(
+    tangent_slope, point, ellipse_axes, ellipse_angle, ellipse_center, fig_name: str, FLAG_PLOT=False
+):
     """
 
     :param tangent_slope: The slope of the tangent
@@ -413,16 +1004,14 @@ def find_perpendiculaire_to_tangente(tangent_slope, point, ellipse_axes, ellipse
         fig.suptitle("Representation insole, tangente and perpendiculaire")
 
         # Tracer l'ellipse
-        ellipse = Ellipse(xy=(cx, cy),
-                          width=a, height=b,
-                          angle=ellipse_angle * 180 / np.pi, facecolor='red', alpha=0.5)
+        ellipse = Ellipse(xy=(cx, cy), width=a, height=b, angle=ellipse_angle * 180 / np.pi, facecolor="red", alpha=0.5)
         ax.add_patch(ellipse)
-        ax.set_aspect('equal')
+        ax.set_aspect("equal")
         ax.set_xlabel(" Position in x")
         ax.set_ylabel(" Position in y")
 
         # Tracer le point d'intersection
-        ax.scatter(x, y, color='blue', label='intersection')
+        ax.scatter(x, y, color="blue", label="intersection")
 
         # Tracer la tangente
         ax.plot(t, tangent_line, color="blue", label="tagente")
@@ -432,7 +1021,7 @@ def find_perpendiculaire_to_tangente(tangent_slope, point, ellipse_axes, ellipse
         plt.legend()
         plt.savefig("Figures/" + fig_name + ".svg")
         fig.clf()
-        plt.show()
+        # plt.show()
 
     return perpendicular_line
 
