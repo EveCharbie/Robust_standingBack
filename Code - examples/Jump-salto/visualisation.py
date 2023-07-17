@@ -40,15 +40,28 @@ def visualisation_model(name_file_model):
     b.exec()
 
 
-def visualisation_movement(name_file_movement):
+
+def visualisation_movement(name_file_movement, name_file_model):
     q, time_node = get_created_data_from_pickle(name_file_movement)
     if len(q) == 1:
             visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
             visu.load_movement(q)
             visu.exec()
 
-    elif len(q) == 7:
-            Q = np.concatenate((q[0], q[1], q[2], q[3], q[4], q[5], q[6]), axis=1)
+    elif len(q) == 2:
+            Q = np.concatenate((q[0], q[1]), axis=1)
+            visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
+            visu.load_movement(Q)
+            visu.exec()
+
+    elif len(q) == 3:
+            Q = np.concatenate((q[0], q[1], q[2]), axis=1)
+            visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
+            visu.load_movement(Q)
+            visu.exec()
+
+    elif len(q) == 3:
+            Q = np.concatenate((q[0], q[1], q[2], q[3]), axis=1)
             visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
             visu.load_movement(Q)
             visu.exec()
@@ -61,6 +74,12 @@ def visualisation_movement(name_file_movement):
 
     elif len(q) == 6:
             Q = np.concatenate((q[0], q[1], q[2], q[3], q[4], q[5]), axis=1)
+            visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
+            visu.load_movement(Q)
+            visu.exec()
+
+    elif len(q) == 7:
+            Q = np.concatenate((q[0], q[1], q[2], q[3], q[4], q[5], q[6]), axis=1)
             visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
             visu.load_movement(Q)
             visu.exec()

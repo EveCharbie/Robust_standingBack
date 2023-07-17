@@ -242,3 +242,10 @@ marker	 ANKLE
 	technical 1
 endmarker
 
+contact	Foot_Toe
+	parent	Foot
+	position	0.00000000000   -0.05   -0.22
+	axis	yz
+endcontact
+
+

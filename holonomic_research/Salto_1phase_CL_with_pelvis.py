@@ -26,11 +26,12 @@ from bioptim import (
 
 from holonomic_research.ocp_example_2 import generate_close_loop_constraint, custom_configure, custom_dynamic
 from holonomic_research.biorbd_model_holonomic import BiorbdModelCustomHolonomic
+from visualisation import visualisation_closed_loop_1phase
 
 
 # --- Parameters --- #
 movement = "Salto_close_loop"
-version = 1
+version = 2
 nb_phase = 1
 name_folder_model = "/home/mickael/Documents/Anais/Robust_standingBack/Model"
 
@@ -51,19 +52,19 @@ def save_results(sol, c3d_file_path):
     data = {}
     q = []
     qdot = []
-    states_all = []
+    # states_all = []
     tau = []
 
     if len(sol.ns) == 1:
         q = sol.states["u"]
         qdot = sol.states["udot"]
-        states_all = sol.states["all"]
+        # states_all = sol.states["all"]
         tau = sol.controls["tau"]
     else:
         for i in range(len(sol.states)):
             q.append(sol.states[i]["u"])
             qdot.append(sol.states[i]["udot"])
-            states_all.append(sol.states[i]["all"])
+            # states_all.append(sol.states[i]["all"])
             tau.append(sol.controls[i]["tau"])
 
     data["q"] = q
@@ -71,7 +72,7 @@ def save_results(sol, c3d_file_path):
     data["tau"] = tau
     data["cost"] = sol.cost
     data["iterations"] = sol.iterations
-    data["detailed_cost"] = sol.detailed_cost
+    # data["detailed_cost"] = sol.detailed_cost
     data["status"] = sol.status
     data["real_time_to_optimize"] = sol.real_time_to_optimize
     data["phase_time"] = sol.phase_time[1:12]
@@ -96,7 +97,7 @@ def save_results(sol, c3d_file_path):
 
 
 def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound):
-    bio_model = (BiorbdModelCustomHolonomic(biorbd_model_path))
+    bio_model = BiorbdModelCustomHolonomic(biorbd_model_path)
 
     # --- Objectives functions ---#
     # Add objective functions
@@ -105,6 +106,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Phase 0 (Salto close loop):
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=10, phase=0, min_bound=0.1, max_bound=0.3)
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=10, phase=0)
+    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_STATE, key="udot", weight=1, phase=0)
 
     # --- Dynamics ---#
     # Dynamics
@@ -130,21 +132,21 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         constraint_double_derivative=constraint_double_derivative,
     )
 
-    bio_model.set_dependencies(independent_joint_index=[0, 1, 2, 5, 6], dependent_joint_index=[3, 4])
+    bio_model.set_dependencies(independent_joint_index=[0, 1, 2, 5, 6, 7], dependent_joint_index=[3, 4])
 
 
     # Path constraint
-    pose_salto_tendu = [0.0, 0.082, 0.0, 2.05, -1.32]
-    pose_salto_groupe = [0.13, -1.21, 0.0, 2.5013, -2.0179]
-    tau_min_total = [0, 0, 0, -325.531, -138, -981.1876, -735.3286]
-    tau_max_total = [0, 0, 0, 325.531, 138, 981.1876, 735.3286]
+    pose_salto_tendu = [0.0, 0.082, 0.0, 2.05, -1.32, 0.0]
+    pose_salto_groupe = [0.13, -1.21, 0.0, 2.5013, -2.0179, 0.0]
+    tau_min_total = [0, 0, 0, -325.531, -138, -981.1876, -735.3286, -343.9806]
+    tau_max_total = [0, 0, 0, 325.531, 138, 981.1876, 735.3286, 343.9806]
     tau_min = [i * 0.9 for i in tau_min_total]
     tau_max = [i * 0.9 for i in tau_max_total]
     tau_init = 0
     mapping = BiMappingList()
-    mapping.add("q", to_second=[0, 1, 2, None, None, 3, 4], to_first=[0, 1, 2, 5, 6])
-    mapping.add("qdot", to_second=[0, 1, 2, None, None, 3, 4], to_first=[0, 1, 2, 5, 6])
-    mapping.add("tau", to_second=[None, None, None, 0, 1, 2, 3], to_first=[3, 4, 5, 6])
+    mapping.add("q", to_second=[0, 1, 2, None, None, 3, 4, 5], to_first=[0, 1, 2, 5, 6, 7])
+    mapping.add("qdot", to_second=[0, 1, 2, None, None, 3, 4, 5], to_first=[0, 1, 2, 5, 6, 7])
+    mapping.add("tau", to_second=[None, None, None, 0, 1, 2, 3, 4], to_first=[3, 4, 5, 6, 7])
 
     # --- Bounds ---#
     # Initialize x_bounds
@@ -153,22 +155,21 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     n_independent = bio_model.nb_independent_joints
 
     x_bounds = BoundsList()
-    x_bounds.add("q", bounds=bio_model.bounds_from_ranges("q", mapping=mapping), phase=0)
-    x_bounds.add("qdot", bounds=bio_model.bounds_from_ranges("qdot", mapping=mapping), phase=0)
-    x_bounds[0]["q"][:, 0] = pose_salto_tendu
-    x_bounds[0]["qdot"][:, 0] = [0] * n_independent
-    x_bounds[0]["q"][3, -1] = pose_salto_groupe[3]
-    x_bounds[0]["q"][4, -1] = pose_salto_groupe[4]
+    x_bounds.add("u", bounds=bio_model.bounds_from_ranges("q", mapping=mapping), phase=0)
+    x_bounds.add("udot", bounds=bio_model.bounds_from_ranges("qdot", mapping=mapping), phase=0)
+    x_bounds[0]["u"][:, 0] = pose_salto_tendu
+    # x_bounds[0]["q"][3, -1] = pose_salto_groupe[3]
+    # x_bounds[0]["q"][4, -1] = pose_salto_groupe[4]
 
     # Initial guess
     x_init = InitialGuessList()
-    x_init.add("q", np.array([pose_salto_tendu, pose_salto_groupe]).T, interpolation=InterpolationType.LINEAR, phase=0)
-    x_init.add("qdot", np.array([[0] * n_independent, [0] * n_independent]).T, interpolation=InterpolationType.LINEAR, phase=0)
+    x_init.add("u", np.array([pose_salto_tendu, pose_salto_groupe]).T, interpolation=InterpolationType.LINEAR, phase=0)
+    x_init.add("udot", np.array([[0] * n_independent, [0] * n_independent]).T, interpolation=InterpolationType.LINEAR, phase=0)
 
     # Define control path constraint
     u_bounds = BoundsList()
-    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6]],
-                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6]], phase=0)
+    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
+                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=0)
 
     u_init = InitialGuessList()
     u_init.add("tau", [tau_init] * (bio_model.nb_tau - 3), phase=0)
@@ -192,7 +193,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
 # --- Load model --- #
 def main():
-    model_path = str(name_folder_model) + "/" + "Model2D_7Dof_0C_5M_CL.bioMod"
+    model_path = str(name_folder_model) + "/" + "Model2D_7Dof_0C_5M_CL_V2.bioMod"
     ocp, bio_model = prepare_ocp(
         biorbd_model_path=model_path,
         phase_time=0.2,
@@ -202,16 +203,15 @@ def main():
     )
 
     # --- Solve the program --- #
-    solver = Solver.IPOPT(show_online_optim=False, show_options=dict(show_bounds=True), _linear_solver="MA57")
+    ocp.print(to_console=True, to_graph=False)
+    solver = Solver.IPOPT(show_online_optim=True, show_options=dict(show_bounds=True), _linear_solver="MA57")
     solver.set_maximum_iterations(10000)
-    solver.set_tol(10e-6)
-    solver.set_constraint_tolerance(1e-8)
     sol = ocp.solve(solver)
+    # sol.graphs(show_bounds=True)
 
 # --- Show results --- #
 #     save_results(sol, str(movement) + "_" + "with_pelvis" + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl")
-#     sol.print_cost()
-#     visualisation_closed_loop(bio_model, sol, model_path)
+#     visualisation_closed_loop_1phase(bio_model, sol, model_path)
 
 
 if __name__ == "__main__":

@@ -23,12 +23,11 @@ from bioptim import (
 
 from holonomic_research.ocp_example_2 import generate_close_loop_constraint, custom_configure, custom_dynamic
 from holonomic_research.biorbd_model_holonomic import BiorbdModelCustomHolonomic
-from visualisation import visualisation_closed_loop
 
 
 # --- Parameters --- #
 movement = "Salto_close_loop"
-version = 1
+version = 2
 nb_phase = 1
 name_folder_model = "/home/mickael/Documents/Anais/Robust_standingBack/Model"
 
@@ -201,11 +200,10 @@ def main():
     )
 
     # --- Solve the program --- #
-    solver = Solver.IPOPT(show_online_optim=False, show_options=dict(show_bounds=True), _linear_solver="MA57")
+    solver = Solver.IPOPT(show_online_optim=True, show_options=dict(show_bounds=True), _linear_solver="MA57")
     solver.set_maximum_iterations(10000)
-    solver.set_tol(10e-6)
-    solver.set_constraint_tolerance(1e-8)
     sol = ocp.solve(solver)
+    sol.graphs(show_bounds=True)
 
 # --- Show results --- #
 

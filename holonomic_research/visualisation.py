@@ -27,11 +27,11 @@ def get_created_data_from_pickle(file: str):
 
 # --- Parameters --- #
 # name_file_model = "/home/mickael/Documents/Anais/Robust_standingBack-main/Model/Model2D_8Dof_2C_5M.bioMod"
-name_file_model = "/home/mickael/Documents/Anais/Robust_standingBack/Model/Model2D_4Dof_0C_5M_CL_V2.bioMod"
-name_file_model_2 = "/home/mickael/Documents/Anais/Robust_standingBack/Model/Model2D_8Dof_2C_5M_2model.bioMod"
-name_file_movement = (
-    "/home/mickael/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Salto_close_loop_7phases_V1.pkl"
-)
+# name_file_model = "/home/mickael/Documents/Anais/Robust_standingBack/Model/Model2D_4Dof_0C_5M_CL_V2.bioMod"
+# name_file_model_2 = "/home/mickael/Documents/Anais/Robust_standingBack/Model/Model2D_8Dof_2C_5M_2model.bioMod"
+# name_file_movement = (
+#     "/home/mickael/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Salto_close_loop_7phases_V1.pkl"
+# )
 
 # --- Visualisation -- #
 
@@ -40,15 +40,27 @@ def visualisation_model(name_file_model):
     b.exec()
 
 
-def visualisation_movement(name_file_movement):
+def visualisation_movement(name_file_movement, name_file_model):
     q, time_node = get_created_data_from_pickle(name_file_movement)
     if len(q) == 1:
             visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
             visu.load_movement(q)
             visu.exec()
 
-    elif len(q) == 7:
-            Q = np.concatenate((q[0], q[1], q[2], q[3], q[4], q[5], q[6]), axis=1)
+    elif len(q) == 2:
+            Q = np.concatenate((q[0], q[1]), axis=1)
+            visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
+            visu.load_movement(Q)
+            visu.exec()
+
+    elif len(q) == 3:
+            Q = np.concatenate((q[0], q[1], q[2]), axis=1)
+            visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
+            visu.load_movement(Q)
+            visu.exec()
+
+    elif len(q) == 3:
+            Q = np.concatenate((q[0], q[1], q[2], q[3]), axis=1)
             visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
             visu.load_movement(Q)
             visu.exec()
@@ -64,6 +76,16 @@ def visualisation_movement(name_file_movement):
             visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
             visu.load_movement(Q)
             visu.exec()
+
+    elif len(q) == 7:
+            Q = np.concatenate((q[0], q[1], q[2], q[3], q[4], q[5], q[6]), axis=1)
+            visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
+            visu.load_movement(Q)
+            visu.exec()
+
+
+
+
 
 
 def visualisation_dedoublement_phase(name_file_movement:str, name_file_model:str, name_file_model_2:str):
@@ -141,12 +163,57 @@ def visualisation_dedoublement_phase(name_file_movement:str, name_file_model:str
         visu_3.load_movement(Q_3)
         visu_3.exec()
 
-def visualisation_closed_loop(bio_model, sol, model_path):
+def visualisation_closed_loop_5phases(bio_model, sol, model_path):
+    q_0 = sol.states[0]["q"]
+    q_1 = sol.states[1]["q"]
+    q_2 = sol.states[2]["q"]
+    q_holo = np.zeros((bio_model[0].nb_q, sol.states[3]["u"].shape[1]))
+    q_4 = sol.states[4]["q"]
+    for i, ui in enumerate(sol.states[3]["u"].T):
+        # vi = bio_model.compute_v_from_u_numeric(ui, v_init=DM(np.zeros(2))).toarray()
+        vi = bio_model[3].compute_v_from_u_explicit_numeric(ui).toarray()
+        qi = bio_model[3].q_from_u_and_v(ui[:, np.newaxis], vi).toarray().squeeze()
+        q_holo[:, i] = qi
+    q = np.concatenate((q_0, q_1, q_2, q_holo, q_4), axis=1)
+    visu = bioviz.Viz(model_path)
+    visu.load_movement(q)
+    visu.exec()
+
+def visualisation_closed_loop_4phases_propulsion(bio_model, sol, model_path):
+    q_0 = sol.states[0]["q"]
+    q_1 = sol.states[1]["q"]
+    q_2 = sol.states[2]["q"]
+    q_holo = np.zeros((bio_model[0].nb_q, sol.states[3]["u"].shape[1]))
+    for i, ui in enumerate(sol.states[3]["u"].T):
+        # vi = bio_model.compute_v_from_u_numeric(ui, v_init=DM(np.zeros(2))).toarray()
+        vi = bio_model[3].compute_v_from_u_explicit_numeric(ui).toarray()
+        qi = bio_model[3].q_from_u_and_v(ui[:, np.newaxis], vi).toarray().squeeze()
+        q_holo[:, i] = qi
+    q = np.concatenate((q_0, q_1, q_2, q_holo), axis=1)
+    visu = bioviz.Viz(model_path)
+    visu.load_movement(q)
+    visu.exec()
+
+def visualisation_closed_loop_4phases_reception(bio_model, sol, model_path):
+    q_0 = sol.states[0]["q"]
+    q_holo = np.zeros((bio_model[0].nb_q, sol.states[1]["u"].shape[1]))
+    q_2 = sol.states[2]["q"]
+    q_3 = sol.states[3]["q"]
+    for i, ui in enumerate(sol.states[1]["u"].T):
+        # vi = bio_model.compute_v_from_u_numeric(ui, v_init=DM(np.zeros(2))).toarray()
+        vi = bio_model[1].compute_v_from_u_explicit_numeric(ui).toarray()
+        qi = bio_model[1].q_from_u_and_v(ui[:, np.newaxis], vi).toarray().squeeze()
+        q_holo[:, i] = qi
+    q = np.concatenate((q_0,q_holo, q_2, q_3), axis=1)
+    visu = bioviz.Viz(model_path)
+    visu.load_movement(q)
+    visu.exec()
+
+def visualisation_closed_loop_3phases(bio_model, sol, model_path):
     q_0 = sol.states[0]["q"]
     q_holo = np.zeros((bio_model[0].nb_q, sol.states[1]["u"].shape[1]))
     q_2 = sol.states[2]["q"]
     for i, ui in enumerate(sol.states[1]["u"].T):
-        # vi = bio_model.compute_v_from_u_numeric(ui, v_init=DM(np.zeros(2))).toarray()
         vi = bio_model[1].compute_v_from_u_explicit_numeric(ui).toarray()
         qi = bio_model[1].q_from_u_and_v(ui[:, np.newaxis], vi).toarray().squeeze()
         q_holo[:, i] = qi
@@ -154,3 +221,40 @@ def visualisation_closed_loop(bio_model, sol, model_path):
     visu = bioviz.Viz(model_path)
     visu.load_movement(q)
     visu.exec()
+
+
+def visualisation_closed_loop_1phase(bio_model, sol, model_path):
+    q = np.zeros((bio_model.nb_tau, sol.states["u"].shape[0]))
+    for i, ui in enumerate(sol.states["u"]):
+        vi = bio_model.compute_v_from_u_explicit_numeric(ui).toarray()
+        qi = bio_model.q_from_u_and_v(ui[:, np.newaxis], vi).toarray().squeeze()
+        q[:, i] = qi
+
+    viz = bioviz.Viz(model_path)
+    viz.load_movement(q)
+    viz.exec()
+
+def visualisation_closed_loop_2phases(bio_model, sol, model_path):
+    q_0 = sol.states[0]["q"]
+    q_holo = np.zeros((bio_model[0].nb_q, sol.states[1]["u"].shape[1]))
+    for i, ui in enumerate(sol.states[1]["u"].T):
+        vi = bio_model[1].compute_v_from_u_explicit_numeric(ui).toarray()
+        qi = bio_model[1].q_from_u_and_v(ui[:, np.newaxis], vi).toarray().squeeze()
+        q_holo[:, i] = qi
+    q = np.concatenate((q_0, q_holo), axis=1)
+    visu = bioviz.Viz(model_path)
+    visu.load_movement(q)
+    visu.exec()
+
+def visualisation_closed_loop_2phases_post(bio_model, sol, model_path):
+    q_0 = sol.states[1]["q"]
+    q_holo = np.zeros((bio_model[1].nb_q, sol.states[0]["u"].shape[1]))
+    for i, ui in enumerate(sol.states[0]["u"].T):
+        vi = bio_model[0].compute_v_from_u_explicit_numeric(ui).toarray()
+        qi = bio_model[0].q_from_u_and_v(ui[:, np.newaxis], vi).toarray().squeeze()
+        q_holo[:, i] = qi
+    q = np.concatenate((q_holo, q_0), axis=1)
+    visu = bioviz.Viz(model_path)
+    visu.load_movement(q)
+    visu.exec()
+

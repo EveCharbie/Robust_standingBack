@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 from bioptim import (
     BiorbdModel,
     Node,
+    PhaseTransitionFcn,
     InterpolationType,
     OptimalControlProgram,
     ConstraintList,
@@ -35,12 +36,12 @@ from bioptim import (
 from casadi import MX, vertcat
 from holonomic_research.ocp_example_2 import generate_close_loop_constraint, custom_configure, custom_dynamic
 from holonomic_research.biorbd_model_holonomic import BiorbdModelCustomHolonomic
-from visualisation import visualisation_closed_loop
+from visualisation import visualisation_closed_loop_2phases_post
 
 
 # --- Parameters --- #
-movement = "Salto_close_loop"
-version = 2
+movement = "Salto_close_loop_post"
+version = 1
 nb_phase = 2
 name_folder_model = "/home/mickael/Documents/Anais/Robust_standingBack/Model"
 
@@ -71,7 +72,7 @@ def save_results(sol, c3d_file_path):
         tau = sol.controls["tau"]
     else:
         for i in range(len(sol.states)):
-            if i == 1:
+            if i == 0:
                 q.append(sol.states[i]["u"])
                 qdot.append(sol.states[i]["udot"])
                 # states_all.append(sol.states[i]["all"])
@@ -129,25 +130,20 @@ def custom_phase_transition(
     """
 
     # Take the values of q of the BioMod without holonomics constraints
-    states_pre = controllers[0].states.cx
-
-    nb_q = controllers[0].model.nb_q
-    q_pre = controllers[0].states.cx[:nb_q]
-    qdot_pre = controllers[0].states.cx[nb_q:]
-
-    nb_independent = controllers[1].model.nb_independent_joints
-    u_post = controllers[1].states.cx[:nb_independent]
-    udot_post = controllers[1].states.cx[nb_independent:]
+    nb_independent = controllers[0].model.nb_independent_joints
+    u_pre = controllers[0].states.cx[:nb_independent]
+    udot_pre = controllers[0].states.cx[nb_independent:]
 
     # Take the q of the indepente joint and calculate the q of dependent joint
-    v_post = controllers[1].model.compute_v_from_u_explicit_symbolic(u_post)
-    q_post = controllers[1].model.q_from_u_and_v(u_post, v_post)
+    v_pre = controllers[0].model.compute_v_from_u_explicit_symbolic(u_pre)
+    q_pre = controllers[0].model.q_from_u_and_v(u_pre, v_pre)
+    Bvu = controllers[0].model.coupling_matrix(q_pre)
+    vdot_pre = Bvu @ udot_pre
+    qdot_pre = controllers[0].model.q_from_u_and_v(udot_pre, vdot_pre)
 
-    Bvu = controllers[1].model.coupling_matrix(q_post)
-    vdot_post = Bvu @ udot_post
-    qdot_post = controllers[1].model.q_from_u_and_v(udot_post, vdot_post)
+    states_pre = vertcat(q_pre, qdot_pre)
 
-    states_post = vertcat(q_post, qdot_post)
+    states_post = controllers[1].states.cx
 
     return states_pre - states_post
 
@@ -155,31 +151,31 @@ def custom_phase_transition(
 # --- Prepare ocp --- #
 
 def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound):
-    bio_model = (BiorbdModel(biorbd_model_path[0]),
-                 BiorbdModelCustomHolonomic(biorbd_model_path[1]))
+    bio_model = (BiorbdModelCustomHolonomic(biorbd_model_path[0]),
+                 BiorbdModel(biorbd_model_path[1]))
 
     # Made up constraints
     constraint, constraint_jacobian, constraint_double_derivative = generate_close_loop_constraint(
-        bio_model[1],
+        bio_model[0],
         "BELOW_KNEE",
         "CENTER_HAND",
         index=slice(1, 3),  # only constraint on x and y
         local_frame_index=11,  # seems better in one local frame than in global frame, the constraint deviates less
     )
 
-    bio_model[1].add_holonomic_constraint(
+    bio_model[0].add_holonomic_constraint(
         constraint=constraint,
         constraint_jacobian=constraint_jacobian,
         constraint_double_derivative=constraint_double_derivative,
     )
 
-    bio_model[1].set_dependencies(independent_joint_index=[0, 1, 2, 5, 6], dependent_joint_index=[3, 4])
+    bio_model[0].set_dependencies(independent_joint_index=[0, 1, 2, 5, 6, 7], dependent_joint_index=[3, 4])
 
     # --- Objectives functions ---#
     # Add objective functions
     objective_functions = ObjectiveList()
 
-    # Phase 0 (Waiting phase):
+    # Phase 0 (Salto close loop):
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=10, phase=0, min_bound=0.1, max_bound=0.3)
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=1, phase=0)
     # # objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_MARKERS_VELOCITY,
@@ -187,15 +183,16 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # # objective_functions.add(ObjectiveFcn.Mayer.SUPERIMPOSE_MARKERS,
     # #                         node=Node.END, first_marker="BELOW_KNEE", second_marker="CENTER_HAND", phase=0)
     #
-    # # Phase 1 (Salto close loop):
+    # # Phase 1 (Waiting phase):
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=10, phase=1, min_bound=0.1, max_bound=0.3)
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=1, phase=1)
 
     # --- Dynamics ---#
     # Dynamics
     dynamics = DynamicsList()
-    dynamics.add(DynamicsFcn.TORQUE_DRIVEN, phase=0)
-    dynamics.add(custom_configure, dynamic_function=custom_dynamic, expand=False, phase=1)
+    dynamics.add(custom_configure, dynamic_function=custom_dynamic, expand=False, phase=0)
+    dynamics.add(DynamicsFcn.TORQUE_DRIVEN, phase=1)
+
 
     # Transition de phase
     phase_transitions = PhaseTransitionList()
@@ -207,82 +204,84 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     constraints = ConstraintList()
 
     # Path constraint
-    pose_salto_tendu_CL = [0, 0, 0, 2.2199, -1.3461]
-    pose_salto_groupe_CL = [0, 0, 0, 2.3432, -2.0252]
-    pose_salto_tendu = [0, 0, 0, 0.79, 0.70, 2.0144, -1.1036]
-    pose_salto_groupe = [0, 0, 0, 0.7966, 0.9233, 2.2199, -1.3461]
-    tau_min_total = [0, 0, 0, -325.531, -138, -981.1876, -735.3286]
-    tau_max_total = [0, 0, 0, 325.531, 138, 981.1876, 735.3286]
+    pose_salto_start = [-0.6369, 1.0356, 0.9974, 0.7592, 0.4129, 1.7890, -1.3444, 0.0393]
+    # pose_salto_start_CL = [-0.6369, 1.0356, 0.9974, 1.7890, -1.3444, 0.0393]
+    pose_salto_start_CL = [-0.6369, 1.0356, 0.46, 1.7890, -1.3444, 0.0393]
+    pose_salto_end_CL = [0.1987, 1.0356, 2.7470, 1.7447, -1.1335, 0.0097]
+    pose_salto_end = [0.1987, 1.0356, 2.7470, 0.9906, 0.0252, 1.7447, -1.1335, 0.0097]
+    pose_landing_start = [0.1987, 1.7551, 5.8322, 0.52, 0.95, 1.72, -0.81, 0.0]
+
+
+    tau_min_total = [0, 0, 0, -325.531, -138, -981.1876, -735.3286, -343.9806]
+    tau_max_total = [0, 0, 0, 325.531, 138, 981.1876, 735.3286, 343.9806]
     tau_min = [i * 0.9 for i in tau_min_total]
     tau_max = [i * 0.9 for i in tau_max_total]
     tau_init = 0
     mapping = BiMappingList()
     dof_mapping = BiMappingList()
-    mapping.add("q", to_second=[0, 1, 2, None, None, 3, 4], to_first=[0, 1, 2, 5, 6])
-    mapping.add("qdot", to_second=[0, 1, 2, None, None, 3, 4], to_first=[0, 1, 2, 5, 6])
-    dof_mapping.add("tau", to_second=[None, None, None, 0, 1, 2, 3], to_first=[3, 4, 5, 6])
+    mapping.add("q", to_second=[0, 1, 2, None, None, 3, 4, 5], to_first=[0, 1, 2, 5, 6, 7])
+    mapping.add("qdot", to_second=[0, 1, 2, None, None, 3, 4, 5], to_first=[0, 1, 2, 5, 6, 7])
+    dof_mapping.add("tau", to_second=[None, None, None, 0, 1, 2, 3, 4], to_first=[3, 4, 5, 6, 7])
 
     # --- Bounds ---#
     # Initialize x_bounds
-    n_q = bio_model[0].nb_q
+    n_q = bio_model[1].nb_q
     n_qdot = n_q
-    n_independent = bio_model[1].nb_independent_joints
+    n_independent = bio_model[0].nb_independent_joints
 
-    # Phase 0: Waiting phase
+    # Phase 0: Salto
     x_bounds = BoundsList()
-    x_bounds.add("q", bounds=bio_model[0].bounds_from_ranges("q"), phase=0)
-    x_bounds.add("qdot", bounds=bio_model[0].bounds_from_ranges("qdot"), phase=0)
-    # x_bounds.add("tau", bounds=bio_model[0].bounds_from_ranges("tau"), phase=0)
-    x_bounds[0]["q"][:, 0] = pose_salto_tendu
-    x_bounds[0]["qdot"][:, 0] = [0] * n_qdot
-    x_bounds[0]["q"].min[0, :] = -10
-    x_bounds[0]["q"].max[0, :] = 10
-    x_bounds[0]["q"].min[1, :] = -10
-    x_bounds[0]["q"].max[1, :] = 10
-    # x_bounds[0]["q"].min[2, :] = -10
-    # x_bounds[0]["qdot"].max[2, :] = 10
-    x_bounds[0]["qdot"].min[0, :] = -10
-    x_bounds[0]["qdot"].max[0, :] = 10
-    x_bounds[0]["qdot"].min[1, :] = -10
-    x_bounds[0]["qdot"].max[1, :] = 10
-    # x_bounds[0]["qdot"].min[2, :] = -10
-    # x_bounds[0]["qdot"].max[2, :] = 10
+    x_bounds.add("u", bounds=bio_model[0].bounds_from_ranges("q", mapping=mapping), phase=0)
+    x_bounds.add("udot", bounds=bio_model[0].bounds_from_ranges("qdot", mapping=mapping), phase=0)
+    x_bounds[0]["u"][:, 0] = pose_salto_start_CL
+    x_bounds[0]["u"].min[0, :] = -2
+    x_bounds[0]["u"].max[0, :] = 1
+    x_bounds[0]["u"].min[1, 1:] = 0
+    x_bounds[0]["u"].max[1, 1:] = 2.5
+    x_bounds[0]["u"].min[2, 0] = 0
+    x_bounds[0]["u"].max[2, 0] = np.pi / 4
+    x_bounds[0]["u"].min[2, 1] = np.pi / 8
+    x_bounds[0]["u"].max[2, 1] = np.pi
+    x_bounds[0]["u"].min[2, 2] = np.pi / 2
+    x_bounds[0]["u"].max[2, 2] = np.pi
+    x_bounds[0]["udot"].min[0, :] = -3
+    x_bounds[0]["udot"].max[0, :] = 10
+    x_bounds[0]["udot"].min[1, :] = -2
+    x_bounds[0]["udot"].max[1, :] = 10
+    x_bounds[0]["udot"].min[2, :] = -5
+    x_bounds[0]["udot"].max[2, :] = 10
 
-    # Phase 1: Waiting phase
-    x_bounds.add("u", bounds=bio_model[1].bounds_from_ranges("q", mapping=mapping), phase=1)
-    x_bounds.add("udot", bounds=bio_model[1].bounds_from_ranges("qdot", mapping=mapping), phase=1)
-    # x_bounds.add("tau", bounds=bio_model[1].bounds_from_ranges("tau"), phase=1)
-    x_bounds[1]["u"][:, 0] = pose_salto_tendu_CL
-    x_bounds[1]["udot"][:, 0] = [0] * n_independent
-    x_bounds[1]["u"][:, -1] = pose_salto_groupe_CL
-    x_bounds[1]["udot"][:, -1] = [0] * n_independent
-    x_bounds[1]["u"].min[0, :] = -10
-    x_bounds[1]["u"].max[0, :] = 10
-    x_bounds[1]["u"].min[1, :] = -10
-    x_bounds[1]["u"].max[1, :] = 10
-    # x_bounds[1]["u"].min[2, :] = -10
-    # x_bounds[1]["udot"].max[2, :] = 10
-    x_bounds[1]["udot"].min[0, :] = -10
-    x_bounds[1]["udot"].max[0, :] = 10
-    x_bounds[1]["udot"].min[1, :] = -10
-    x_bounds[1]["udot"].max[1, :] = 10
-    # x_bounds[1]["udot"].min[2, :] = -10
-    # x_bounds[1]["udot"].max[2, :] = 10
-
+    # Phase 1: Second flight
+    x_bounds.add("q", bounds=bio_model[1].bounds_from_ranges("q"), phase=1)
+    x_bounds.add("qdot", bounds=bio_model[1].bounds_from_ranges("qdot"), phase=1)
+    x_bounds[1]["q"].min[0, :] = -2
+    x_bounds[1]["q"].max[0, :] = 1
+    x_bounds[1]["q"].min[1, 1:] = 0
+    x_bounds[1]["q"].max[1, 1:] = 2.5
+    x_bounds[1]["q"].min[2, 0] = np.pi / 2
+    x_bounds[1]["q"].max[2, 0] = np.pi
+    x_bounds[1]["q"].min[2, 1] = np.pi / 2
+    x_bounds[1]["q"].max[2, 1] = 2 * np.pi
+    x_bounds[1]["q"].min[2, -1] = 2 * np.pi - 1
+    x_bounds[1]["q"].max[2, -1] = 2 * np.pi + 1
+    x_bounds[1]["qdot"].min[0, :] = -2
+    x_bounds[1]["qdot"].max[0, :] = 10
+    x_bounds[1]["qdot"].min[1, :] = -2
+    x_bounds[1]["qdot"].max[1, :] = 10
 
     # Initial guess
     x_init = InitialGuessList()
-    x_init.add("q", np.array([pose_salto_tendu, pose_salto_groupe]).T, interpolation=InterpolationType.LINEAR, phase=0)
-    x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=0)
-    x_init.add("u", np.array([pose_salto_tendu_CL, pose_salto_groupe_CL]).T, interpolation=InterpolationType.LINEAR, phase=1)
-    x_init.add("udot", np.array([[0] * n_independent, [0] * n_independent]).T, interpolation=InterpolationType.LINEAR, phase=1)
+    x_init.add("u", np.array([pose_salto_start_CL, pose_salto_end_CL]).T, interpolation=InterpolationType.LINEAR, phase=0)
+    x_init.add("udot", np.array([[0] * n_independent, [0] * n_independent]).T, interpolation=InterpolationType.LINEAR, phase=0)
+    x_init.add("q", np.array([pose_salto_end, pose_landing_start]).T, interpolation=InterpolationType.LINEAR, phase=1)
+    x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=1)
 
     # Define control path constraint
     u_bounds = BoundsList()
-    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6]],
-                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6]], phase=0)
-    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6]],
-                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6]], phase=1)
+    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
+                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=0)
+    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
+                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=1)
 
     u_init = InitialGuessList()
     u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=0)
@@ -323,8 +322,6 @@ def main():
     ocp.print(to_console=True, to_graph=False)
     solver = Solver.IPOPT(show_online_optim=False, show_options=dict(show_bounds=True), _linear_solver="MA57")
     solver.set_maximum_iterations(100000)
-    solver.set_tol(10e-6)
-    solver.set_constraint_tolerance(1e-8)
     sol = ocp.solve(solver)
     # sol.print_cost()
 
@@ -332,7 +329,7 @@ def main():
     save_results(sol, str(movement) + "_" + "with_pelvis" + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl")
 
     # sol.graphs(show_bounds=True)
-    visualisation_closed_loop(bio_model, sol, model_path)
+    visualisation_closed_loop_2phases_post(bio_model, sol, model_path)
 
     # --- Compute results --- #
     # constraints_graphs(ocp, sol)
