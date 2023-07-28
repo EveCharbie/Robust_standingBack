@@ -81,9 +81,7 @@ def visualisation_dedoublement_phase(name_file_movement: str, name_file_model: s
         for i in range(7, 11):
             time_node[i] = time_node[i] - (time_Q7 - ecart)
         Q_2 = np.concatenate((q[0], q[1], q[7], q[8], q[9], q[10]), axis=1)
-        time_Q2 = np.concatenate(
-            (time_node[0], time_node[1], time_node[7], time_node[8], time_node[9], time_node[10])
-        )
+        time_Q2 = np.concatenate((time_node[0], time_node[1], time_node[7], time_node[8], time_node[9], time_node[10]))
         duree_Q2 = [time_Q2[i + 1] - time_Q2[i] for i in range(0, len(time_Q2) - 1)]
 
         # Interpolation simulation salto with errors timing
@@ -101,17 +99,13 @@ def visualisation_dedoublement_phase(name_file_movement: str, name_file_model: s
             Q2_interpolate[nb_Dof] = newy
 
         if Q1_interpolate.shape[1] < Q2_interpolate.shape[1]:
-            Q_add = np.zeros(
-                shape=(Q_1.shape[0], int(Q2_interpolate.shape[1] - Q1_interpolate.shape[1])), dtype=float
-            )
+            Q_add = np.zeros(shape=(Q_1.shape[0], int(Q2_interpolate.shape[1] - Q1_interpolate.shape[1])), dtype=float)
             for i in range(Q2_interpolate.shape[1] - Q1_interpolate.shape[1]):
                 Q_add[:, i] = Q1_interpolate[:, -1]
             Q1_interpolate_new = np.concatenate((Q1_interpolate, Q_add), axis=1)
 
         if Q2_interpolate.shape[1] < Q1_interpolate.shape[1]:
-            Q_add = np.zeros(
-                shape=(Q_1.shape[0], int(Q2_interpolate.shape[1] - Q1_interpolate.shape[1])), dtype=float
-            )
+            Q_add = np.zeros(shape=(Q_1.shape[0], int(Q2_interpolate.shape[1] - Q1_interpolate.shape[1])), dtype=float)
             for i in range(Q2_interpolate.shape[1] - Q1_interpolate.shape[1]):
                 Q_add[:, i] = Q1_interpolate[:, -1]
             Q1_interpolate_new = np.concatenate((Q1_interpolate, Q_add), axis=1)
@@ -229,7 +223,8 @@ def visualisation_closed_loop(name_file_movement: str, name_file_model: str):
         local_frame_index=11,
     )
     bio_model.set_holonomic_configuration(
-        constraints_list=holonomic_constraints, independent_joint_index=[0, 1, 2, 5, 6, 7],
+        constraints_list=holonomic_constraints,
+        independent_joint_index=[0, 1, 2, 5, 6, 7],
         dependent_joint_index=[3, 4],
     )
     data = get_created_data_from_pickle(name_file_movement)
@@ -309,7 +304,7 @@ def visualisation_closed_loop_4phases_reception(bio_model, sol, model_path):
         vi = bio_model[1].compute_v_from_u_explicit_numeric(ui).toarray()
         qi = bio_model[1].state_from_partition(ui[:, np.newaxis], vi).toarray().squeeze()
         q_holo[:, i] = qi
-    q = np.concatenate((q_0,q_holo, q_2, q_3), axis=1)
+    q = np.concatenate((q_0, q_holo, q_2, q_3), axis=1)
     visu = bioviz.Viz(model_path)
     visu.load_movement(q)
     visu.exec()

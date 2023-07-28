@@ -16,6 +16,7 @@ Phase 2: Tucked phase + Landing
 import numpy as np
 import pickle
 import sys
+
 sys.path.append("/home/lim/Documents/Anais/bioviz")
 sys.path.append("/home/lim/Documents/Anais/bioptim")
 from bioptim import (

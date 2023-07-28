@@ -5,57 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6503dafd-8802-4d54-b5c1-48950943a3f6" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code - examples/GeneratePlanarModel.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code - examples/Jump-salto/Dedoublement_phase.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code - examples/Jump-salto/Graph_torque_angle.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code - examples/Jump-salto/Jump_2phases.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code - examples/Jump-salto/Jump_3phases.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code - examples/Jump-salto/Salto_1phase.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code - examples/Jump-salto/Salto_2phases.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code - examples/Jump-salto/Salto_3phases.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code - examples/Jump-salto/Salto_4phases.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code - examples/Jump-salto/Salto_5phases.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code - examples/Jump-salto/Salto_6phases.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code - examples/Jump-salto/Salto_7phases.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code - examples/Jump-salto/Salto_actuator.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code - examples/Jump-salto/visualisation.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code - examples/Openpickle.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code - examples/save.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Code - examples/visualisation.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/Model2D_4Dof_0C_5M_CL.bioMod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/Model2D_4Dof_0C_5M_CL_V2.bioMod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/Model2D_4Dof_0C_5M_CL_V3.bioMod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/Model2D_7Dof_0C_3M.bioMod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/Model2D_7Dof_0C_3M_original.bioMod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/Model2D_7Dof_0C_5M_CL.bioMod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/Model2D_7Dof_0C_5M_CL_V2.bioMod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/Model2D_7Dof_1C_3M.bioMod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/Model2D_7Dof_1C_3M_original.bioMod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/Model2D_7Dof_2C_3M.bioMod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/Model2D_7Dof_2C_3M_mesh.bioMod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/Model2D_8Dof_0C_3M.bioMod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/Model2D_8Dof_0C_5M.bioMod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/Model2D_8Dof_1C_5M.bioMod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/Model2D_8Dof_2C_3M.bioMod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/Model2D_8Dof_2C_3M_original.bioMod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/Model2D_8Dof_2C_5M.bioMod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/Pyomecaman_original.bioMod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/SyGa_Yeadon.bioMod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/mesh/arm.stl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/mesh/foot.stl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/mesh/fore_arm.stl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/mesh/hand.stl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/mesh/head.stl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/mesh/leg_left.stl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/mesh/leg_right.stl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/mesh/pelvis.stl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/mesh/thigh.stl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/mesh/thorax.stl" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data_analysis/Create_cylinder_insole.py" beforeDir="false" afterPath="$PROJECT_DIR$/data_analysis/Create_cylinder_insole.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data_analysis/cartography_insoles.py" beforeDir="false" afterPath="$PROJECT_DIR$/data_analysis/cartography_insoles.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data_analysis/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/data_analysis/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

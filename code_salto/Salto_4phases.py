@@ -136,7 +136,15 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Path constraint
     n_q = bio_model[0].nb_q
     n_qdot = n_q
-    pose_at_first_node = [-0.2436, -0.2580, -0.9574, 1.0434, 2.2767, -1.8341, 0.5049]  # Position of segment during first position
+    pose_at_first_node = [
+        -0.2436,
+        -0.2580,
+        -0.9574,
+        1.0434,
+        2.2767,
+        -1.8341,
+        0.5049,
+    ]  # Position of segment during first position
     pose_landing = [0.0, 0.14, 6.28, 3.1, 0.0, 0.0, 0.0]  # Position of segment during landing
 
     # --- Bounds ---#
@@ -184,13 +192,20 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_init.add("q", pose_at_first_node, phase=3)
     x_init.add("qdot", [0] * n_qdot, phase=3)
 
-
     # Define control path constraint
     u_bounds = BoundsList()
-    u_bounds.add("tau", min_bound=[tau_min] * (bio_model[0].nb_tau - 3), max_bound=[tau_max] * (bio_model[0].nb_tau - 3), phase=0)
-    u_bounds.add("tau", min_bound=[tau_min] * (bio_model[1].nb_tau - 3), max_bound=[tau_max] * (bio_model[0].nb_tau - 3), phase=1)
-    u_bounds.add("tau", min_bound=[tau_min] * (bio_model[2].nb_tau - 3), max_bound=[tau_max] * (bio_model[0].nb_tau - 3), phase=2)
-    u_bounds.add("tau", min_bound=[tau_min] * (bio_model[2].nb_tau - 3), max_bound=[tau_max] * (bio_model[0].nb_tau - 3), phase=3)
+    u_bounds.add(
+        "tau", min_bound=[tau_min] * (bio_model[0].nb_tau - 3), max_bound=[tau_max] * (bio_model[0].nb_tau - 3), phase=0
+    )
+    u_bounds.add(
+        "tau", min_bound=[tau_min] * (bio_model[1].nb_tau - 3), max_bound=[tau_max] * (bio_model[0].nb_tau - 3), phase=1
+    )
+    u_bounds.add(
+        "tau", min_bound=[tau_min] * (bio_model[2].nb_tau - 3), max_bound=[tau_max] * (bio_model[0].nb_tau - 3), phase=2
+    )
+    u_bounds.add(
+        "tau", min_bound=[tau_min] * (bio_model[2].nb_tau - 3), max_bound=[tau_max] * (bio_model[0].nb_tau - 3), phase=3
+    )
 
     u_init = InitialGuessList()
     u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=0)

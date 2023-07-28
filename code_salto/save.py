@@ -48,7 +48,7 @@ def save_results(sol, name_pickle_file):
         pickle.dump(data, file)
 
 
-def save_results_CL(sol, name_pickle_file, index_holonomic_constraints:int):
+def save_results_CL(sol, name_pickle_file, index_holonomic_constraints: int):
     """
     Save all the results of the predictive simulation into a pickle file
     Parameters

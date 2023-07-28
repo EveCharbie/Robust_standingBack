@@ -97,7 +97,7 @@ def find_activation_sensor(distance_sensor_y, position_activation_y):
     return resume
 
 
-def cartography_insole(file_insole, file_info_insole, fig_name:str, FLAG_PLOT=False):
+def cartography_insole(file_insole, file_info_insole, fig_name: str, FLAG_PLOT=False):
     """
     Plot the cartography of the insoles
     Parameters
@@ -116,7 +116,9 @@ def cartography_insole(file_insole, file_info_insole, fig_name:str, FLAG_PLOT=Fa
 
     """
 
-    sensor_45 = file_insole.columns[1:-1].to_list()     #  List sensor on the insole size 45 (without columns Sync and Time)
+    sensor_45 = file_insole.columns[
+        1:-1
+    ].to_list()  #  List sensor on the insole size 45 (without columns Sync and Time)
     coordonnees_insole_45 = file_info_insole.loc[0:7, sensor_45]
 
     # Plot : Insoles
@@ -124,16 +126,16 @@ def cartography_insole(file_insole, file_info_insole, fig_name:str, FLAG_PLOT=Fa
         fig, axs = plt.subplots(2)
         fig.suptitle("Insoles cartography")
 
-            # Subplot 1 : insoles R
-        axs[0].plot(coordonnees_insole_45.iloc[7, :], coordonnees_insole_45.iloc[6, :], 'ro')
+        # Subplot 1 : insoles R
+        axs[0].plot(coordonnees_insole_45.iloc[7, :], coordonnees_insole_45.iloc[6, :], "ro")
         axs[0].set_ylabel("Position Y (mm)", fontsize=14)
-        axs[0].title.set_text('Insole Right')
+        axs[0].title.set_text("Insole Right")
 
-            # Subplot 2 : insoles L
-        axs[1].plot(coordonnees_insole_45.iloc[5, :], coordonnees_insole_45.iloc[4, :], 'ro')
+        # Subplot 2 : insoles L
+        axs[1].plot(coordonnees_insole_45.iloc[5, :], coordonnees_insole_45.iloc[4, :], "ro")
         axs[1].set_xlabel("Position X (mm)", fontsize=14)
         axs[1].set_ylabel("Position Y (mm)", fontsize=14)
-        axs[1].title.set_text('Insole Left')
+        axs[1].title.set_text("Insole Left")
         plt.savefig("Figures/" + fig_name + ".svg")
         fig.clf()
 
@@ -461,7 +463,6 @@ def position_activation(file_insole_R, file_insole_L, file_info_insole, FLAG_PLO
         plt.legend()
         plt.savefig("Figures/insoles_position_activation_L.svg")
         plt.clf()
-
 
     activation_R = {
         "value": position_activation_R,
@@ -963,8 +964,7 @@ def minimize_distance(
 
     g += [
         (
-            ((xct**2 / (((ellipse_axes[0]) / 2) ** 2))
-            + (yct**2 / (((ellipse_axes[1]) / 2) ** 2)))**2
+            ((xct**2 / (((ellipse_axes[0]) / 2) ** 2)) + (yct**2 / (((ellipse_axes[1]) / 2) ** 2))) ** 2
             - (xc_0**2 + yc_0**2)
         )
         ** 2
@@ -986,8 +986,7 @@ def minimize_distance(
 
         g += [
             (
-                ((xct**2 / (((ellipse_axes[0]) / 2) ** 2))
-                + (yct**2 / (((ellipse_axes[1]) / 2) ** 2)))**2
+                ((xct**2 / (((ellipse_axes[0]) / 2) ** 2)) + (yct**2 / (((ellipse_axes[1]) / 2) ** 2))) ** 2
                 - (xc**2 + yc**2)
             )
             ** 2
@@ -999,7 +998,7 @@ def minimize_distance(
         tata = cas.MX.zeros(2)
         tata[0] = xc - xc_0
         tata[1] = yc - yc_0
-        g += [(insole_sensors[i_sensor] - insole_sensors[i_sensor - 1])**2 - (tata[0] - tata[1])**2]
+        g += [(insole_sensors[i_sensor] - insole_sensors[i_sensor - 1]) ** 2 - (tata[0] - tata[1]) ** 2]
         lbg += [0]
         ubg += [0]
 
@@ -1029,7 +1028,14 @@ def minimize_distance(
     fig.suptitle("Representation optimization insole")
 
     # Ellipse
-    ellipse = Ellipse(xy=(ellipse_center[0], ellipse_center[1]), width=ellipse_axes[0]/2, height=ellipse_axes[1]/2, angle=ellipse_angle * 180 / np.pi, facecolor="red", alpha=0.5)
+    ellipse = Ellipse(
+        xy=(ellipse_center[0], ellipse_center[1]),
+        width=ellipse_axes[0] / 2,
+        height=ellipse_axes[1] / 2,
+        angle=ellipse_angle * 180 / np.pi,
+        facecolor="red",
+        alpha=0.5,
+    )
     ax.add_patch(ellipse)
     ax.set_aspect("equal")
     ax.set_xlabel(" Position in x")

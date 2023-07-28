@@ -4,18 +4,16 @@ import casadi as cas
 import numpy as np
 from casadi import MX, vertcat, Function
 
-#--- Parameters ---#
+# --- Parameters ---#
 l1 = 1
 l2 = 1
 xp = 0
 yp = 1
 
-#--- Test ---#
+# --- Test ---#
 
 # Fonction angle theta1 et theta2
-theta2 = cas.acos(
-    (xp ** 2 + yp ** 2 - (l2 ** 2 + l1 ** 2)) / 2 * l1 * l2
-)
+theta2 = cas.acos((xp**2 + yp**2 - (l2**2 + l1**2)) / 2 * l1 * l2)
 
 # theta1 = cas.atan(markers_frame_thorax[2]/markers_frame_thorax[1]) - cas.atan(
 #     (L2 * cas.sin(theta2)) / (L1 + L2 * cas.cos(theta2))
@@ -26,7 +24,7 @@ theta2 = cas.acos(
 
 theta1 = cas.atan2(
     (-xp * l2 * cas.sin(theta2) + yp * (l1 + l2 * cas.cos(theta2))),
-    (xp * (l1 + l2 * cas.cos(theta2)) + yp * l2 * cas.sin(theta2))
+    (xp * (l1 + l2 * cas.cos(theta2)) + yp * l2 * cas.sin(theta2)),
 )
 
 # theta1 = cas.atan2(
@@ -34,8 +32,8 @@ theta1 = cas.atan2(
 #     (xp + ((xp ** 2 + yp ** 2 + l1 ** 2 - l2 ** 2)/(2 * l1)))
 # )
 
-print("Theta 1:" + str(theta1*180/np.pi))
-print("Theta 2:" + str(theta2*180/np.pi))
+print("Theta 1:" + str(theta1 * 180 / np.pi))
+print("Theta 2:" + str(theta2 * 180 / np.pi))
 
 
 # # pour tester que l'equation du markers ne depend des q non associés à cette branche.

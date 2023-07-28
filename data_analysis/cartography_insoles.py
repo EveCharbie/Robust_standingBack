@@ -82,5 +82,3 @@ def cartography_insole(file_insole, file_info_insole, fig_name: str, FLAG_PLOT=F
         axs[1].title.set_text("Insole Left")
         plt.savefig("Figures/" + fig_name + ".svg")
         fig.clf()
-
-

@@ -306,7 +306,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Phase 0: Preparation propulsion
     x_bounds.add("q", bounds=bio_model[0].bounds_from_ranges("q"), phase=0)
     x_bounds.add("qdot", bounds=bio_model[0].bounds_from_ranges("qdot"), phase=0)
-    x_bounds[0]["q"][:, 0] = pose_at_first_node # impose the first position
+    x_bounds[0]["q"][:, 0] = pose_at_first_node  # impose the first position
     x_bounds[0]["qdot"][:, 0] = [0] * n_qdot
     x_bounds[0]["q"].min[0, 2] = -1
     x_bounds[0]["q"].max[0, 2] = 1
@@ -377,9 +377,13 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
     # Initial guess
     x_init = InitialGuessList()
-    x_init.add("q", np.array([pose_at_first_node, pose_propulsion_start]).T, interpolation=InterpolationType.LINEAR, phase=0)
+    x_init.add(
+        "q", np.array([pose_at_first_node, pose_propulsion_start]).T, interpolation=InterpolationType.LINEAR, phase=0
+    )
     x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=0)
-    x_init.add("q", np.array([pose_propulsion_start, pose_takeout_start]).T, interpolation=InterpolationType.LINEAR, phase=1)
+    x_init.add(
+        "q", np.array([pose_propulsion_start, pose_takeout_start]).T, interpolation=InterpolationType.LINEAR, phase=1
+    )
     x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=1)
     x_init.add("q", np.array(pose_at_first_node), phase=2)
     x_init.add("qdot", np.array([0] * n_qdot), phase=2)
@@ -394,41 +398,48 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
     # Define control path constraint
     u_bounds = BoundsList()
-    u_bounds.add("tau",
-                 min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
-                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]],
-                 phase=0,
-                 )
-    u_bounds.add("tau",
-                 min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
-                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]],
-                 phase=1,
-                 )
-    u_bounds.add("tau",
-                 min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
-                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]],
-                 phase=2,
-                 )
-    u_bounds.add("tau",
-                 min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
-                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]],
-                 phase=3,
-                 )
-    u_bounds.add("tau",
-                 min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
-                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]],
-                 phase=4,
-                 )
-    u_bounds.add("tau",
-                 min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
-                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]],
-                 phase=5,
-                 )
-    u_bounds.add("tau",
-                 min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
-                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]],
-                 phase=6,
-                 )
+    u_bounds.add(
+        "tau",
+        min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
+        max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]],
+        phase=0,
+    )
+    u_bounds.add(
+        "tau",
+        min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
+        max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]],
+        phase=1,
+    )
+    u_bounds.add(
+        "tau",
+        min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
+        max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]],
+        phase=2,
+    )
+    u_bounds.add(
+        "tau",
+        min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
+        max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]],
+        phase=3,
+    )
+    u_bounds.add(
+        "tau",
+        min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
+        max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]],
+        phase=4,
+    )
+    u_bounds.add(
+        "tau",
+        min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
+        max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]],
+        phase=5,
+    )
+    u_bounds.add(
+        "tau",
+        min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
+        max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]],
+        phase=6,
+    )
 
     u_init = InitialGuessList()
     u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=0)
@@ -453,7 +464,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         variable_mappings=dof_mapping,
         n_threads=32,
     )
-
 
 
 # --- Load model --- #

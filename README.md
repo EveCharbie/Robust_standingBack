@@ -1,5 +1,8 @@
 # Robust_standingBack
-This repo aims to generate robust techniques for a standing back somersault on ground.
+The purpose of this repo is to present all the work I've done on optima control backbend simulations during 
+my 6-month internship at the S2M laboratory of the Université de Montréal . 
+In particular, we worked on the robustness of the movement and on the implementation of a closed loop 
+of the kinematic chain during the tucked phase of a back somersault.
 
 ## Steps
 ### 2D model
