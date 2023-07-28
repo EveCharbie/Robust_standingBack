@@ -1,10 +1,11 @@
 """
-The aim of this code is to ...
+The aim of this code is to test the holonomic constraint of the flight phase
+with the pelvis and during the tucked phase
 
-Phase 0: Tuck phase
-- zero contact
-- objectives functions: maximize torque
-
+Phase 0: Tucked phase
+- Dynamic(s): TORQUE_DRIVEN with holonomic constraints
+- Constraint(s): zero contact, 1 holonomic constraints body-body
+- Objective(s) function(s): minimize torque, velocity and time
 
 """
 # --- Import package --- #
@@ -103,7 +104,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Add objective functions
     objective_functions = ObjectiveList()
 
-    # Phase 0 (Salto close loop):
+    # Phase 0 (Tucked phase):
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=10, phase=0, min_bound=0.1, max_bound=0.3)
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=10, phase=0)
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_STATE, key="udot", weight=1, phase=0)
@@ -158,8 +159,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds.add("u", bounds=bio_model.bounds_from_ranges("q", mapping=mapping), phase=0)
     x_bounds.add("udot", bounds=bio_model.bounds_from_ranges("qdot", mapping=mapping), phase=0)
     x_bounds[0]["u"][:, 0] = pose_salto_tendu
-    # x_bounds[0]["q"][3, -1] = pose_salto_groupe[3]
-    # x_bounds[0]["q"][4, -1] = pose_salto_groupe[4]
 
     # Initial guess
     x_init = InitialGuessList()
@@ -207,11 +206,11 @@ def main():
     solver = Solver.IPOPT(show_online_optim=True, show_options=dict(show_bounds=True), _linear_solver="MA57")
     solver.set_maximum_iterations(10000)
     sol = ocp.solve(solver)
-    # sol.graphs(show_bounds=True)
+    sol.graphs(show_bounds=True)
 
 # --- Show results --- #
-#     save_results(sol, str(movement) + "_" + "with_pelvis" + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl")
-#     visualisation_closed_loop_1phase(bio_model, sol, model_path)
+    save_results(sol, str(movement) + "_" + "with_pelvis" + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl")
+    visualisation_closed_loop_1phase(bio_model, sol, model_path)
 
 
 if __name__ == "__main__":

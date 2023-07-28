@@ -2,13 +2,6 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/bioptim" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/bioptim/external/acados" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/bioptim/external/acados/examples/acados_python/tests/test_data" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/bioptim/external/acados/external/blasfeo" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/bioptim/external/acados/external/catch" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/bioptim/external/acados/external/jsonlab" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/bioptim/external/acados/external/osqp" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/../bioptim" vcs="Git" />
   </component>
 </project>

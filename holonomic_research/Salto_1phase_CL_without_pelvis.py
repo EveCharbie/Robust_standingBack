@@ -1,8 +1,11 @@
 """
-The aim of this code is to ...
-Phase 0: Tuck phase
-- zero contact, holonomics constraints
-- objectives functions: maximize torque, minimize time
+The aim of this code is to test the holonomic constraint of the flight phase
+without the pelvis and during the tucked phase
+
+Phase 0: Tucked phase
+- Dynamic(s): TORQUE_DRIVEN with holonomic constraints
+- Constraint(s): zero contact, 1 holonomic constraints body-body
+- Objective(s) function(s): minimize torque and time
 """
 # --- Import package --- #
 

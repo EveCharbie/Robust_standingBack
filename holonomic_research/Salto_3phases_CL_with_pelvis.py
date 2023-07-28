@@ -1,13 +1,25 @@
 """
-...
-Phase 0: Waiting phase
-- zero contact
-- objectives functions: minimize torque, time
+The aim of this code is to test the holonomic constraint of the flight phase
+with the pelvis during the flight phase (no holonomic constraints),
+the tucked phase (holonomic constraints) and
+the preparation of landing (no holonomic constraints).
+We also want to see how well the transition
+between phases with and without holonomic constraints works.
 
-Phase 1: Salto
-- zero contact, holonomics constraints
-- objectives functions: minimize torque, time
+Phase 0: Flight
+- Dynamic(s): TORQUE_DRIVEN
+- Constraint(s): zero contact, no holonomic constraints
+- Objective(s) function(s): minimize torque and time
 
+Phase 1: Tucked phase
+- Dynamic(s): TORQUE_DRIVEN with holonomic constraints
+- Constraint(s): zero contact, 1 holonomic constraints body-body
+- Objective(s) function(s): minimize torque and time
+
+Phase 2: Preparation landing
+- Dynamic(s): TORQUE_DRIVEN
+- Constraint(s): zero contact, no holonomic constraints body-body
+- Objective(s) function(s): minimize torque and time
 
 """
 # --- Import package --- #
@@ -42,15 +54,11 @@ from bioptim import (
 )
 
 from casadi import MX, vertcat, Function
-from holonomic_research.ocp_example_2 import generate_close_loop_constraint, custom_configure, custom_dynamic
 from holonomic_research.biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
 from visualisation import visualisation_closed_loop_3phases
 
 
-
-
 # --- Save results --- #
-
 def save_results(sol, c3d_file_path):
     """
     Solving the ocp
@@ -348,20 +356,17 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Add objective functions
     objective_functions = ObjectiveList()
 
-    # Phase 0 (Waiting phase):
+    # Phase 0 (Flight phase):
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=10, phase=0, min_bound=0.1, max_bound=0.3)
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=10, phase=0)
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True,  weight=10, phase=0)
-    # objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_COM_POSITION, node=Node.ALL_SHOOTING, weight=-10000, phase=0)
 
-    # Phase 1 (Salto close loop):
+    # Phase 1 (Tucked phase:
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=10, phase=1, min_bound=0.1, max_bound=0.3)
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=0.01, phase=1)
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=0.01, phase=1)
-    # objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_COM_POSITION, node=Node.ALL_SHOOTING, weight=-10000, phase=1)
-    # objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_STATE, key="qdot_u", weight=1, derivative=True, phase=1)
 
-    # Phase 2 (Second flight):
+    # Phase 2 (Preparation landing):
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=10, phase=2, min_bound=0.1, max_bound=0.3)
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=10, phase=2)
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=10, phase=2)
@@ -406,25 +411,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     )
 
     # Path constraint
-    # pose_takeout_start = [-0.2777, 0.0399, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119]
-    # pose_salto_start = [-0.6369, 1.0356, 1.5062, 0.3411, 1.3528, 2.1667, -1.9179, 0.0393]
-    # pose_salto_start_CL = [-0.6369, 1.0356, 1.5062, 2.1667, -1.9179, 0.0393]
-    # pose_salto_end_CL = [0.1987, 1.0356, 2.7470, 1.7447, -1.1335, 0.0097]
-    # pose_salto_end = [0.1987, 1.0356, 2.7470, 0.9906, 0.0252, 1.7447, -1.1335, 0.0097]
-    # pose_landing_start = [0.1987, 1.7551, 5.8322, 0.52, 0.95, 1.72, -0.81, 0.0]
-
-    # pose_takeout_start = [-0.1949, 0.0399, 0.193, 2.5896,
-    #                       0.51, 0.5354, -0.8367, 0.1119]
-    # pose_salto_start = [-0.1658, 1.0489, 1.0684, 0.5005,
-    #                     0.1439, 1.4035, -2.2762, -0.4778]
-    # pose_salto_start_CL = [-0.1658, 1.0489, 1.0684,
-    #                        1.4035, -2.2762, -0.4778]
-    # pose_salto_end_CL = [-0.1034, 1.8749, 3.0529,
-    #                      2.5692, -2.2063, 0.6769]
-    # pose_salto_end = [-0.1034, 1.8749, 3.0529, 0.1327, 1.9699,
-    #                   2.5692, -2.2063, 0.6769]
-    # pose_landing_start = [-0.2156, 1.2560, 5.8,
-    #                       0.02007, 1.0791, 1.2200, -1.3094, -0.4993]
 
     pose_takeout_start = [-0.2777, 0.0399, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119]
     pose_salto_start = [-0.6369, 1.0356, 1.5062, 0.3411, 1.3528, 2.1667, -1.9179, 0.0393]
@@ -439,7 +425,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     n_qdot = n_q
     n_independent = bio_model[1].nb_independent_joints
 
-    # Phase 0: Waiting phase
+    # Phase 0: Flight phase
     x_bounds = BoundsList()
     x_bounds.add("q", bounds=bio_model[0].bounds_from_ranges("q"), phase=0)
     x_bounds.add("qdot", bounds=bio_model[0].bounds_from_ranges("qdot"), phase=0)
@@ -461,8 +447,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[0]["qdot"].min[2, :] = -5
     x_bounds[0]["qdot"].max[2, :] = 5
 
-
-    # Phase 1: Salto
+    # Phase 1: Tucked phase
     x_bounds.add("q_u", bounds=bio_model[1].bounds_from_ranges("q", mapping=variable_bimapping), phase=1)
     x_bounds.add("qdot_u", bounds=bio_model[1].bounds_from_ranges("qdot", mapping=variable_bimapping), phase=1)
     x_bounds[1]["q_u"].min[0, :] = -2
@@ -481,12 +466,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[1]["qdot_u"].max[1, :] = 10
     x_bounds[1]["q_u"].max[3, :] = 2.6
     x_bounds[1]["q_u"].min[3, :] = 1.30
-    # x_bounds[1]["u"].max[4, :] = -1.34
-    # x_bounds[1]["u"].max[4, :] = -1
-    # x_bounds[1]["u"].min[4, :] = -2.3
 
-
-    # Phase 2: Second flight
+    # Phase 2: Preparation landing
     x_bounds.add("q", bounds=bio_model[2].bounds_from_ranges("q"), phase=2)
     x_bounds.add("qdot", bounds=bio_model[2].bounds_from_ranges("qdot"), phase=2)
     x_bounds[2]["q"].min[0, :] = -2
@@ -591,7 +572,9 @@ def main():
 # --- Show results --- #
     save_results(sol, str(movement) + "_" + "with_pelvis" + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl")
     visualisation_closed_loop_3phases(bio_model, sol, model_path)
-    # sol.graphs(show_bounds=True)
+    sol.graphs(show_bounds=True)
+
+    # Graph to compute forces during holonomic constraints body-body
     q, qdot, qddot, lambdas = compute_all_states(sol, bio_model[1], index_holonomics_constraints=index_holonomics_constraints)
 
     plt.plot(sol.time[index_holonomics_constraints], lambdas[0, :],

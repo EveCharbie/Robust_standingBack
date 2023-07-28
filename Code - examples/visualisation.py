@@ -188,11 +188,3 @@ def visualisation_closed_loop_3phases(bio_model, sol, model_path):
     visu = bioviz.Viz(model_path)
     visu.load_movement(q)
     visu.exec()
-
-
-# --- Parameters --- #
-name_file_model = "/home/mickael/Documents/Anais/Robust_standingBack/Model/Model2D_7Dof_0C_5M_CL_V2.bioMod"
-name_file_model_2 = "/home/mickael/Documents/Anais/Robust_standingBack/Model/Model2D_8Dof_2C_5M_2model.bioMod"
-name_file_movement = ("/home/mickael/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Salto_close_loop_7phases_V1.pkl")
-
-visualisation_model(name_file_model)

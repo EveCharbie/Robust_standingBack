@@ -1,13 +1,16 @@
 """
-...
-Phase 0: Waiting phase
-- zero contact
-- objectives functions: minimize torque, time
+The aim of this code is to test the preparation propulsion
+and the propulsion phase
 
-Phase 1: Salto
-- zero contact, holonomics constraints
-- objectives functions: minimize torque, time
+Phase 0: Preparation propulsion
+- Dynamic(s): TORQUE_DRIVEN
+- Constraint(s): 2 contact, no holonomic constraints
+- Objective(s) function(s): minimize torque and time
 
+Phase 1: Propulsion
+- Dynamic(s): TORQUE_DRIVEN
+- Constraint(s): 1 contact
+- Objective(s) function(s): minimize torque and time
 
 """
 # --- Import package --- #
@@ -108,15 +111,13 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Add objective functions
     objective_functions = ObjectiveList()
 
-    # Phase 0 (Prepa propulsion):
+    # Phase 0 (Preparation propulsion):
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=-1000, phase=0, min_bound=0.1, max_bound=0.3)
-    # objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_STATE, key="qdot", weight=0.01, phase=0)
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=0.000001, phase=0)
 
     # Phase 1 (Propulsion):
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=1000, phase=1, min_bound=0.1, max_bound=0.3)
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=0.000001, phase=1)
-    # objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_STATE, key="qdot", weight=0.01, phase=1)
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_COM_VELOCITY, node=Node.END, weight=-1, phase=1, axes=Axis.Z)
 
     # --- Dynamics ---#
@@ -139,14 +140,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         phase=0,
     )
 
-    # constraints.add(
-    #     ConstraintFcn.TRACK_CONTACT_FORCES,
-    #     min_bound=min_bound,
-    #     max_bound=max_bound,
-    #     node=Node.ALL_SHOOTING,
-    #     contact_index=0,
-    #     phase=0,
-    # )
     constraints.add(
         ConstraintFcn.TRACK_CONTACT_FORCES,
         min_bound=min_bound,
@@ -174,14 +167,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         static_friction_coefficient=0.33,
         phase=1,
     )
-    # constraints.add(
-    #     ConstraintFcn.TRACK_CONTACT_FORCES,
-    #     min_bound=min_bound,
-    #     max_bound=max_bound,
-    #     node=Node.ALL_SHOOTING,
-    #     contact_index=0,
-    #     phase=1,
-    # )
 
     constraints.add(
         ConstraintFcn.TRACK_CONTACT_FORCES,
@@ -201,12 +186,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     )
 
     # Path constraint
-    # pose_at_first_node = [0.0188, 0.1368, 0.0, 1.78, 0.5437, 0.191, -0.25, 0.10]  # Start
-    # pose_propulsion_start = [-0.0641, -0.2365, -0.5743, 2.6347, 0.5437, 1.8041, -1.46, 0.46]
     pose_at_first_node = [0.0188, 0.1368, -0.1091, 1.78, 0.5437, 0.191, -0.1452, 0.04]  # Position of segment during first position
     pose_propulsion_start = [0.0195, -0.1714, -0.8568, -0.0782, 0.5437, 2.0522, -1.6462, 0.5296]
-    # pose_propulsion_start = [0.0188, -0.1502, -0.6102, 2.3879, 1.53, 1.8152, -1.4073, 0.2331]
-    # pose_propulsion_start = [-0.14115299824043254,0.020007462178597373,-0.6643283987542782,2.7183391530541856,0.03694279767063482,1.3422602547560498,-0.9395105108826743,0.379942867174669]
     pose_takeout_end = [-0.0641, 0.4015, 0.0, 2.5, 1.7953, 0.2255, -0.3913, 0.1622]
     pose_takeout_start = [-0.2777, 0.0399, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119]
 
@@ -254,14 +235,10 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_init = InitialGuessList()
     x_init.add("q", np.array([pose_at_first_node, pose_propulsion_start]).T, interpolation=InterpolationType.LINEAR,
                phase=0)
-
-    # x_init.add("q", np.array([pose_at_first_node, pose_propulsion_start]).T, interpolation=InterpolationType.LINEAR, phase=0)
     x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=0)
+
     x_init.add("q", np.array([pose_propulsion_start, pose_takeout_end]).T, interpolation=InterpolationType.LINEAR,
                phase=1)
-
-    # x_init.add("q", np.array([pose_propulsion_start, pose_takeout_start]).T, interpolation=InterpolationType.LINEAR,
-    #            phase=1)
     x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=1)
 
     # Define control path constraint
@@ -308,12 +285,11 @@ def main():
     # ocp.add_plot_penalty()
     # --- Solve the program --- #
     ocp.print(to_console=True, to_graph=False)
-    # ocp.add_plot_penalty()
+    ocp.add_plot_penalty()
     solver = Solver.IPOPT(show_online_optim=False, show_options=dict(show_bounds=True), _linear_solver="MA57")
     solver.set_maximum_iterations(1000)
 
     sol = ocp.solve(solver)
-    # bio_model[1].compute_external_force_holonomics_constraints(sol.states[1]["u"], sol.states[1]["udot"], sol.controls[1]["tau"])
     sol.print_cost()
 
 # --- Show results --- #
@@ -321,6 +297,7 @@ def main():
     save_results(sol, name_movement)
     visualisation_movement(name_movement, model_path_contact)
     sol.graphs(show_bounds=True)
+
 
 if __name__ == "__main__":
     main()

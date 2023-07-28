@@ -1,12 +1,18 @@
 """
-...
-Phase 0: Waiting phase
-- zero contact
-- objectives functions: minimize torque, time
+The aim of this code is to test the holonomic constraint of the flight phase
+with the pelvis and during the flight phase (no holonomic constraints)
+and the tucked phase (holonomic constraints). And see how well the transition
+between phases with and without holonomic constraints works.
 
-Phase 1: Salto
-- zero contact, holonomics constraints
-- objectives functions: minimize torque, time
+Phase 0: Flight
+- Dynamic(s): TORQUE_DRIVEN
+- Constraint(s): zero contact, no holonomic constraints
+- Objective(s) function(s): minimize torque and time
+
+Phase 1: Tucked phase
+- Dynamic(s): TORQUE_DRIVEN with holonomic constraints
+- Constraint(s): zero contact, 1 holonomic constraints body-body
+- Objective(s) function(s): minimize torque and time
 
 
 """
@@ -183,15 +189,11 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Add objective functions
     objective_functions = ObjectiveList()
 
-    # Phase 0 (Waiting phase):
+    # Phase 0 (Flight phase):
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=10, phase=0, min_bound=0.1, max_bound=0.3)
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=1, phase=0)
-    # # objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_MARKERS_VELOCITY,
-    # #                         node=Node.END, marker_index=2, weight=10, phase=0)
-    # # objective_functions.add(ObjectiveFcn.Mayer.SUPERIMPOSE_MARKERS,
-    # #                         node=Node.END, first_marker="BELOW_KNEE", second_marker="CENTER_HAND", phase=0)
-    #
-    # # Phase 1 (Salto close loop):
+
+    # Phase 1 (Tucked phase):
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=10, phase=1, min_bound=0.1, max_bound=0.3)
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=1, phase=1)
 
@@ -342,14 +344,12 @@ def main():
     solver = Solver.IPOPT(show_online_optim=False, show_options=dict(show_bounds=True), _linear_solver="MA57")
     solver.set_maximum_iterations(100000)
     sol = ocp.solve(solver)
-    # sol.print_cost()
+    sol.print_cost()
 
 # --- Show results --- #
+    sol.graphs(show_bounds=True)
     save_results(sol, str(movement) + "_" + "with_pelvis" + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl")
-
-    # sol.graphs(show_bounds=True)
     visualisation_closed_loop_2phases(bio_model, sol, model_path)
-
 
 
 if __name__ == "__main__":

@@ -1,16 +1,25 @@
 """
-...
-Phase 0: Waiting phase
-- zero contact
-- objectives functions: minimize torque, time
+The aim of this code is to test the holonomic constraint of the flight phase
+without the pelvis during the flight phase (no holonomic constraints),
+the tucked phase (holonomic constraints) and
+the preparation of landing (no holonomic constraints).
+We also want to see how well the transition
+between phases with and without holonomic constraints works.
 
-Phase 1: Salto
-- zero contact, holonomics constraints
-- objectives functions: minimize torque, time
+Phase 0: Flight
+- Dynamic(s): TORQUE_DRIVEN
+- Constraint(s): zero contact, no holonomic constraints
+- Objective(s) function(s): minimize torque and time
 
-Phase 2: Second flight phase
-- zero contact
-- objectives functions: minimize torque, time
+Phase 1: Tucked phase
+- Dynamic(s): TORQUE_DRIVEN with holonomic constraints
+- Constraint(s): zero contact, 1 holonomic constraints body-body
+- Objective(s) function(s): minimize torque and time
+
+Phase 2: Preparation landing
+- Dynamic(s): TORQUE_DRIVEN
+- Constraint(s): zero contact, no holonomic constraints body-body
+- Objective(s) function(s): minimize torque and time
 
 
 """
@@ -203,17 +212,17 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Add objective functions
     objective_functions = ObjectiveList()
 
-    # Phase 0 (Waiting phase):
-    # objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=-10, phase=0, min_bound=0.1, max_bound=0.3)
-    # objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=10, phase=0)
+    # Phase 0 (Flight phase):
+    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=-10, phase=0, min_bound=0.1, max_bound=0.3)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=10, phase=0)
 
-    # Phase 1 (Salto close loop):
-    # objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=10, phase=1, min_bound=0.1, max_bound=0.3)
+    # Phase 1 (Tucked phase):
+    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=10, phase=1, min_bound=0.1, max_bound=0.3)
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=0.000001, phase=1)
 
-    # Phase 2 (Second flight):
-    # objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=-10, phase=2, min_bound=0.1, max_bound=0.3)
-    # objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=10, phase=2)
+    # Phase 2 (Preparation landing):
+    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=-10, phase=2, min_bound=0.1, max_bound=0.3)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=10, phase=2)
 
     # --- Dynamics ---#
     # Dynamics
@@ -270,18 +279,18 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     n_qdot = n_q
     n_independent = bio_model[1].nb_independent_joints
 
-    # Phase 0: Waiting phase
+    # Phase 0: Flight phase
     x_bounds = BoundsList()
     x_bounds.add("q", bounds=bio_model[0].bounds_from_ranges("q"), phase=0)
     x_bounds.add("qdot", bounds=bio_model[0].bounds_from_ranges("qdot"), phase=0)
     x_bounds[0]["q"][:, 0] = pose_salto_tendu
     x_bounds[0]["qdot"][:, 0] = [0] * n_qdot
 
-    # Phase 1 : Salto
+    # Phase 1 : Tucked phase
     x_bounds.add("u", bounds=bio_model[1].bounds_from_ranges("q", mapping=mapping), phase=1)
     x_bounds.add("udot", bounds=bio_model[1].bounds_from_ranges("qdot", mapping=mapping), phase=1)
 
-    # Phase 2: Second flight
+    # Phase 2: Preparation landing
     x_bounds.add("q", bounds=bio_model[2].bounds_from_ranges("q"), phase=2)
     x_bounds.add("qdot", bounds=bio_model[2].bounds_from_ranges("qdot"), phase=2)
     x_bounds[2]["q"][:, -1] = pose_envol_final
@@ -343,7 +352,7 @@ def main():
     )
 
     # --- Solve the program --- #
-    # ocp.print(to_console=True, to_graph=False)
+    ocp.print(to_console=True, to_graph=False)
     solver = Solver.IPOPT(show_online_optim=False, show_options=dict(show_bounds=True), _linear_solver="MA57")
     solver.set_maximum_iterations(1000)
     solver.set_tol(10e-6)
@@ -351,65 +360,9 @@ def main():
     sol = ocp.solve(solver)
 
 # --- Show results --- #
+    sol.graphs(show_bounds=True)
     save_results(sol, str(movement) + "_" + "without_pelvis" + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl")
     visualisation_closed_loop(bio_model, sol, model_path)
-
-    # --- Compute results --- #
-    # constraints_graphs(ocp, sol)
-    # for index_dof in range(sol.ocp.nlp[0].model.nb_q):
-    #     time = np.concatenate((sol.time[0], sol.time[1]))
-    #     if index_dof < sol.ocp.nlp[1].model.nb_independent_joints:   # Graph bras
-    #         fig, axes = plt.subplots(nrows=3, ncols=1)
-    #         fig.suptitle(str(sol.ocp.nlp[0].model.name_dof[index_dof]))
-    #         q_add = np.empty(shape=(int(time.shape[0] - sol.states[0]["q"][index_dof].shape[0])),
-    #                          dtype=float)
-    #         q_add[:] = np.nan
-    #         axes[0].plot(time, np.concatenate((sol.states[0]["q"][index_dof], q_add), axis=0))
-    #         axes[0].set_title("Q")
-    #
-    #         qdot_add = np.empty(shape=(int(time.shape[0] - sol.states[0]["qdot"][index_dof].shape[0])),
-    #                             dtype=float)
-    #         qdot_add[:] = np.nan
-    #         axes[1].plot(time, np.concatenate((sol.states[0]["qdot"][index_dof], qdot_add), axis=0))
-    #         axes[1].set_title("Qdot")
-    #
-    #         # axes[2].plot(sol.controls[0]["tau"][index_dof], time)
-    #         axes[2].plot(time, (np.concatenate((sol.controls[0]["tau"][index_dof],
-    #                                       sol.controls[1]["tau"][index_dof]),
-    #                                      axis=0)))
-    #         axes[2].set_title("Tau")
-    #         axes[2].set_xlabel("Time (s)")
-    #
-    #         fig.tight_layout()
-    #         plt.savefig("Figures/" + str(movement) + "_" + "with_pelvis" + "_" + str(nb_phase) +
-    #                     "phases_V" + str(version) + str(sol.ocp.nlp[0].model.name_dof[index_dof]) + ".svg")
-    #         plt.show()
-    #         fig.clf()
-    #
-    #     else:
-    #         fig, axes = plt.subplots(nrows=3, ncols=1)
-    #         fig.suptitle(str(sol.ocp.nlp[0].model.name_dof[index_dof]))
-    #         axes[0].plot(time, (np.concatenate((sol.states[0]["q"][index_dof],
-    #                                      sol.states[1]["u"][index_dof - sol.ocp.nlp[1].model.nb_independent_joints]),
-    #                                     axis=0)))
-    #         axes[0].set_title("Q")
-    #
-    #         axes[1].plot(time, (np.concatenate((sol.states[0]["qdot"][index_dof],
-    #                                      sol.states[1]["udot"][index_dof - sol.ocp.nlp[1].model.nb_independent_joints]),
-    #                                     axis=0)))
-    #         axes[1].set_title("Qdot")
-    #
-    #         axes[2].plot(time, (np.concatenate((sol.controls[0]["tau"][index_dof],
-    #                                      sol.controls[1]["tau"][index_dof]),
-    #                                     axis=0)))
-    #         axes[2].set_title("Tau")
-    #         axes[2].set_xlabel("Time (s)")
-    #
-    #         fig.tight_layout()
-    #         plt.savefig("Figures/" + str(movement) + "_" + "with_pelvis" + "_" + str(nb_phase) +
-    #                                 "phases_V" + str(version) + str(sol.ocp.nlp[0].model.name_dof[index_dof]) + ".svg")
-    #         plt.show()
-    #         fig.clf()
 
 
 if __name__ == "__main__":
