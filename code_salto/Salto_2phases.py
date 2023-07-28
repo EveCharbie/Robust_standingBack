@@ -1,24 +1,21 @@
 """
 The aim of this code is to create a movement a simple jump in 3 phases with a 2D model.
-Phase 1: Propulsion
-- one contact (toe)
-- objectives functions: maximize velocity of CoM and minimize time of flight
 
+Phase 0: Propulsion
+- Dynamic(s): TORQUE_DRIVEN with contact
+- Constraint(s): one contact (toe)
+- Objective(s) function(s): maximize velocity of CoM and minimize time of flight
 
-Phase 2: Salto + Landing
-- zero contact + 1 contact marker foot end phase
-- objectives functions: maximize torque,
-
+Phase 2: Tucked phase + Landing
+- Dynamic(s): TORQUE_DRIVEN with contact
+- Constraint(s): zero contact + 1 contact marker foot end phase
+- Objective(s) function(s): maximize torque
 
 """
 # --- Import package --- #
-
-
 import numpy as np
 import pickle
 import sys
-
-
 sys.path.append("/home/lim/Documents/Anais/bioviz")
 sys.path.append("/home/lim/Documents/Anais/bioptim")
 from bioptim import (
@@ -42,8 +39,6 @@ from bioptim import (
 
 
 # --- Prepare ocp --- #
-
-
 def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound):
 
     # --- Options --- #
@@ -51,7 +46,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     bio_model = (
         BiorbdModel(biorbd_model_path[0]),
         BiorbdModel(biorbd_model_path[1]),
-    )  # BiorbdModel(biorbd_model_path[2])
+    )
     tau_min, tau_max, tau_init = -1000, 1000, 0
     dof_mapping = BiMappingList()
     dof_mapping.add("tau", [None, None, None, 0, 1, 2, 3], [3, 4, 5, 6])
@@ -59,12 +54,12 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Add objective functions
     objective_functions = ObjectiveList()
 
-    # Phase 1 (First position): Maximize velocity CoM + Minimize time (less important)
+    # Phase 0 (Propulsion): Maximize velocity CoM + Minimize time (less important)
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_COM_VELOCITY, node=Node.END, weight=-1, phase=0, axes=Axis.Z)
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=1000, phase=0, min_bound=0.1, max_bound=0.3)
     # objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=1, phase=0)
 
-    # Phase 2 (Salto + Landing):  Rotation, Maximize
+    # Phase 1 (Tucked phase + Landing):  Rotation, Maximize
     # objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_COM_POSITION, weight=-100, phase=1)
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=10, phase=1)
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=-1000, phase=1, min_bound=0.3, max_bound=2)
@@ -76,6 +71,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     dynamics.add(DynamicsFcn.TORQUE_DRIVEN)
 
     # Constraints
+    # Phase 0: Propulsion
     constraints = ConstraintList()
     constraints.add(
         ConstraintFcn.TRACK_CONTACT_FORCES,
@@ -86,6 +82,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         phase=0,
     )
 
+    # Phase 1: Tucked phase + Landing
     constraints.add(ConstraintFcn.TRACK_MARKERS, node=Node.END, marker_index=2, axes=Axis.Z, phase=1)
 
     # Path constraint
@@ -124,11 +121,11 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Initial guess
     x_init = InitialGuessList()
     x_init.add(pose_at_first_node + [0] * n_qdot)
+    x_init.add(pose_at_first_node + [0] * n_qdot)
     # x_init.add((np.array([pose_at_first_node + [0] * n_qdot, pose_extension + [0] * n_qdot])).T, interpolation=InterpolationType.LINEAR)
     # x_init.add((np.array([pose_extension + [0] * n_qdot, pose_salto + [0] * n_qdot])).T, interpolation=InterpolationType.LINEAR)
     # x_init.add((np.array([pose_salto + [0] * n_qdot, pose_landing + [0] * n_qdot])).T, interpolation=InterpolationType.LINEAR)
     # x_init.add(pose_at_first_node + [0] * n_qdot)
-    x_init.add(pose_at_first_node + [0] * n_qdot)
 
     # Define control path constraint
     u_bounds = BoundsList()
@@ -162,8 +159,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
 
 # --- Load model --- #
-
-
 def main():
     ocp = prepare_ocp(
         biorbd_model_path=(
@@ -176,8 +171,6 @@ def main():
         max_bound=np.inf,
     )
 
-    # ocp.add_plot_penalty()
-
     # --- Solve the program --- #
     solver = Solver.IPOPT(show_online_optim=True, show_options=dict(show_bounds=True))
     solver.set_maximum_iterations(1000)
@@ -187,16 +180,6 @@ def main():
     sol.animate()
     sol.print_cost()
     sol.graphs()
-
-
-# --- Save results --- #
-
-
-# del sol.ocp
-# with open(.....) as f:
-#    pickle.dump()
-# with open(f"Results_jump_3phases_sansrecep") as file:
-#    states, controls, parameters = pickle.load(file)
 
 
 if __name__ == "__main__":

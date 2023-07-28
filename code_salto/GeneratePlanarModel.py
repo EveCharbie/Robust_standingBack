@@ -24,7 +24,7 @@ from biorbd.model_creation import (
 )
 
 """ 
-Second method: Create a 2D model from a old 3D model in a txt file
+The aim of this code is to create a 2D model from a old 3D model in a txt file
 """
 
 
@@ -33,8 +33,6 @@ def format_vec(vec):
 
 
 # --- Create class --- #
-
-
 DType = TypeVar("DType", bound=np.generic)
 Vec3 = Annotated[npt.NDArray[DType], Literal[3]]
 

@@ -1,14 +1,11 @@
+"""
+Main code calling scipt python create_cylinder_insole functions to analyze pressure inserts data
+"""
+
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
 import biorbd
 from matplotlib.patches import Ellipse
-from copy import copy
-import os
-from scipy import signal
-from scipy.optimize import fsolve
-import math
-import casadi as cas
 from Create_cylinder_insole import (
     equation_droite,
     position_insole,
@@ -87,13 +84,10 @@ parameters_ellipse_L = points_to_ellipse(
 )
 center_ellipse_L = np.array([parameters_ellipse_L[2]["center_x_ellipse"], parameters_ellipse_L[2]["center_y_ellipse"]])
 
-# Autre optimisation pour fitter les cellules (minimize erreur position (position sensor - position marker) +mettre les capteurs a distance
-# constante des markers
+# TODO: Further optimization to fit cells (minimize error position (position sensor - position marker)
+#  TODO: + keep sensors at a constant distance from markers
 
-
-# Position des activations en x et y
-
-
+# Position of activations in x and y
 position_activation_R, position_activation_L = position_activation(
     file_insole_R=markers_insole_R,
     file_insole_L=markers_insole_L,
@@ -102,7 +96,6 @@ position_activation_R, position_activation_L = position_activation(
 )
 
 # Second optimisation
-
 distance_opti_L = minimize_distance(
     position_markers=markers_insole_L_xy,
     position_activation=position_activation_L["activation"],
@@ -112,7 +105,7 @@ distance_opti_L = minimize_distance(
     ellipse_angle=parameters_ellipse_L[2]["angle"],
 )
 
-# Faire la somme vectorielle des activations
+# TODO: Vector sum of activations
 
 # Find line, tangente and perpendiculaire
 droite_tangente_perpendiculaire_L = []
@@ -154,11 +147,11 @@ for i in range(markers_insole_L_xy.shape[1]):
         fig_name="Perpendiculaire_insole_L_" + str(i),
     )
 
-    # Intervalles de valeurs de x pour le traçage
+    # Ranges of x values for tracing
     pos_x = abs(parameters_ellipse_L[2]["center_x_ellipse"] - markers_insole_L_xy[0, i])
     x_values = np.linspace(-pos_x - 0.01, pos_x + 0.01, 100)
 
-    # Évaluation de y pour chaque valeur de x
+    # Evaluation of y for each value of x
     y_values = [float(func_droite_L(x).full()[0]) for x in x_values]
     droite_tangente_perpendiculaire_L.append([(x_values, y_values), intersection, tangente])
 
@@ -177,12 +170,10 @@ parameters_ellipse_R = points_to_ellipse(
 )
 center_ellipse_R = np.array([parameters_ellipse_R[2]["center_x_ellipse"], parameters_ellipse_R[2]["center_y_ellipse"]])
 
-# Autre optimisation pour fitter les cellules (minimize erreur position (position sensor - position marker) +mettre les capteurs a distance
-# constante des markers
-# Position des activations en x et y (position_activation_L, distance_activation_sensor_L)
-# distance_opti_R = minimize_distance(position_activation_R["value"][:, 1], markers_insole_R_xy[:, 10])
+# TODO: Further optimization to fit cells (minimize error position (position sensor - position marker)
+#  TODO: + keep sensors at a constant distance from markers
 
-# Faire la somme vectorielle des activations
+# TODO: Vector sum of activations
 
 # Find line, tangente and perpendiculaire
 droite_tangente_perpendiculaire_R = []
@@ -223,10 +214,10 @@ for i in range(markers_insole_R_xy.shape[1]):
         fig_name="Perpendiculaire_insole_R_" + str(i),
     )
 
-    # Intervalles de valeurs de x pour le traçage
+    # Ranges of x values for tracing
     pos_x = abs(parameters_ellipse_R[2]["center_x_ellipse"] - markers_insole_R_xy[0, i])
     x_values = np.linspace(-pos_x - 0.01, pos_x + 0.01, 100)
 
-    # Évaluation de y pour chaque valeur de x
+    # Evaluation of y for each value of x
     y_values = [float(func_droite_R(x).full()[0]) for x in x_values]
     droite_tangente_perpendiculaire_R.append([(x_values, y_values), intersection, tangente])

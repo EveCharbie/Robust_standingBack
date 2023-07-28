@@ -1,27 +1,27 @@
 import casadi as cas
-from IPython import embed
-import biorbd
-import matplotlib.pyplot as plt
-import numpy as np
 from matplotlib.patches import Ellipse
-from copy import copy
 from scipy.optimize import fsolve
-import math
-
-# --- Functions --- #
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 from scipy import signal
+
 
 # --- Functions --- #
 def lissage(signal_brut, L):
     """
+    Smooth the signal
+    Parameters
+    ----------
+    signal_brut:
+        Signal to smooth
+    L:
+        Number of values to take into account
 
-    :param signal_brut: signal
-    :param L: step for smoothing
-    :return: signal smoothing
+    Returns
+    -------
+    res:
+        Smoothed signal
     """
     res = np.copy(signal_brut)  # duplication des valeurs
     for i in range(1, len(signal_brut) - 1):  # toutes les valeurs sauf la première et la dernière
@@ -33,15 +33,44 @@ def lissage(signal_brut, L):
 
 
 def distance_activation_sensor(coordonnes_insoles, position_activation, name_activation):
+    """
+    Calculate the distance between the activation and the sensors
+    Parameters
+    ----------
+    coordonnes_insoles:
+        Coordonnes of the sensors
+    position_activation:
+        Position of the activation
+    name_activation:
+        Name of the activation
+
+    Returns
+    -------
+    distance:
+        Distance between the activation and the sensors
+    """
     distance = {
         "value": abs(position_activation[:, np.newaxis] - coordonnes_insoles),
         "activation_name": name_activation,
     }
-
     return distance
 
 
 def find_activation_sensor(distance_sensor_y, position_activation_y):
+    """
+    Find the position of the activation in relation to a selected sensor
+    Parameters
+    ----------
+    distance_sensor_y:
+        Distance between the activation and the sensors
+    position_activation_y:
+        Position of the activation
+
+    Returns
+    -------
+    resume:
+        Resume of the sensor to the activation
+    """
     index_post = []
     index_pre = []
     for valeur_proche in position_activation_y:
@@ -68,12 +97,26 @@ def find_activation_sensor(distance_sensor_y, position_activation_y):
     return resume
 
 
-# --- Cartography insoles --- #
-def cartography_insole(file_insole, file_info_insole, fig_name: str, FLAG_PLOT=False):
+def cartography_insole(file_insole, file_info_insole, fig_name:str, FLAG_PLOT=False):
+    """
+    Plot the cartography of the insoles
+    Parameters
+    ----------
+    file_insole:
+        File of the insole
+    file_info_insole:
+        File of the information of the insole
+    fig_name:
+        Name of the figure
+    FLAG_PLOT:
+        Flag to plot the results
 
-    sensor_45 = file_insole.columns[
-        1:-1
-    ].to_list()  #  List sensor on the insole size 45 (without columns Sync and Time)
+    Returns
+    -------
+
+    """
+
+    sensor_45 = file_insole.columns[1:-1].to_list()     #  List sensor on the insole size 45 (without columns Sync and Time)
     coordonnees_insole_45 = file_info_insole.loc[0:7, sensor_45]
 
     # Plot : Insoles
@@ -81,30 +124,38 @@ def cartography_insole(file_insole, file_info_insole, fig_name: str, FLAG_PLOT=F
         fig, axs = plt.subplots(2)
         fig.suptitle("Insoles cartography")
 
-        # Subplot 1 : insoles R
-        axs[0].plot(coordonnees_insole_45.iloc[7, :], coordonnees_insole_45.iloc[6, :], "ro")
+            # Subplot 1 : insoles R
+        axs[0].plot(coordonnees_insole_45.iloc[7, :], coordonnees_insole_45.iloc[6, :], 'ro')
         axs[0].set_ylabel("Position Y (mm)", fontsize=14)
-        axs[0].title.set_text("Insole Right")
+        axs[0].title.set_text('Insole Right')
 
-        # Subplot 2 : insoles L
-        axs[1].plot(coordonnees_insole_45.iloc[5, :], coordonnees_insole_45.iloc[4, :], "ro")
+            # Subplot 2 : insoles L
+        axs[1].plot(coordonnees_insole_45.iloc[5, :], coordonnees_insole_45.iloc[4, :], 'ro')
         axs[1].set_xlabel("Position X (mm)", fontsize=14)
         axs[1].set_ylabel("Position Y (mm)", fontsize=14)
-        axs[1].title.set_text("Insole Left")
+        axs[1].title.set_text('Insole Left')
         plt.savefig("Figures/" + fig_name + ".svg")
         fig.clf()
 
 
-# Find all the activation
-# Load insoles
 def position_activation(file_insole_R, file_insole_L, file_info_insole, FLAG_PLOT=False):
     """
+    Find the position of the activation
+    Parameters
+    ----------
+    file_insole_R:
+        File of the right insole
+    file_insole_L:
+        File of the left insole
+    file_info_insole:
+        File of the information of the insole
+    FLAG_PLOT:
+        Flag to plot the results
 
-    :param file_insole_R: File of the right insole
-    :param file_insole_L: File of the left insole
-    :param file_info_insole: File with the information of the insole (coordinate sensor insole)
-    :param FLAG_PLOT: if you want the plot related to the detection of the activation position on the insole
-    :return: The position of activation for the right and the left insoles, and the distance between a reference activation and all the sensor
+    Returns
+    -------
+    position_activation:
+        Position of the activation
     """
 
     # Baseline activation
@@ -139,7 +190,6 @@ def position_activation(file_insole_R, file_insole_L, file_info_insole, FLAG_PLO
     markers_insole_L_baseline_total = markers_insole_L_baseline.loc[:, filtered_sensor_min_max_L.columns.to_list()].sum(
         axis=1
     )
-
     peaks_L, properties_L = signal.find_peaks(
         markers_insole_L_baseline_total, distance=400, plateau_size=1, height=1.5, width=20
     )
@@ -165,6 +215,7 @@ def position_activation(file_insole_R, file_insole_L, file_info_insole, FLAG_PLO
         fig.tight_layout()
         plt.savefig("Figures/insoles_totale_activation_markers.svg")
         fig.clf()
+        plt.close(fig)
 
     position_activation_R = np.zeros(shape=(2, peaks_R.shape[0]))
     position_activation_L = np.zeros(shape=(2, peaks_L.shape[0]))
@@ -176,7 +227,7 @@ def position_activation(file_insole_R, file_insole_L, file_info_insole, FLAG_PLO
         insole_R_activate_peak = markers_insole_R_baseline.loc[:, filtered_sensor_min_max_R.columns.to_list()][
             peaks_R[i] - 10 : peaks_R[i] + 10
         ]
-        # Sélection des colonnes où les valeurs sont supérieures à zéro
+        # Select columns with values greater than zero
         colonnes_sup_zero_R = insole_R_activate_peak.loc[:, (insole_R_activate_peak > 0).any()]
         coordonnees_R = file_info_insole.loc[:, colonnes_sup_zero_R.columns.to_list()]
         poids_R = np.mean(colonnes_sup_zero_R, axis=0)
@@ -197,6 +248,10 @@ def position_activation(file_insole_R, file_insole_L, file_info_insole, FLAG_PLO
         position_activation_L_ref[:, i] = file_info_insole.iloc[6:8, 0] - position_activation_L[:, i]
 
     distance_sensor_y = distance_between_line_sensors(file_info_insole)
+
+    # remove column 5 (sensor located at end of base plate)
+    position_activation_R_ref = np.delete(position_activation_R_ref, 5, axis=1)
+    position_activation_L_ref = np.delete(position_activation_L_ref, 5, axis=1)
 
     activation_R = find_activation_sensor(distance_sensor_y, position_activation_R_ref[1, :])
     activation_L = find_activation_sensor(distance_sensor_y, position_activation_L_ref[1, :])
@@ -221,6 +276,7 @@ def position_activation(file_insole_R, file_insole_L, file_info_insole, FLAG_PLO
         fig.tight_layout()
         plt.savefig("Figures/insoles_position_markers.svg")
         fig.clf()
+        plt.close(fig)
 
     if FLAG_PLOT:
 
@@ -311,7 +367,6 @@ def position_activation(file_insole_R, file_insole_L, file_info_insole, FLAG_PLO
         plt.legend()
         plt.savefig("Figures/insoles_position_activation_R.svg")
         plt.clf()
-
         plt.plot(file_info_insole.iloc[5, :], file_info_insole.iloc[4, :], "ro")
         plt.plot(
             position_activation_L[1, 0],
@@ -407,6 +462,7 @@ def position_activation(file_insole_R, file_insole_L, file_info_insole, FLAG_PLO
         plt.savefig("Figures/insoles_position_activation_L.svg")
         plt.clf()
 
+
     activation_R = {
         "value": position_activation_R,
         "value_ref": position_activation_R_ref,
@@ -446,22 +502,22 @@ def position_activation(file_insole_R, file_insole_L, file_info_insole, FLAG_PLO
         ],
     }
 
-    # Optimisation distance marker et sensor
-    # distance_activation_sensor_R = []
-    # distance_activation_sensor_L = []
-    # for i in range(activation_R["value"].shape[1]):
-    #     distance_activation_sensor_R.append(distance_activation_sensor(file_info_insole.iloc[6:8, :], activation_R["value"][:, i], activation_R["name_activation"][i]))
-    #
-    # for i in range(activation_L["value"].shape[1]):
-    #     distance_activation_sensor_L.append(distance_activation_sensor(file_info_insole.iloc[4:6, :],
-    #                                                               activation_L["value"][:, i], activation_L["name_activation"][i]))
-
-    print("ok")
-
-    return activation_R, activation_L  # , distance_activation_sensor_R, distance_activation_sensor_L
+    return activation_R, activation_L
 
 
 def change_ref_marker(data):
+    """
+    Change the reference of the marker to the first value of the marker
+    Parameters
+    ----------
+    data:
+        Data of the markers
+
+    Returns
+    -------
+    new_data:
+        Data of the markers with the reference changed
+    """
     new_data = np.zeros((data.shape[0]))
     for i in range(data.shape[0]):
         if i == 0:
@@ -472,6 +528,18 @@ def change_ref_marker(data):
 
 
 def distance_between_line_sensors(info_insole):
+    """
+    Find the distance between the line sensors
+    Parameters
+    ----------
+    info_insole:
+        Information of the insole
+
+    Returns
+    -------
+    distance_between_sensor:
+        Distance between the line sensors
+    """
     distance_line_sensors_y = np.unique(info_insole.iloc[7, :], axis=0)
     distance_between_sensor = []
     for i in range(distance_line_sensors_y.shape[0]):
@@ -481,10 +549,18 @@ def distance_between_line_sensors(info_insole):
 
 def norm_2D(pointA, pointB) -> float:
     """
-    Find the distance between two points
-    :param pointA: A point with a coordinate on x and y
-    :param pointB: A other point with a coordinate on x and y
-    :return: The distance between this two points
+    Find the norm between two points
+    Parameters
+    ----------
+    pointA:
+        Coordinate on x and y of the point A
+    pointB:
+        Coordinate on x and y of the point B
+
+    Returns
+    -------
+    norm:
+        Norm between the two points
     """
     norm = np.sqrt(((pointA[0] - pointB[0]) ** 2) + ((pointA[1] - pointB[1]) ** 2))
     return norm
@@ -493,25 +569,37 @@ def norm_2D(pointA, pointB) -> float:
 def intersection_ellipse_line(line_points, ellipse_center, a, b, theta, FLAG_PLOT=False) -> list:
     """
     Find the intersection between a line and an ellipse
-    :param line_points: Coordinate on x and y of two points and the line
-    :param ellipse_center: Coordinate on x and y of the ellipse's center
-    :param a: Major axis
-    :param b: Minor axis
-    :param theta: Angle of the ellipse
-    :param FLAG_PLOT: If you want the plot of the intersection between a line and an ellipse
-    :return: The coordinate on x and y of the intersection between a line and an ellipse
+    Parameters
+    ----------
+    line_points:
+        Points of the line
+    ellipse_center:
+        Center of the ellipse
+    a:
+        Semi-major axis of the ellipse
+    b:
+        Semi-minor axis of the ellipse
+    theta:
+        Angle of the ellipse
+    FLAG_PLOT:
+        Flag to plot the intersection
+
+    Returns
+    -------
+    intersection_points:
+        Points of the intersection
     """
-    # Paramètres de la droite
+    # Parameters line
     x1, y1 = line_points[0]
     x2, y2 = line_points[1]
 
     # Calcule de la pente (m)
     m = (y2 - y1) / (x2 - x1)
 
-    # Paramètres de l'ellipse
+    # Slope calculation (m)
     h, k = ellipse_center
 
-    # Redéfinir les points de la ligne pour passer par l'origine
+    # Redefine line points to pass through origin
     x1 -= h
     y1 -= k
     x2 -= h
@@ -529,19 +617,20 @@ def intersection_ellipse_line(line_points, ellipse_center, a, b, theta, FLAG_PLO
         eq2 = y - y1 - m * (x - x1)
         return [eq1, eq2]
 
-    # Utiliser fsolve de scipy pour trouver les solutions
+    # Use scipy's fsolve to find solutions
     x, y = fsolve(equations, (x1, y1))
     intersection = x + h, y + k
 
+    # Plotting
     if FLAG_PLOT:
         ellipse = Ellipse(xy=(h, k), width=a, height=b, angle=theta * 180 / np.pi, facecolor="orange", alpha=0.5)
 
         func_droite = equation_droite((x1, y1), (x2, y2))
-        # Intervalles de valeurs de x pour le traçage
+        # Ranges of x values for tracing
         pos_x = abs(x2 - x1)
         x_values = np.linspace(-pos_x - 0.01, pos_x + 0.01, 100)
 
-        # Évaluation de y pour chaque valeur de x
+        # Evaluation of y for each value of x
         y_values = [float(func_droite(x).full()[0]) for x in x_values]
         print(intersection)
 
@@ -559,44 +648,62 @@ def intersection_ellipse_line(line_points, ellipse_center, a, b, theta, FLAG_PLO
         plt.legend()
         plt.grid(True)
         fig.clf()
+        plt.close(fig)
 
-    # Ramener les coordonnées des points d'intersection à l'original
     return intersection
 
 
 def equation_droite(pointA, pointB):
     """
-    Equation of a line
-    :param pointA: Coordinate on x and y of a point on the line
-    :param pointB: Coordinate on x and y of an other point on the line
-    :return: A function casadi of the equation of a line
+    Find the equation of a line from two points with a casadi function
+    Parameters
+    ----------
+    pointA:
+        Coordinate on x and y of the point A
+    pointB:
+        Coordinate on x and y of the point B
+
+    Returns
+    -------
+    func:
+        Equation of the line
     """
+
     xA, yA = pointA
     xB, yB = pointB
 
-    # Variables symboliques
+    # Symbolic variables
     x = cas.MX.sym("x")
 
-    # Calcule de la pente (m)
+    # Slope calculation (m)
     m = (yB - yA) / (xB - xA)
 
-    # Calcule de l'ordonnée
+    # Calculation of ordinate
     b = yA - m * xA
 
-    # Equation de la droite
+    # Equation of the line
     y = m * x + b
 
-    # Création fonction casadi
+    # Create casadi function
     func = cas.Function("f", [x], [y])
+
     return func
 
 
 def find_index_by_name(list: list, word: str):
     """
-    Find the index of an element in a list from its name
-    :param list: List where is the word
-    :param word: Word
-    :return: The index of the word into a list
+    Find the index of a word in a list
+    Parameters
+    ----------
+    list:
+        List of words
+    word:
+        Word to find
+
+    Returns
+    -------
+    index_finding:
+        Index of the word in the list
     """
     index_finding = [index for index, markers in enumerate(list) if word in markers]
     return index_finding
@@ -604,12 +711,22 @@ def find_index_by_name(list: list, word: str):
 
 def points_to_ellipse(data, fig_name, markers_name, FLAG_PLOT: False) -> list:
     """
+    Find the ellipse parameters from the markers
+    Parameters
+    ----------
+    data:
+        Data of the markers
+    fig_name:
+        Name of the figure
+    markers_name:
+        Name of the markers
+    FLAG_PLOT:
+        Flag to plot the ellipse
 
-    :param data: File with the data
-    :param fig_name: The name you want for the figure
-    :param markers_name:
-    :param FLAG_PLOT: If you want to save the figure
-    :return: The parameters of the ellipse (a, b, center ellipse, theta)
+    Returns
+    -------
+    ellipse_parameters:
+        Parameters of the ellipse
     """
 
     data = np.array(data.T)
@@ -647,6 +764,7 @@ def points_to_ellipse(data, fig_name, markers_name, FLAG_PLOT: False) -> list:
     #     [index_marker_parameter["marker_down"] + index_marker_parameter["marker_mid"], "down+mid"],
     #     [index_marker_parameter["marker_up"] + index_marker_parameter["marker_mid"] + index_marker_parameter[
     #          "marker_up"], "all"]]
+    # TODO: Takes into account markers in front of the knee
 
     centers_index = [
         [index_marker_parameter["marker_up"], "up"],
@@ -657,7 +775,6 @@ def points_to_ellipse(data, fig_name, markers_name, FLAG_PLOT: False) -> list:
     ellipse = []
 
     for i in range(len(centers_index)):
-        # centers = data[markers_penalized[i], :]
         centers = data[centers_index[i][0], :]
         mean_centers = np.mean(centers, axis=0)
         x0 = np.array([theta_gauss, width_gauss, height_gauss, mean_centers[0], mean_centers[1]])
@@ -768,22 +885,21 @@ def points_to_ellipse(data, fig_name, markers_name, FLAG_PLOT: False) -> list:
             label="markers mid",
         )
 
-        # Ajout de l'ellipse aux axes
+        # Add ellipse to axes
         ax.add_patch(ellipse_up)
         ax.add_patch(ellipse_down)
         ax.add_patch(ellipse_all)
         ax.set_aspect("equal")
 
-        # Définition des parametres des axes
-        # ax.set_xlim((center_x_opt - width_opt) - 0.1, (center_x_opt + width_opt) + 0.1)
-        # ax.set_ylim((center_y_opt - height_opt) - 0.1, (center_y_opt + height_opt) + 0.1)
+        # Defining axis parameters
         ax.set_xlabel(" Position in x")
         ax.set_ylabel(" Position in y")
         plt.legend(handles=[up_markers[0], down_markers[0], mid_markers[0]])
 
-        # Affichage de la figure
+        # Displaying and saving the figure
         plt.savefig(fig_name + ".svg")
-        # plt.show()
+        plt.show()
+        plt.close(plt)
 
     return ellipse
 
@@ -798,23 +914,32 @@ def minimize_distance(
     FLAG_PLOT=False,
 ):
     """
-
+    Minimize the distance between the markers and the ellipse
     Parameters
     ----------
-    position_markers_y: position markers in y, nedd to be referenced to the first activation of the insole
-    ellipse_center: Value of the center of the ellipse
-    ellipse_axes: Value of the axes of the ellipse (a and b)
-    ellipse_angle: Angle of the ellipse
+    position_markers:
+        Position of the markers in the global frame
+    position_activation:
+        Position of the activation markers in the global frame
+    coordonnees_insole_45_y:
+        Position of the sensors on the insole
+    ellipse_center:
+        Center of the ellipse
+    ellipse_axes:
+        Axes of the ellipse
+    ellipse_angle:
+        Angle of the ellipse
+    FLAG_PLOT:
+        Flag to plot the results
 
-    Returns: angle optimized to put the activation on the insole
+    Returns
     -------
 
     """
-    # TODO: change insole ref to put the zero on the first line
+    # Change insole ref to put the zero on the first line
     x, y = change_ref_marker(position_markers[0]), change_ref_marker(position_markers[1])
 
-    # TODO: compute the "Y position"on the sensors on the insole
-    # insole_sensors = np.linspace(0, 0.3, 18)  # To be changed
+    # Compute the "Y position"on the sensors on the insole
     insole_sensors = coordonnees_insole_45_y
 
     # Optimization variables
@@ -838,9 +963,9 @@ def minimize_distance(
 
     g += [
         (
-            (xct**2 / (((ellipse_axes[0]) / 2) ** 2))
-            + (yct**2 / (((ellipse_axes[1]) / 2) ** 2))
-            - cas.sqrt(xc_0**2 + yc_0**2)
+            ((xct**2 / (((ellipse_axes[0]) / 2) ** 2))
+            + (yct**2 / (((ellipse_axes[1]) / 2) ** 2)))**2
+            - (xc_0**2 + yc_0**2)
         )
         ** 2
     ]
@@ -861,28 +986,26 @@ def minimize_distance(
 
         g += [
             (
-                (xct**2 / (((ellipse_axes[0]) / 2) ** 2))
-                + (yct**2 / (((ellipse_axes[1]) / 2) ** 2))
-                - cas.sqrt(xc**2 + yc**2)
+                ((xct**2 / (((ellipse_axes[0]) / 2) ** 2))
+                + (yct**2 / (((ellipse_axes[1]) / 2) ** 2)))**2
+                - (xc**2 + yc**2)
             )
             ** 2
         ]
         lbg += [1]
         ubg += [1]
 
-        # TODO: make sure it goes in the right direction, regarde si on prend le bonne indice
+        # TODO: make sure it goes in the right direction
         tata = cas.MX.zeros(2)
         tata[0] = xc - xc_0
         tata[1] = yc - yc_0
-        g += [cas.norm_2(insole_sensors[i_sensor] - insole_sensors[i_sensor - 1]) - (cas.norm_2(tata))]
+        g += [(insole_sensors[i_sensor] - insole_sensors[i_sensor - 1])**2 - (tata[0] - tata[1])**2]
         lbg += [0]
         ubg += [0]
 
         xc_0 = xc
         yc_0 = yc
 
-    # TODO change for real values + loop
-    #  disons que la premiere activation se trouve exactement entre le sensor 3 et 4
     markers = 0
     activation_position = cas.MX.zeros(2)
     for i in range(len(position_activation["index_pre"])):
@@ -892,9 +1015,7 @@ def minimize_distance(
         activation_position[1] = y_sensors[position_activation["index_pre"][i]] + position_activation["pourcentage"][
             i
         ] * (y_sensors[position_activation["index_post"][i]] - y_sensors[position_activation["index_pre"][i]])
-        distance_marker_sensor = cas.sqrt(
-            (x[markers] - activation_position[0]) ** 2 + (y[markers] - activation_position[1]) ** 2
-        )
+        distance_marker_sensor = (x[markers] - activation_position[0]) ** 2 + (y[markers] - activation_position[1]) ** 2
         f += distance_marker_sensor
 
     nlp = {"x": cas.vertcat(angle_to_put_zero, x_sensors, y_sensors), "f": f, "g": cas.vertcat(*g)}
@@ -903,7 +1024,26 @@ def minimize_distance(
     x0 = np.zeros((18 * 2,))  # Initial guess for the optimization variables
 
     sol = solver(x0=x0, lbx=[-np.inf] * 18 * 2, ubx=[np.inf] * 18 * 2, lbg=lbg, ubg=ubg)
-    # if FLAG_PLOT: # Dessiner l'ellipse,  # Mettre les markers, # Mettre les points d'activation, # Mettre les activations estimées
+
+    fig, ax = plt.subplots()
+    fig.suptitle("Representation optimization insole")
+
+    # Ellipse
+    ellipse = Ellipse(xy=(ellipse_center[0], ellipse_center[1]), width=ellipse_axes[0]/2, height=ellipse_axes[1]/2, angle=ellipse_angle * 180 / np.pi, facecolor="red", alpha=0.5)
+    ax.add_patch(ellipse)
+    ax.set_aspect("equal")
+    ax.set_xlabel(" Position in x")
+    ax.set_ylabel(" Position in y")
+
+    # Position markers
+    ax.scatter(position_markers[0, :], position_markers[1, :], color="blue", label="markers")
+
+    # Position activation
+    # ax.scatter(x, y, color="green", label="activation")
+
+    # Visualisation
+    plt.show()
+    plt.close(fig)
 
     if solver.stats()["success"]:
         output_variables = float(sol["x"])
@@ -916,23 +1056,37 @@ def minimize_distance(
 
 def find_tangent(ellipse_center, ellipse_axes, ellipse_angle, point, fig_name: str, FLAG_PLOT=False):
     """
-    Find the tangent of a point on the edge of a ellipse
-    :param ellipse_center: Coordinate on x and y of the ellipse's center
-    :param ellipse_axes: Values of the major and the minor axis
-    :param ellipse_angle: Angle of the ellipse
-    :param point: Coordinate on x and y of a point on the edge of the ellipse
-    :param FLAG_PLOT: If you want the plot of the tagent of a point of the edge of the ellipse
-    :return: The slope of the tangent
+    Find the tangent of an ellipse at a given point
+    Parameters
+    ----------
+    ellipse_center:
+        Center of the ellipse
+    ellipse_axes:
+        Axes of the ellipse
+    ellipse_angle:
+        Angle of the ellipse
+    point:
+        Point at which the tangent is searched
+    fig_name:
+        Name of the figure
+    FLAG_PLOT:
+        Flag to plot the ellipse and the tangent
+
+    Returns
+    -------
+    slope:
+        Slope of the tangent
     """
+
     cx, cy = ellipse_center
     a, b = ellipse_axes
     x, y = point
 
-    # Rotation inverse et translation inverse pour obtenir les coordonnées du point dans le système de l'ellipse
+    # Reverse rotation and reverse translation to obtain point coordinates in the ellipse system
     x1 = (x - cx) * np.cos(ellipse_angle) + (y - cy) * np.sin(ellipse_angle)
     y1 = -(x - cx) * np.sin(ellipse_angle) + (y - cy) * np.cos(ellipse_angle)
 
-    # Coefficients pour l'équation de la tangente
+    # Coefficients for the tangent equation
     A = x1 / a**2
     B = y1 / b**2
 
@@ -949,26 +1103,27 @@ def find_tangent(ellipse_center, ellipse_axes, ellipse_angle, point, fig_name: s
         t = np.linspace(x - 0.1, x + 0.1, 100)
         tangent_line = y + slope * (t - x)
 
-        # Tracer l'ellipse et la tangente
+        # Drawing the ellipse and tangent
         fig, ax = plt.subplots()
         fig.suptitle("Representation insole and the tangente of a one marker")
 
-        # Tracer l'ellipse
+        # Drawing the ellipse
         ellipse = Ellipse(xy=(cx, cy), width=a, height=b, angle=ellipse_angle * 180 / np.pi, facecolor="red", alpha=0.5)
         ax.add_patch(ellipse)
         ax.set_aspect("equal")
         ax.set_xlabel(" Position in x")
         ax.set_ylabel(" Position in y")
 
-        # Tracer le point d'intersection
+        # Draw the point of intersection
         ax.scatter(x, y, color="blue", label="intersection")
 
-        # Tracer la tangente
+        # Drawing the tangent
         ax.plot(t, tangent_line, color="blue", label="tangente")
         plt.legend()
         plt.savefig("Figures/" + fig_name + ".svg")
         fig.clf()
-        # plt.show()
+        plt.close(fig)
+        plt.show()
 
     return slope_ellipse, slope
 
@@ -977,61 +1132,86 @@ def find_perpendiculaire_to_tangente(
     tangent_slope, point, ellipse_axes, ellipse_angle, ellipse_center, fig_name: str, FLAG_PLOT=False
 ):
     """
+    Find the perpendicular to the tangent of an ellipse at a given point
+    Parameters
+    ----------
+    tangent_slope:
+        Slope of the tangent
+    point:
+        Point at which the tangent is searched
+    ellipse_axes:
+        Axes of the ellipse
+    ellipse_angle:
+        Angle of the ellipse
+    ellipse_center:
+        Center of the ellipse
+    fig_name:
+        Name of the figure
+    FLAG_PLOT:
+        Flag to plot the ellipse and the perpendicular to the tangent
 
-    :param tangent_slope: The slope of the tangent
-    :param point: Coordinate on x and y of a point on the edge of the ellipse
-    :param ellipse_axes: Values of the major and the minor axis
-    :param ellipse_angle: Values of the major and the minor axis
-    :param ellipse_center: Coordinate on x and y of the ellipse's center
-    :param FLAG_PLOT: If you want the plot of the tagent and the perpendicular of a point of the edge of the ellipse
-    :return:
+    Returns
+    -------
+    slope:
+        Slope of the perpendicular to the tangent
     """
     x, y = point
     cx, cy = ellipse_center
     a, b = ellipse_axes
 
-    # Pente de la perpendiculaire à la tangente
+    # Slope of the perpendicular to the tangent
     perpendicular_slope = -1 / tangent_slope
 
-    # Génération des points pour la perpendiculaire à la tangente
+    # Generating points for the perpendicular to the tangent
     t = np.linspace(x - 0.1, x + 0.1, 100)
     perpendicular_line = y + perpendicular_slope * (t - x)
     tangent_line = y + tangent_slope * (t - x)
 
     if FLAG_PLOT:
-        # Tracer l'ellipse, la tangente et la perpendiculaire à la tangente
+        # Draw the ellipse, the tangent and the perpendicular to the tangent
         fig, ax = plt.subplots()
         fig.suptitle("Representation insole, tangente and perpendiculaire")
 
-        # Tracer l'ellipse
+        # Drawing the ellipse
         ellipse = Ellipse(xy=(cx, cy), width=a, height=b, angle=ellipse_angle * 180 / np.pi, facecolor="red", alpha=0.5)
         ax.add_patch(ellipse)
         ax.set_aspect("equal")
         ax.set_xlabel(" Position in x")
         ax.set_ylabel(" Position in y")
 
-        # Tracer le point d'intersection
+        # Draw the point of intersection
         ax.scatter(x, y, color="blue", label="intersection")
 
-        # Tracer la tangente
+        # Tracing the tangent
         ax.plot(t, tangent_line, color="blue", label="tagente")
 
-        # Tracer la perpendiculaire à la tangente
+        # Draw the perpendicular to the tangent
         ax.plot(t, perpendicular_line, color="orange", label="perpendiculaire")
         plt.legend()
         plt.savefig("Figures/" + fig_name + ".svg")
         fig.clf()
-        # plt.show()
+        plt.close(fig)
+        plt.show()
 
     return perpendicular_line
 
 
 def position_insole(marker_list: list, model):
     """
+    Find the position of the insole
+    Parameters
+    ----------
+    marker_list:
+        List of the markers
+    model:
+        Model of the insole
 
-    :param marker_list: List marker insole with only index of markers in the model
-    :param model: Biorbd model with the markers
-    :return: The position of the insole's center and the position of all markers of the insole
+    Returns
+    -------
+    center:
+        Center of the insole
+    position_markers:
+        Position of the markers
     """
     if all(isinstance(valeur, int) for valeur in marker_list):
         position_markers = np.zeros(shape=(3, len(marker_list)))

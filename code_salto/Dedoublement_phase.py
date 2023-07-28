@@ -4,50 +4,58 @@ The aim of this code is to create a backward salto with two different technique:
 - the second technique with the optimal technique
 
 Phase 0: Preparation propulsion
-- 3 contacts (TOE_Y, TOE_Z, HEEL_Z)
-- Objectives functions: minimize time, tau and qdot derivative
-- Dynamics: with_contact
+- Dynamic(s): TORQUE_DRIVEN with contact
+- Constraint(s): 2 contacts (TOE_Y, TOE_Z, HEEL_Z)
+- Objective(s) function(s): minimize time, tau and qdot derivative
 
 Phase 1: Propulsion
-- 2 contacts (TOE_Y, TOE_Z)
-- Objectives functions: minimize time, velocity of CoM at the end of the phase, tau and qdot derivative
-- Dynamics: with_contact
+- Dynamic(s): TORQUE_DRIVEN with contact
+- Constraint(s): 1 contacts (TOE_Y, TOE_Z)
+- Objective(s) function(s): minimize time, velocity of CoM at the end of the phase, tau and qdot derivative
 
-Phase 2: Wait phase (Take-off phase)
+Phase 2: Wait phase (Flight phase)
 - 0 contact
 - Objectives functions: minimize tau and qdot derivative
 
-Phase 3: Take-off phase
-- 0 contact
-- Objectives functions: maximize heigh CoM, time, and minimize tau and qdot derivative
+Phase 3: Flight phase
+- Dynamic(s): TORQUE_DRIVEN
+- Constraint(s):0 contact
+- Objective(s) function(s): maximize heigh CoM, time, and minimize tau and qdot derivative
 
-Phase 4: Salto
-- 0 contact
-- Objectives functions: minimize tau and qdot derivative
+Phase 4: Tucked phase
+- Dynamic(s): TORQUE_DRIVEN
+- Constraint(s): 0 contact
+- Objective(s) function(s): minimize tau and qdot derivative
 
-Phase 5: Take-off after salto
-- 0 contact
-- Objectives functions: minimize tau and qdot derivative
+Phase 5: Preparation landing
+- Dynamic(s): TORQUE_DRIVEN
+- Constraint(s): 0 contact
+- Objective(s) function(s): minimize tau and qdot derivative
 
 Phase 6: Landing
-- 3 contacts (TOE_Y, TOE_Z, HEEL_Z)
-- Objectives functions: minimize velocity CoM at the end, minimize tau and qdot derivative
+- Dynamic(s): TORQUE_DRIVEN with contact
+- Constraint(s): 3 contacts (TOE_Y, TOE_Z, HEEL_Z)
+- Objective(s) function(s): minimize velocity CoM at the end, minimize tau and qdot derivative
 
-Phase 7: Take-off phase
-- 0 contact
-- Objectives functions: maximize heigh CoM, time, and minimize tau and qdot derivative
+Phase 7: Flight phase
+- Dynamic(s): TORQUE_DRIVEN
+- Constraint(s): 0 contact
+- Objective(s) function(s): maximize heigh CoM, time, and minimize tau and qdot derivative
 
-Phase 8: Salto
-- 0 contact
-- Objectives functions: minimize tau and qdot derivative
+Phase 8: Tucked phase
+- Dynamic(s): TORQUE_DRIVEN
+- Constraint(s): 0 contact
+- Objective(s) function(s): minimize tau and qdot derivative
 
-Phase 9: Take-off after salto
-- 0 contact
-- Objectives functions: maximize max time, minimize tau and qdot derivative
+Phase 9: Preparation landing
+- Dynamic(s): TORQUE_DRIVEN
+- Constraint(s): zero contact
+- Objective(s) function(s): maximize max time, minimize tau and qdot derivative
 
 Phase 10: Landing
-- 3 contacts (TOE_Y, TOE_Z, HEEL_Z)
-- Objectives functions: minimize velocity CoM at the end, minimize tau and qdot derivative
+- Dynamic(s): TORQUE_DRIVEN with contact
+- Constraint(s): 2 contact (TOE_Y, TOE_Z, HEEL_Z)
+- Objective(s) function(s): minimize velocity CoM at the end, minimize tau and qdot derivative
 
 """
 
@@ -55,7 +63,7 @@ Phase 10: Landing
 
 
 import numpy as np
-from Save import save_results_with_pickle
+from save import save_results
 import biorbd_casadi as biorbd
 from bioptim import (
     BiorbdModel,
