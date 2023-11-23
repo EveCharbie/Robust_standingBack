@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="fcef5322-eca4-4033-ac78-6436a60d7edb" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Code - examples/Jump-salto/Salto_6phases.py" beforeDir="false" afterPath="$PROJECT_DIR$/Code - examples/Jump-salto/Salto_6phases.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Code - examples/Jump-salto/Salto_6phases_V2.py" beforeDir="false" afterPath="$PROJECT_DIR$/Code - examples/Jump-salto/Salto_6phases_V2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Code - examples/Jump-salto/Salto__6phases_V10.pkl" beforeDir="false" afterPath="$PROJECT_DIR$/Code - examples/Jump-salto/Salto__6phases_V10.pkl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Code - examples/visualisation.py" beforeDir="false" afterPath="$PROJECT_DIR$/Code - examples/visualisation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Model/Model2D_7Dof_2C_5M_CL_V3.bioMod" beforeDir="false" afterPath="$PROJECT_DIR$/Model/Model2D_7Dof_2C_5M_CL_V3.bioMod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Model/Model2D_7Dof_3C_5M_CL_V3.bioMod" beforeDir="false" afterPath="$PROJECT_DIR$/Model/Model2D_7Dof_3C_5M_CL_V3.bioMod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_1phase_CL_with_pelvis.py" beforeDir="false" afterPath="$PROJECT_DIR$/holonomic_research/Salto_1phase_CL_with_pelvis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_1phase_CL_without_pelvis.py" beforeDir="false" afterPath="$PROJECT_DIR$/holonomic_research/Salto_1phase_CL_without_pelvis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_2phases_CL_without_pelvis.py" beforeDir="false" afterPath="$PROJECT_DIR$/holonomic_research/Salto_2phases_CL_without_pelvis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_2phases_post_CL_with_pelvis.py" beforeDir="false" afterPath="$PROJECT_DIR$/holonomic_research/Salto_2phases_post_CL_with_pelvis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_2phases_pre_CL_with_pelvis.py" beforeDir="false" afterPath="$PROJECT_DIR$/holonomic_research/Salto_2phases_pre_CL_with_pelvis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_2phases_propulsion.py" beforeDir="false" afterPath="$PROJECT_DIR$/holonomic_research/Salto_2phases_propulsion.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_3phases_CL_with_pelvis.py" beforeDir="false" afterPath="$PROJECT_DIR$/holonomic_research/Salto_3phases_CL_with_pelvis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_3phases_CL_without_pelvis.py" beforeDir="false" afterPath="$PROJECT_DIR$/holonomic_research/Salto_3phases_CL_without_pelvis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_4phases_CL_with_pelvis_landing.py" beforeDir="false" afterPath="$PROJECT_DIR$/holonomic_research/Salto_4phases_CL_with_pelvis_landing.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_4phases_CL_with_pelvis_propulsion.py" beforeDir="false" afterPath="$PROJECT_DIR$/holonomic_research/Salto_4phases_CL_with_pelvis_propulsion.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_5phases_CL_with_pelvis.py" beforeDir="false" afterPath="$PROJECT_DIR$/holonomic_research/Salto_5phases_CL_with_pelvis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_5phases_CL_with_pelvis_landing.py" beforeDir="false" afterPath="$PROJECT_DIR$/holonomic_research/Salto_5phases_CL_with_pelvis_landing.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_6phases_CL.py" beforeDir="false" afterPath="$PROJECT_DIR$/holonomic_research/Salto_6phases_CL.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_6phases_CL_V2.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto__with_pelvis_2phases_V1.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto__with_pelvis_3phases_V1.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto__with_pelvis_3phases_V2.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto__with_pelvis_3phases_V3.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto__with_pelvis_3phases_V5.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto__with_pelvis_3phases_V6.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto__with_pelvis_3phases_V7.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto__with_pelvis_3phases_V8.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto__with_pelvis_3phases_V9.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_landing_with_pelvis_4phases_V2.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_landing_with_pelvis_4phases_V3.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_landing_with_pelvis_4phases_V4.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_post_with_pelvis_2phases_V1.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_propulsion_with_pelvis_4phases_V1.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_with_pelvis_1phases_V2.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_with_pelvis_2phases_V3.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_with_pelvis_3phases_V1.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_with_pelvis_3phases_V10.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_with_pelvis_3phases_V11.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_with_pelvis_3phases_V12.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_with_pelvis_3phases_V13.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_with_pelvis_3phases_V2.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_with_pelvis_3phases_V3.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_with_pelvis_3phases_V6.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_with_pelvis_3phases_V7.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_with_pelvis_3phases_V8.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_with_pelvis_3phases_V9.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_with_pelvis_4phases_V1.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_with_pelvis_4phases_V3.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_with_pelvis_4phases_V4.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_with_pelvis_5phases_V1.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_with_pelvis_5phases_V2.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_with_pelvis_5phases_V3.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_without_pelvis_3phases_V1.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_without_pelvis_3phases_V2.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Salto_close_loop_without_pelvis_3phases_V3.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/Save.py" beforeDir="false" afterPath="$PROJECT_DIR$/holonomic_research/Save.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/admssible.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/biorbd_model_holonomic_updated.py" beforeDir="false" afterPath="$PROJECT_DIR$/holonomic_research/biorbd_model_holonomic_updated.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/graphs.py" beforeDir="false" afterPath="$PROJECT_DIR$/holonomic_research/graphs.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/holonomic_research/visualisation.py" beforeDir="false" afterPath="$PROJECT_DIR$/holonomic_research/visualisation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../bioptim/bioptim/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/../bioptim/bioptim/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../bioptim/bioptim/examples/getting_started/pendulum.py" beforeDir="false" afterPath="$PROJECT_DIR$/../bioptim/bioptim/examples/getting_started/pendulum.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../bioptim/bioptim/gui/plot.py" beforeDir="false" afterPath="$PROJECT_DIR$/../bioptim/bioptim/gui/plot.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../bioptim/bioptim/limits/penalty.py" beforeDir="false" afterPath="$PROJECT_DIR$/../bioptim/bioptim/limits/penalty.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../bioptim/external/acados" beforeDir="false" afterPath="$PROJECT_DIR$/../bioptim/external/acados" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="ROOT_SYNC" value="DONT_SYNC" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectId" id="2QqJAnrXBAM7mYYLuhnoJzGFjUf" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "last_opened_file_path": "/home/mickael/Documents/Anais/Robust_standingBack/holonomic_research",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyDependenciesConfigurable"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/holonomic_research" />
+      <recent name="$PROJECT_DIR$/Model" />
+      <recent name="$PROJECT_DIR$/Code - examples/Jump-salto" />
+      <recent name="$PROJECT_DIR$/Robust_standingBack/Model" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Python.graphs">
+    <configuration name="Salto_6phases_CL" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="Robust_standingBack" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/holonomic_research" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/holonomic_research/Salto_6phases_CL.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Salto_6phases_CL_V2" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="Robust_standingBack" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/holonomic_research" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/holonomic_research/Salto_6phases_CL_V2.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="example_multinode_objective" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="bioptim" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/../bioptim/bioptim/examples/getting_started" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/../bioptim/bioptim/examples/getting_started/example_multinode_objective.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="graphs" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="Robust_standingBack" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/holonomic_research" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/holonomic_research/graphs.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="script_Pierre_2" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+      <module name="Robust_standingBack" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/holonomic_research" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/holonomic_research/script_Pierre_2.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="visualisation" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="Robust_standingBack" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/holonomic_research" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/holonomic_research/visualisation.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.graphs" />
+        <item itemvalue="Python.Salto_6phases_CL" />
+        <item itemvalue="Python.Salto_6phases_CL_V2" />
+        <item itemvalue="Python.visualisation" />
+        <item itemvalue="Python.example_multinode_objective" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="fcef5322-eca4-4033-ac78-6436a60d7edb" name="Changes" comment="" />
+      <created>1686075036634</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1686075036634</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Robust_standingBack/holonomic_research/script_Pierre_2.py</url>
+          <line>97</line>
+          <option name="timeStamp" value="59" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/holonomic_research/ocp_example.py</url>
+          <line>84</line>
+          <option name="timeStamp" value="72" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Code - examples/Jump-salto/visualisation.py</url>
+          <line>169</line>
+          <option name="timeStamp" value="74" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Code - examples/Jump-salto/Salto_1phase_CL_with_pelvis.py</url>
+          <line>349</line>
+          <option name="timeStamp" value="78" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/../bioptim/bioptim/examples/torque_driven_ocp/phase_transition_uneven_variable_number_by_mapping.py</url>
+          <line>98</line>
+          <option name="timeStamp" value="80" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/../bioptim/bioptim/examples/getting_started/custom_phase_transitions.py</url>
+          <line>57</line>
+          <option name="timeStamp" value="81" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/../bioptim/bioptim/examples/getting_started/custom_phase_transitions.py</url>
+          <line>184</line>
+          <option name="timeStamp" value="83" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Code - examples/Jump-salto/visualisation.py</url>
+          <line>164</line>
+          <option name="timeStamp" value="98" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/holonomic_research/Salto_3phases_CL_without_pelvis.py</url>
+          <line>196</line>
+          <option name="timeStamp" value="117" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/../bioptim/bioptim/gui/plot.py</url>
+          <line>336</line>
+          <option name="timeStamp" value="122" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/holonomic_research/Salto_5phases_CL_with_pelvis.py</url>
+          <line>33</line>
+          <option name="timeStamp" value="129" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/holonomic_research/biorbd_model_holonomic.py</url>
+          <line>566</line>
+          <option name="timeStamp" value="159" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/holonomic_research/Salto_3phases_CL_with_pelvis.py</url>
+          <line>577</line>
+          <option name="timeStamp" value="161" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/../bioptim/bioptim/misc/options.py</url>
+          <line>301</line>
+          <option name="timeStamp" value="162" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/../bioptim/bioptim/dynamics/configure_problem.py</url>
+          <line>601</line>
+          <option name="timeStamp" value="228" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/holonomic_research/Salto_3phases_CL_with_pelvis.py</url>
+          <line>84</line>
+          <option name="timeStamp" value="229" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/../bioptim/bioptim/limits/penalty.py</url>
+          <line>58</line>
+          <option name="timeStamp" value="233" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/../bioptim/bioptim/optimization/optimization_variable.py</url>
+          <line>251</line>
+          <option name="timeStamp" value="235" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/../bioptim/bioptim/gui/plot.py</url>
+          <line>699</line>
+          <option name="timeStamp" value="242" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/holonomic_research/graphs.py</url>
+          <line>249</line>
+          <option name="timeStamp" value="248" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/../bioptim/bioptim/optimization/optimal_control_program.py</url>
+          <line>758</line>
+          <option name="timeStamp" value="249" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/../bioptim/bioptim/examples/getting_started/example_multinode_objective.py</url>
+          <line>28</line>
+          <option name="timeStamp" value="261" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/../bioptim/bioptim/examples/getting_started/example_multinode_objective.py</url>
+          <line>69</line>
+          <option name="timeStamp" value="262" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>

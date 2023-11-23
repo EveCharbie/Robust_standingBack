@@ -369,13 +369,15 @@ marker	 ANKLE
 	position 0 0 0
 	technical 1
 endmarker
+contact	Foot_Toe
+	parent	Foot
+	position	0.00000000000   -0.0300000000   -0.20000000000
+	axis	yz
+endcontact
+
 contact	Foot_Heel
 	parent	Foot
 	position	0.00000000000   -0.0300000000    0.05000000000
 	axis	z
 endcontact
-contact	Foot_Toe
-	parent	Foot
-	position	0.00000000000   -0.0300000000   -0.15000000000
-	axis	yz
-endcontact
+
