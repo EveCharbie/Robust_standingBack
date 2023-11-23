@@ -94,6 +94,7 @@
     <option name="stateVersion" value="1" />
   </component>
   <component name="ProjectId" id="2QqJAnrXBAM7mYYLuhnoJzGFjUf" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -104,7 +105,7 @@
     "last_opened_file_path": "/home/mickael/Documents/Anais/Robust_standingBack/holonomic_research",
     "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyDependenciesConfigurable"
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/holonomic_research" />
@@ -143,7 +144,7 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/holonomic_research" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/data_analysis" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
@@ -253,7 +254,7 @@
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="fcef5322-eca4-4033-ac78-6436a60d7edb" name="Changes" comment="" />
+      <changelist id="6503dafd-8802-4d54-b5c1-48950943a3f6" name="Changes" comment="" />
       <created>1686075036634</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />

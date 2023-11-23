@@ -33,8 +33,12 @@ if rotation_pelvis is True:
     pose_salto_tendu = [2.19, -1.19]
     pose_salto_groupe = [2.6, -2.17]
 
-    u_1 = np.arange(start=pose_salto_tendu[0], stop=pose_salto_groupe[0], step=abs(pose_salto_groupe[0]-pose_salto_tendu[0])/20)
-    u_2 = np.arange(start=pose_salto_tendu[1], stop=pose_salto_groupe[1], step=-abs(pose_salto_groupe[1]-pose_salto_tendu[1])/20)
+    u_1 = np.arange(
+        start=pose_salto_tendu[0], stop=pose_salto_groupe[0], step=abs(pose_salto_groupe[0] - pose_salto_tendu[0]) / 20
+    )
+    u_2 = np.arange(
+        start=pose_salto_tendu[1], stop=pose_salto_groupe[1], step=-abs(pose_salto_groupe[1] - pose_salto_tendu[1]) / 20
+    )
     u = np.concatenate((u_1[:, np.newaxis], u_2[:, np.newaxis]), axis=1)
 
     q = np.zeros((bio_model.nb_tau, u.shape[0]))
@@ -78,10 +82,12 @@ else:
     pose_salto_tendu = [2.19, -1.19]
     pose_salto_groupe = [2.6, -2.17]
 
-    u_1 = np.arange(start=pose_salto_tendu[0], stop=pose_salto_groupe[0],
-                    step=abs(pose_salto_groupe[0] - pose_salto_tendu[0]) / 20)
-    u_2 = np.arange(start=pose_salto_tendu[1], stop=pose_salto_groupe[1],
-                    step=-abs(pose_salto_groupe[1] - pose_salto_tendu[1]) / 20)
+    u_1 = np.arange(
+        start=pose_salto_tendu[0], stop=pose_salto_groupe[0], step=abs(pose_salto_groupe[0] - pose_salto_tendu[0]) / 20
+    )
+    u_2 = np.arange(
+        start=pose_salto_tendu[1], stop=pose_salto_groupe[1], step=-abs(pose_salto_groupe[1] - pose_salto_tendu[1]) / 20
+    )
     u = np.concatenate((u_1[:, np.newaxis], u_2[:, np.newaxis]), axis=1)
 
     q = np.zeros((bio_model.nb_tau, u.shape[0]))
@@ -100,5 +106,3 @@ else:
     # viz = bioviz.Viz(model_path)
     # viz.load_movement(qi[:, np.newaxis])
     # viz.exec()
-
-

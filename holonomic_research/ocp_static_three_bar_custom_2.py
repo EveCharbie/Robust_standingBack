@@ -99,22 +99,25 @@ def prepare_ocp(
 
     # ------------- #
 
-    return OptimalControlProgram(
-        bio_model=bio_model,
-        dynamics=dynamics,
-        n_shooting=n_shooting,
-        phase_time=phase_time,
-        x_init=x_init,
-        u_init=u_init,
-        x_bounds=x_bounds,
-        u_bounds=u_bounds,
-        objective_functions=objective_functions,
-        constraints=constraints,
-        ode_solver=ode_solver,
-        n_threads=8,
-        assume_phase_dynamics=True,
-        use_sx=False,
-    ), bio_model
+    return (
+        OptimalControlProgram(
+            bio_model=bio_model,
+            dynamics=dynamics,
+            n_shooting=n_shooting,
+            phase_time=phase_time,
+            x_init=x_init,
+            u_init=u_init,
+            x_bounds=x_bounds,
+            u_bounds=u_bounds,
+            objective_functions=objective_functions,
+            constraints=constraints,
+            ode_solver=ode_solver,
+            n_threads=8,
+            assume_phase_dynamics=True,
+            use_sx=False,
+        ),
+        bio_model,
+    )
 
 
 def main():
@@ -144,6 +147,7 @@ def main():
         q[:, i] = qi
 
     import bioviz
+
     viz = bioviz.Viz("models/three_bar.bioMod", show_contacts=False)
     viz.load_movement(q)
     viz.exec()

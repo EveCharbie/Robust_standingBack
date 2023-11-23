@@ -81,17 +81,13 @@ def custom_configure(ocp: OptimalControlProgram, nlp: NonLinearProgram):
 
     name_u = [nlp.model.name_dof[i] for i in range(nlp.model.nb_independent_joints)]
     axes_idx = ConfigureProblem._apply_phase_mapping(ocp, nlp, "u")
-    ConfigureProblem.configure_new_variable(
-        "u", name_u, ocp, nlp, True, False, False, axes_idx=axes_idx
-    )
+    ConfigureProblem.configure_new_variable("u", name_u, ocp, nlp, True, False, False, axes_idx=axes_idx)
 
     name = "udot"
     name_qdot = ConfigureProblem._get_kinematics_based_names(nlp, "qdot")
     name_udot = [name_qdot[i] for i in range(nlp.model.nb_independent_joints)]
     axes_idx = ConfigureProblem._apply_phase_mapping(ocp, nlp, name)
-    ConfigureProblem.configure_new_variable(
-        name, name_udot, ocp, nlp, True, False, False, axes_idx=axes_idx
-    )
+    ConfigureProblem.configure_new_variable(name, name_udot, ocp, nlp, True, False, False, axes_idx=axes_idx)
 
     ConfigureProblem.configure_tau(ocp, nlp, as_states=False, as_controls=True)
     ConfigureProblem.configure_dynamics_function(ocp, nlp, custom_dynamic, expand=False)
@@ -292,6 +288,7 @@ def main():
         q[:, i] = qi
 
     import bioviz
+
     viz = bioviz.Viz(model_path)
     viz.load_movement(q)
     viz.exec()

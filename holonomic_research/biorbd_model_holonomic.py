@@ -33,9 +33,11 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
         self._independent_joint_index = [i for i in range(self.nb_q)]
 
     def set_dependencies(self, dependent_joint_index: list, independent_joint_index: list):
-        """ Set the dependencies between the joints of the model """
+        """Set the dependencies between the joints of the model"""
         if len(dependent_joint_index) + len(independent_joint_index) != self.nb_q:
-            raise RuntimeError("The sum of the number of dependent and independent joints should be equal to the number of DoF of the model")
+            raise RuntimeError(
+                "The sum of the number of dependent and independent joints should be equal to the number of DoF of the model"
+            )
 
         self._dependent_joint_index = dependent_joint_index
         self._independent_joint_index = independent_joint_index
@@ -255,7 +257,7 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
 
         return vertcat(tau_u, tau_v)
 
-    def partitioned_constrained_jacobian(self,q):
+    def partitioned_constrained_jacobian(self, q):
         """
         This function returns the partitioned constrained jacobian, reordered in function independent and dependent joints
 
@@ -308,33 +310,31 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
         qdot = self.q_from_u_and_v(udot, vdot)
 
         partitioned_mass_matrix = self.partitioned_mass_matrix(q)
-        m_uu = partitioned_mass_matrix[:self.nb_independent_joints, :self.nb_independent_joints]
-        m_uv = partitioned_mass_matrix[:self.nb_independent_joints, self.nb_independent_joints:]
-        m_vu = partitioned_mass_matrix[self.nb_independent_joints:, :self.nb_independent_joints]
-        m_vv = partitioned_mass_matrix[self.nb_independent_joints:, self.nb_independent_joints:]
+        m_uu = partitioned_mass_matrix[: self.nb_independent_joints, : self.nb_independent_joints]
+        m_uv = partitioned_mass_matrix[: self.nb_independent_joints, self.nb_independent_joints :]
+        m_vu = partitioned_mass_matrix[self.nb_independent_joints :, : self.nb_independent_joints]
+        m_vv = partitioned_mass_matrix[self.nb_independent_joints :, self.nb_independent_joints :]
 
         modified_mass_matrix = m_uu + m_uv @ Bvu + Bvu.T @ m_vu + Bvu.T @ m_vv @ Bvu
         second_term = m_uv + Bvu.T @ m_vv
 
         # compute the non linear effect
         non_linear_effect = self.partitioned_non_linear_effect(q, qdot, external_forces, f_contacts)
-        non_linear_effect_u = non_linear_effect[:self.nb_independent_joints]
-        non_linear_effect_v = non_linear_effect[self.nb_independent_joints:]
+        non_linear_effect_u = non_linear_effect[: self.nb_independent_joints]
+        non_linear_effect_v = non_linear_effect[self.nb_independent_joints :]
 
         modified_non_linear_effect = non_linear_effect_u + Bvu.T @ non_linear_effect_v
 
         # compute the tau
         partitioned_tau = self.partitioned_tau(tau)
-        tau_u = partitioned_tau[:self.nb_independent_joints]
-        tau_v = partitioned_tau[self.nb_independent_joints:]
+        tau_u = partitioned_tau[: self.nb_independent_joints]
+        tau_v = partitioned_tau[self.nb_independent_joints :]
 
         modified_generalized_forces = tau_u + Bvu.T @ tau_v
 
-        uddot = inv(modified_mass_matrix) @ \
-                (modified_generalized_forces
-                 - second_term @ self.biais_vector(q, qdot)
-                 - modified_non_linear_effect
-                 )
+        uddot = inv(modified_mass_matrix) @ (
+            modified_generalized_forces - second_term @ self.biais_vector(q, qdot) - modified_non_linear_effect
+        )
 
         return uddot
 
@@ -349,10 +349,10 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
         """
 
         J = self.partitioned_constrained_jacobian(q)
-        Jv = J[:, self.nb_independent_joints:]
-        Jv_inv = inv(Jv) # inv_minor otherwise ?
+        Jv = J[:, self.nb_independent_joints :]
+        Jv_inv = inv(Jv)  # inv_minor otherwise ?
 
-        Ju = J[:, :self.nb_independent_joints]
+        Ju = J[:, : self.nb_independent_joints]
 
         return -Jv_inv @ Ju
 
@@ -368,8 +368,8 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
 
         """
         J = self.partitioned_constrained_jacobian(q)
-        Jv = J[:, self.nb_independent_joints:]
-        Jv_inv = inv(Jv) # inv_minor otherwise ?
+        Jv = J[:, self.nb_independent_joints :]
+        Jv_inv = inv(Jv)  # inv_minor otherwise ?
 
         return - Jv_inv @ self.holonomic_constraints_jacobian(qdot) @ qdot
 
@@ -532,12 +532,10 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
             The dependent joint
         """
 
-        theta2 = cas.acos(
-            (xp ** 2 + yp ** 2 - (l2 ** 2 + l1 ** 2)) / (2 * l1 * l2)
-        )
+        theta2 = cas.acos((xp**2 + yp**2 - (l2**2 + l1**2)) / (2 * l1 * l2))
         theta1 = cas.atan2(
             (-xp * l2 * cas.sin(theta2) + yp * (l1 + l2 * cas.cos(theta2))),
-            (xp * (l1 + l2 * cas.cos(theta2)) + yp * l2 * cas.sin(theta2))
+            (xp * (l1 + l2 * cas.cos(theta2)) + yp * l2 * cas.sin(theta2)),
         )
         return vertcat(theta1, theta2)
 
@@ -579,7 +577,6 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
 
         return v_opt
 
-
     def compute_v_from_u_numeric(self, u: DM, v_init=None):
         """
         Compute the dependent joint from the independent joint,
@@ -601,7 +598,7 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
             The numerical values of the dependent joint for a given independent joint u
         """
 
-        decision_variables = MX.sym("decision_variables",  self.nb_dependent_joints)
+        decision_variables = MX.sym("decision_variables", self.nb_dependent_joints)
         q = self.q_from_u_and_v(u, decision_variables)
         mx_residuals = self.holonomic_constraints(q)
 
@@ -619,7 +616,7 @@ class BiorbdModelCustomHolonomic(BiorbdModel):
         }
         ifcn = rootfinder("ifcn", "newton", residuals, opts)
         v_opt = ifcn(
-           v_init,
+            v_init,
         )
 
         return v_opt
