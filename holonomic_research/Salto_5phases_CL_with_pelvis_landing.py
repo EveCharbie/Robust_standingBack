@@ -264,15 +264,18 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
     # --- Dynamics ---#
     dynamics = DynamicsList()
-    dynamics.add(DynamicsFcn.TORQUE_DRIVEN, with_contact=True, phase=0)
-    dynamics.add(DynamicsFcn.TORQUE_DRIVEN, phase=1)
+    dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, with_contact=True, phase=0)
+    dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, phase=1)
     dynamics.add(
         bio_model[2].holonomic_torque_driven,
+        expand_dynamics=True, 
+        expand_continuity=False,
         dynamic_function=DynamicsFunctions.holonomic_torque_driven,
         mapping=variable_bimapping,
+        phase = 2
     )
-    dynamics.add(DynamicsFcn.TORQUE_DRIVEN, phase=3)
-    dynamics.add(DynamicsFcn.TORQUE_DRIVEN, with_contact=True, phase=4)
+    dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, phase=3)
+    dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, with_contact=True, phase=4)
 
     # Transition de phase
     phase_transitions = PhaseTransitionList()
@@ -313,6 +316,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         marker_2="CENTER_HAND",
         index=slice(1, 3),
         local_frame_index=11,
+        phase = 2
     )
     # Made up constraints
 
@@ -517,18 +521,19 @@ def main():
     )
 
     # --- Solve the program --- #
-    ocp.print(to_console=True, to_graph=False)
+    #ocp.print(to_console=True, to_graph=False)
     solver = Solver.IPOPT(show_online_optim=False, show_options=dict(show_bounds=True), _linear_solver="MA57")
+    #solver.set_linear_solver('ma57')
     solver.set_maximum_iterations(10000)
     solver.set_bound_frac(1e-8)
     solver.set_bound_push(1e-8)
     sol = ocp.solve(solver)
 
 # --- Show results --- #
-    sol.print_cost()
-    sol.graphs(show_bounds=True)
-    save_results(sol, str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl")
-    visualisation_closed_loop_5phases_reception(bio_model, sol, model_path)
+    #sol.print_cost()
+    #sol.graphs(show_bounds=True)
+    #save_results(sol, str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl")
+    #visualisation_closed_loop_5phases_reception(bio_model, sol, model_path)
 
 
 if __name__ == "__main__":
