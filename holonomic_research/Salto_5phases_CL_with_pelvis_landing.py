@@ -227,7 +227,7 @@ def custom_phase_transition_post(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 17
+version = 18
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 #pickle_sol_init = "/home/mickael/Documents/Anais/Robust_standingBack/holonomic_research/Salto_close_loop_landing_4phases_V13.pkl"
@@ -441,6 +441,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[2]["q_u"].max[4, :-1] = -1.72
     x_bounds[2]["q_u"].min[4, :-1] = -2.3
 
+
     # Phase 3: Preparation landing
     x_bounds.add("q", bounds=bio_model[3].bounds_from_ranges("q"), phase=3)
     x_bounds.add("qdot", bounds=bio_model[3].bounds_from_ranges("qdot"), phase=3)
@@ -450,6 +451,10 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[3]["q"].max[1, 1:] = 2.5
     x_bounds[3]["q"].min[2, :] = 3/4 * np.pi
     x_bounds[3]["q"].max[2, :] = 2 * np.pi + 0.5
+    x_bounds[3]["q"].min[5, -1] = pose_landing_start[5] - 0.06 #0.06
+    x_bounds[3]["q"].max[5, -1] = pose_landing_start[5] + 0.06
+    x_bounds[3]["q"].min[6, -1] = pose_landing_start[6] - 0.06
+    x_bounds[3]["q"].max[6, -1] = pose_landing_start[6] + 0.06
 
     # Phase 3: Landing
     x_bounds.add("q", bounds=bio_model[4].bounds_from_ranges("q"), phase=4)
@@ -464,7 +469,10 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[4]["q"].max[2, 0] = 2 * np.pi + 0.5
     x_bounds[4]["q"].min[2, 1:] = 2 * np.pi - 0.5
     x_bounds[4]["q"].max[2, 1:] = 2 * np.pi + 0.5
-    x_bounds[4]["q"][:, -1] = pose_landing_end
+    #x_bounds[4]["q"][:, -1] = pose_landing_end
+    x_bounds[4]["q"].max[:, -1] = np.array(pose_landing_end) + 0.2 #0.5
+    x_bounds[4]["q"].min[:, -1] = np.array(pose_landing_end) - 0.2
+    x_bounds[4]["qdot"][:, -1] = [0] * n_qdot
 
     # Initial guess
     x_init = InitialGuessList()
@@ -570,9 +578,7 @@ def main():
     name_file_model = str(name_folder_model) + "/" + "Model2D_7Dof_3C_5M_CL_V2.bioMod"
 
     #graph_all(name_file_move)
-    #ocp.add_plot_ipopt_outputs()
     #visualisation_movement(name_file_move, name_file_model)
-
 
 if __name__ == "__main__":
     main()
