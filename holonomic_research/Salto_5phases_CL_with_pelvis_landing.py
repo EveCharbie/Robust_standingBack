@@ -227,7 +227,7 @@ def custom_phase_transition_post(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 16
+version = 17
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 #pickle_sol_init = "/home/mickael/Documents/Anais/Robust_standingBack/holonomic_research/Salto_close_loop_landing_4phases_V13.pkl"
@@ -378,10 +378,10 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     #)
 
     # Path constraint
-    pose_at_first_node = [0.0188, 0.1368, -0.1091, 1.78, 0.5437, 0.191, -0.1452,
-                          0.25]  # Position of segment during first position
-    pose_propulsion_start = [0.0195, -0.1714, -0.8568, -0.0782, 0.5437, 2.0522, -1.6462, 0.5296]
-    pose_takeout_start = [-0.2777, 0.0399, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119]
+    #pose_propulsion_start = [0.0195, -0.1714, -0.8568, -0.0782, 0.5437, 2.0522, -1.6462, 0.5296]
+    #pose_takeout_start = [-0.2777, 0.0399, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119]
+    pose_propulsion_start = [0.0195, -0.1714, -0.37, -0.57, 0.40, 1.14, -1.53, 0.37]
+    pose_takeout_start = [-0.2777, 0.0399, 0, 2.51, 0.44, 0, 0, 0.1119]
     pose_salto_start = [-0.6369, 1.0356, 1.5062, 0.3411, 1.3528, 2.1667, -1.9179, 0.0393]
     pose_salto_end = [0.1987, 1.0356, 2.7470, 0.9906, 0.0252, 1.7447, -1.1335, 0.0097]
     pose_salto_start_CL = [-0.6369, 1.0356, 1.5062, 2.1667, -1.9179, 0.0393]
@@ -399,7 +399,10 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds = BoundsList()
     x_bounds.add("q", bounds=bio_model[1].bounds_from_ranges("q"), phase=0)
     x_bounds.add("qdot", bounds=bio_model[1].bounds_from_ranges("qdot"), phase=0)
-    x_bounds[0]["q"][:, 0] = pose_propulsion_start
+    #x_bounds[0]["q"][:, 0] = pose_propulsion_start
+    x_bounds[0]["q"].min[:, 0] = np.array(pose_propulsion_start) - 0.1 # 0.03
+    x_bounds[0]["q"].max[:, 0] = np.array(pose_propulsion_start) + 0.1
+    x_bounds[0]["qdot"][:, 0] = [0] * n_qdot
     x_bounds[0]["q"].min[2, 1:] = -np.pi / 2
     x_bounds[0]["q"].max[2, 1:] = np.pi / 2
     x_bounds[0]["q"].min[0, :] = -1
