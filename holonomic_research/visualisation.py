@@ -7,6 +7,8 @@ from bioptim import (
     HolonomicConstraintsList,
     HolonomicConstraintsFcn,
 )
+import matplotlib.pyplot as plt
+import math
 
 
 # --- Visualisation -- #
@@ -41,7 +43,7 @@ def visualisation_movement(name_file_movement: str, name_file_model: str):
 
     """
     data = get_created_data_from_pickle(name_file_movement)
-    Q = np.concatenate(data["q"], axis=1)
+    Q = np.hstack(data["q"])
     visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
     visu.load_movement(Q)
     visu.exec()
@@ -467,3 +469,113 @@ def visualisation_closed_loop_2phases_post(bio_model, sol, model_path):
     visu = bioviz.Viz(model_path)
     visu.load_movement(q)
     visu.exec()
+
+def graph_all(sol):
+    data = get_created_data_from_pickle(sol)
+    lambdas = data["lambda"]
+    q = data["q_all"]
+    qdot = data["qdot_all"]
+    qddot = data["qddot_all"]
+    tau = data["tau_all"]
+    dof_names = data["dof_names"]
+
+    # Time
+    time_total = data["time_total"]
+    time_end_phase = data["time_end_phase"]
+    time = data["time_all"]
+
+    # Figure q
+    fig, axs = plt.subplots(2, math.ceil(q.shape[0]/2))
+    num_col = 0
+    num_line = 0
+    for nb_seg in range(q.shape[0]):
+        axs[num_line, num_col].plot(time, q[nb_seg])
+        for xline in range(len(time_end_phase)):
+            axs[num_line, num_col].axvline(time_end_phase[xline], color="k", linestyle="--")
+        axs[num_line, num_col].set_title(dof_names[nb_seg])
+        num_col = num_col + 1
+        if nb_seg == math.ceil(q.shape[0]/2) - 1:
+            num_col = 0
+            num_line = 1
+    for ax in axs.flat:
+        ax.set(xlabel='Time [s]', ylabel='Q')
+    for ax in axs.flat:
+        ax.label_outer()
+    fig.suptitle("Evolution des Q")
+
+    # Figure qdot
+    fig, axs = plt.subplots(2, math.ceil(qdot.shape[0] / 2))
+    num_col = 0
+    num_line = 0
+    for nb_seg in range(qdot.shape[0]):
+        axs[num_line, num_col].plot(time, qdot[nb_seg])
+        for xline in range(len(time_end_phase)):
+            axs[num_line, num_col].axvline(time_end_phase[xline], color="k", linestyle="--")
+        axs[num_line, num_col].set_title(dof_names[nb_seg])
+        num_col = num_col + 1
+        if nb_seg == math.ceil(qdot.shape[0] / 2) - 1:
+            num_col = 0
+            num_line = 1
+    for ax in axs.flat:
+        ax.set(xlabel='Time [s]', ylabel='Qdot')
+    for ax in axs.flat:
+        ax.label_outer()
+    fig.suptitle("Evolution des Qdot")
+
+    # Figure tau
+    fig, axs = plt.subplots(2, math.ceil(tau.shape[0]/2))
+    num_col = 0
+    num_line = 0
+    for nb_seg in range(tau.shape[0]):
+        axs[num_line, num_col].plot(tau[nb_seg])
+        value_xline = 0
+        for xline in range(len(time_end_phase)):
+            value_xline = value_xline + data["n_shooting"][xline]
+            axs[num_line, num_col].axvline(value_xline, color="k", linestyle="--")
+        axs[num_line, num_col].set_title(dof_names[nb_seg + 3])
+        num_col = num_col + 1
+        if nb_seg == math.ceil(tau.shape[0]/2) - 1:
+            num_col = 0
+            num_line = 1
+    for ax in axs.flat:
+        ax.set(xlabel='Time [s]', ylabel='Tau')
+    for ax in axs.flat:
+        ax.label_outer()
+    fig.suptitle("Evolution des Tau")
+
+    # Figure lambdas
+    fig, axs = plt.subplots(2, math.ceil(lambdas.shape[0]/2))
+    num_col = 0
+    num_line = 0
+    for nb_seg in range(lambdas.shape[0]):
+        axs[num_col].plot(lambdas[nb_seg])
+        num_col = num_col + 1
+    for ax in axs.flat:
+        ax.set(xlabel='Time [s]', ylabel='Lambdas')
+    for ax in axs.flat:
+        ax.label_outer()
+    fig.suptitle("Evolution des Lambdas")
+
+
+def graph_q(bio_model, sol):
+    data = get_created_data_from_pickle(sol)
+    q_0 = data["q"][0]
+    q_1 = data["q"][1]
+    q_holo = np.zeros((bio_model[0].nb_q, data["q"][2].shape[1]))
+    q_3 = data["q"][3]
+    q_4 = data["q"][4]
+    for i, ui in enumerate(data["q"][2].T):
+        vi = bio_model[2].compute_v_from_u_explicit_numeric(ui).toarray()
+        qi = bio_model[2].state_from_partition(ui[:, np.newaxis], vi).toarray().squeeze()
+        q_holo[:, i] = qi
+    q = np.concatenate((q_0, q_1, q_holo, q_3, q_4), axis=1)
+    n_shooting = [q_0.shape[1], q_1.shape[1], q_holo.shape[1], q_3.shape[1], q_4.shape[1]]
+
+    for nb_seg in range(q.shape[0]):
+        plt.figure()
+        plt.plot(q[nb_seg])
+        xline = 0
+        for line in range(len(n_shooting)):
+            xline = xline + n_shooting[line]
+            plt.axvline(xline)
+        plt.show()

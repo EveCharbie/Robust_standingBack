@@ -10,7 +10,7 @@ from biorbd_casadi import (
 )
 from biorbd import marker_index, segment_index
 from casadi import MX, DM, vertcat, horzcat, Function, solve, inv_minor, inv, fmod, pi, transpose
-from bioptim import HolonomicBiorbdModel, ConfigureProblem, DynamicsFunctions
+from bioptim import HolonomicBiorbdModel, ConfigureProblem, DynamicsFunctions, SolutionMerge
 import numpy as np
 
 
@@ -187,7 +187,7 @@ class BiorbdModelCustomHolonomic(HolonomicBiorbdModel):
         ConfigureProblem.configure_new_variable(name, names_udot, ocp, nlp, True, False, False, axes_idx=axes_idx)
 
         ConfigureProblem.configure_tau(ocp, nlp, as_states=False, as_controls=True)
-        ConfigureProblem.configure_dynamics_function(ocp, nlp, DynamicsFunctions.holonomic_torque_driven, expand=False)
+        ConfigureProblem.configure_dynamics_function(ocp, nlp, DynamicsFunctions.holonomic_torque_driven) #, expand=False
 
     def partitioned_forward_dynamics(
         self, q_u, qdot_u, tau, external_forces=None, f_contacts=None, q_v_init=None
@@ -243,20 +243,165 @@ class BiorbdModelCustomHolonomic(HolonomicBiorbdModel):
 
         return qddot_u
 
+    """""
+       def compute_q(self, q_u: MX, q_v_init: MX = None) -> MX:
+
+           Compute the dependent joint from the independent joint
+           and integrates them into the variable q
+
+           Parameters
+           ----------
+           q_u: the q state of the independent joint
+           q_v_init
+
+           Returns
+           -------
+           q: states of the dependent and independent joint
+
+
+           q_v = self.compute_v_from_u_explicit_symbolic(q_u)
+           return self.state_from_partition(q_u, q_v)
+       """""
+
     def compute_q(self, q_u: MX, q_v_init: MX = None) -> MX:
+        q_v = self.compute_q_v(q_u, q_v_init)
+        return self.state_from_partition(q_u, q_v)
+
+    def compute_qdot_v(self, q: MX, qdot_u: MX) -> MX:
+        coupling_matrix_vu = self.coupling_matrix(q)
+        return coupling_matrix_vu @ qdot_u
+
+    def compute_qdot(self, q: MX, qdot_u: MX) -> MX:
+        qdot_v = self.compute_qdot_v(q, qdot_u)
+        return self.state_from_partition(qdot_u, qdot_v)
+
+    def compute_qddot_v(self, q: MX, qdot: MX, qddot_u: MX) -> MX:
         """
-        Compute the dependent joint from the independent joint
-        and integrates them into the variable q
+        Sources
+        -------
+        Docquier, N., Poncelet, A., and Fisette, P.:
+        ROBOTRAN: a powerful symbolic gnerator of multibody models, Mech. Sci., 4, 199–219,
+        https://doi.org/10.5194/ms-4-199-2013, 2013.
+        Equation (17) in the paper.
+        """
+        coupling_matrix_vu = self.coupling_matrix(q)
+        return coupling_matrix_vu @ qddot_u + self.biais_vector(q, qdot)
+
+    def compute_qddot(self, q: MX, qdot: MX, qddot_u: MX) -> MX:
+        """
+        Sources
+        -------
+        Docquier, N., Poncelet, A., and Fisette, P.:
+        ROBOTRAN: a powerful symbolic gnerator of multibody models, Mech. Sci., 4, 199–219,
+        https://doi.org/10.5194/ms-4-199-2013, 2013.
+        Equation (17) in the paper.
+        """
+        qddot_v = self.compute_qddot_v(q, qdot, qddot_u)
+        return self.state_from_partition(qddot_u, qddot_v)
+
+    def compute_the_lagrangian_multipliers(
+            self, q: MX, qdot: MX, qddot: MX, tau: MX, external_forces: MX = None, f_contacts: MX = None
+    ) -> MX:
+        """
+        Sources
+        -------
+        Docquier, N., Poncelet, A., and Fisette, P.:
+        ROBOTRAN: a powerful symbolic gnerator of multibody models, Mech. Sci., 4, 199–219,
+        https://doi.org/10.5194/ms-4-199-2013, 2013.
+        Equation (17) in the paper.
+        """
+        if external_forces is not None:
+            raise NotImplementedError("External forces are not implemented yet.")
+        if f_contacts is not None:
+            raise NotImplementedError("Contact forces are not implemented yet.")
+        partitioned_constraints_jacobian = self.partitioned_constraints_jacobian(q)
+        partitioned_constraints_jacobian_v = partitioned_constraints_jacobian[:, self.nb_independent_joints:]
+        partitioned_constraints_jacobian_v_t_inv = inv(partitioned_constraints_jacobian_v.T)
+
+        partitioned_mass_matrix = self.partitioned_mass_matrix(q)
+        m_vu = partitioned_mass_matrix[self.nb_independent_joints:, : self.nb_independent_joints]
+        m_vv = partitioned_mass_matrix[self.nb_independent_joints:, self.nb_independent_joints:]
+
+        qddot_u = qddot[self._independent_joint_index]
+        qddot_v = qddot[self._dependent_joint_index]
+
+        non_linear_effect = self.partitioned_non_linear_effect(q, qdot, external_forces, f_contacts)
+        non_linear_effect_v = non_linear_effect[self.nb_independent_joints:]
+
+        partitioned_tau = self.partitioned_tau(tau)
+        partitioned_tau_v = partitioned_tau[self.nb_independent_joints:]
+
+        return partitioned_constraints_jacobian_v_t_inv @ (
+                m_vu @ qddot_u + m_vv @ qddot_v + non_linear_effect_v - partitioned_tau_v
+        )
+
+    def compute_all_states(self, sol, index_holonomic_model):
+        """
+        Compute all the states from the solution of the optimal control program
 
         Parameters
         ----------
-        q_u: the q state of the independent joint
-        q_v_init
+        bio_model: HolonomicBiorbdModel
+            The biorbd model
+        sol:
+            The solution of the optimal control program
 
         Returns
         -------
-        q: states of the dependent and independent joint
 
         """
-        q_v = self.compute_v_from_u_explicit_symbolic(q_u)
-        return self.state_from_partition(q_u, q_v)
+
+        states = sol.decision_states(to_merge=SolutionMerge.NODES)
+        controls = sol.decision_controls(to_merge=SolutionMerge.NODES)
+
+        n = states[index_holonomic_model]["q_u"].shape[1]
+        q = np.zeros((self.nb_q, n))
+        qdot = np.zeros((self.nb_q, n))
+        qddot = np.zeros((self.nb_q, n))
+        lambdas = np.zeros((self.nb_dependent_joints, n))
+        tau = np.zeros((self.nb_tau - self.nb_root, n))
+        tau_dependent_joint_index = [x - self.nb_root for x in self.dependent_joint_index]
+        tau_independent_joint_index = [x - self.nb_root for x in self.independent_joint_index]
+        tau_independent_joint_index = [x for x in tau_independent_joint_index if x >= 0]
+
+        for i, independent_joint_index in enumerate(tau_independent_joint_index):
+            tau[independent_joint_index, :-1] = controls[index_holonomic_model]["tau"][i, :]
+        for i, dependent_joint_index in enumerate(tau_dependent_joint_index):
+            tau[dependent_joint_index, :-1] = controls[index_holonomic_model]["tau"][i, :]
+        tau_root = np.zeros((self.nb_root, tau.shape[1]))
+        tau = np.vstack((tau_root, tau))
+
+        # Partitioned forward dynamics
+        q_u_sym = MX.sym("q_u_sym", self.nb_independent_joints, 1)
+        qdot_u_sym = MX.sym("qdot_u_sym", self.nb_independent_joints, 1)
+        tau_sym = MX.sym("tau_sym", self.nb_tau, 1)
+        partitioned_forward_dynamics_func = Function(
+            "partitioned_forward_dynamics",
+            [q_u_sym, qdot_u_sym, tau_sym],
+            [self.partitioned_forward_dynamics(q_u_sym, qdot_u_sym, tau_sym)],
+        )
+        # Lagrangian multipliers
+        q_sym = MX.sym("q_sym", self.nb_q, 1)
+        qdot_sym = MX.sym("qdot_sym", self.nb_q, 1)
+        qddot_sym = MX.sym("qddot_sym", self.nb_q, 1)
+        compute_lambdas_func = Function(
+            "compute_the_lagrangian_multipliers",
+            [q_sym, qdot_sym, qddot_sym, tau_sym],
+            [self.compute_the_lagrangian_multipliers(q_sym, qdot_sym, qddot_sym, tau_sym)],
+        )
+
+        for i in range(n):
+            q_v_i = self.compute_q_v(states[index_holonomic_model]["q_u"][:, i]).toarray()
+            q[:, i] = self.state_from_partition(states[index_holonomic_model]["q_u"][:, i][:, np.newaxis],
+                                                q_v_i).toarray().squeeze()
+            qdot[:, i] = self.compute_qdot(q[:, i], states[index_holonomic_model]["qdot_u"][:, i]).toarray().squeeze()
+            qddot_u_i = (
+                partitioned_forward_dynamics_func(states[index_holonomic_model]["q_u"][:, i],
+                                                  states[index_holonomic_model]["qdot_u"][:, i], tau[:, i])
+                .toarray()
+                .squeeze()
+            )
+            qddot[:, i] = self.compute_qddot(q[:, i], qdot[:, i], qddot_u_i).toarray().squeeze()
+            lambdas[:, i] = compute_lambdas_func(q[:, i], qdot[:, i], qddot[:, i], tau[:, i]).toarray().squeeze()
+
+        return q, qdot, qddot, lambdas

@@ -131,3 +131,9 @@ dmypy.json
 .DS_Store
 
 .idea/
+
+*.ogv
+
+*.vtp
+
+holonomic_research/models/Wu_Shoulder_Model_kinova_scaled_adjusted_2.bioMod

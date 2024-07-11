@@ -50,6 +50,7 @@ from bioptim import (
     InitialGuessList,
     Solver,
     Axis,
+    SolutionMerge,
     PenaltyController,
     PhaseTransitionFcn,
     DynamicsFunctions,
@@ -58,12 +59,12 @@ from bioptim import (
 )
 from casadi import MX, vertcat
 from holonomic_research.biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
-from visualisation import visualisation_closed_loop_5phases_reception
+from visualisation import visualisation_closed_loop_5phases_reception, visualisation_movement, graph_all
 from Save import get_created_data_from_pickle
 
 
 # --- Save results --- #
-def save_results(sol, c3d_file_path):
+def save_results_holonomic(sol, c3d_file_path, biomodel, index_holo):
     """
     Solving the ocp
     Parameters
@@ -75,46 +76,69 @@ def save_results(sol, c3d_file_path):
     """
 
     data = {}
+    states = sol.decision_states(to_merge=SolutionMerge.NODES)
+    controls = sol.decision_controls(to_merge=SolutionMerge.NODES)
+    list_time = sol.decision_time(to_merge=SolutionMerge.NODES)
+
     q = []
     qdot = []
-    states_all = []
+    qddot =[]
     tau = []
+    time = []
 
-    if len(sol.ns) == 1:
-        q = sol.states["q_u"]
-        qdot = sol.states["q_udot"]
-        # states_all = sol.states["all"]
-        tau = sol.controls["tau"]
+    if len(sol.ocp.n_shooting) == 1:
+        q = states["q_u"]
+        qdot = states["q_udot"]
+        tau = controls["tau"]
     else:
-        for i in range(len(sol.states)):
-            if i == 2:
-                q.append(sol.states[i]["q_u"])
-                qdot.append(sol.states[i]["qdot_u"])
-                # states_all.append(sol.states[i]["all"])
-                tau.append(sol.controls[i]["tau"])
+        for i in range(len(states)):
+            if i == index_holo:
+                q_holo, qdot_holo, qddot_holo, lambdas = BiorbdModelCustomHolonomic.compute_all_states(
+                    biomodel[index_holo], sol, index_holo)
+                q.append(q_holo)
+                qdot.append(qdot_holo)
+                qddot.append(qddot_holo)
+                tau.append(controls[i]["tau"])
+                data["lambda"] = lambdas
+                time.append(list_time[i])
             else:
-                q.append(sol.states[i]["q"])
-                qdot.append(sol.states[i]["qdot"])
-                # states_all.append(sol.states[i]["all"])
-                tau.append(sol.controls[i]["tau"])
+                q.append(states[i]["q"])
+                qdot.append(states[i]["qdot"])
+                tau.append(controls[i]["tau"])
+                time.append(list_time[i])
 
     data["q"] = q
     data["qdot"] = qdot
+    data["qddot"] = qddot
     data["tau"] = tau
+    data["time"] = time
     data["cost"] = sol.cost
     data["iterations"] = sol.iterations
     # data["detailed_cost"] = sol.detailed_cost
     data["status"] = sol.status
     data["real_time_to_optimize"] = sol.real_time_to_optimize
-    data["phase_time"] = sol.phase_time[1:12]
+    data["phase_time"] = sol.phases_dt
     data["constraints"] = sol.constraints
-    data["controls"] = sol.controls
-    data["constraints_scaled"] = sol.controls_scaled
-    data["n_shooting"] = sol.ns
-    data["time"] = sol.time
+    data["n_shooting"] = sol.ocp.n_shooting
     data["lam_g"] = sol.lam_g
     data["lam_p"] = sol.lam_p
     data["lam_x"] = sol.lam_x
+    data["phase_time"] = sol.ocp.phase_time
+    data["dof_names"] = sol.ocp.nlp[0].dof_names
+    data["q_all"] = np.hstack(data["q"])
+    data["qdot_all"] = np.hstack(data["qdot"])
+    data["qddot_all"] = np.hstack(data["qddot"])
+    data["tau_all"] = np.hstack(data["tau"])
+    time_end_phase = []
+    time_total = 0
+    time_all = []
+    for i in range(len(data["time"])):
+        time_all.append(data["time"][i] + time_total)
+        time_total = time_total + data["time"][i][-1]
+        time_end_phase.append(time_total)
+    data["time_all"] = np.vstack(time_all)
+    data["time_total"] = time_total
+    data["time_end_phase"] = time_end_phase
 
     if sol.status == 1:
         data["status"] = "Optimal Control Solution Found"
@@ -203,9 +227,9 @@ def custom_phase_transition_post(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 1
+version = 14
 nb_phase = 5
-name_folder_model = "/home/mickael/Documents/Anais/Robust_standingBack/Model"
+name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 #pickle_sol_init = "/home/mickael/Documents/Anais/Robust_standingBack/holonomic_research/Salto_close_loop_landing_4phases_V13.pkl"
 #sol = get_created_data_from_pickle(pickle_sol_init)
 
@@ -268,8 +292,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, phase=1)
     dynamics.add(
         bio_model[2].holonomic_torque_driven,
-        expand_dynamics=True, 
-        expand_continuity=False,
+        #expand_dynamics=True,
+        #expand_continuity=False,
         dynamic_function=DynamicsFunctions.holonomic_torque_driven,
         mapping=variable_bimapping,
         phase=2
@@ -316,7 +340,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         marker_2="CENTER_HAND",
         index=slice(1, 3),
         local_frame_index=11,
-        phase=2
+        #phase=2
     )
     # Made up constraints
 
@@ -502,7 +526,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         objective_functions=objective_functions,
         constraints=constraints,
         n_threads=32,
-        assume_phase_dynamics=True,
+        #assume_phase_dynamics=True,
         phase_transitions=phase_transitions,
         variable_mappings=dof_mapping,
     ), bio_model
@@ -513,6 +537,7 @@ def main():
     model_path = str(name_folder_model) + "/" + "Model2D_7Dof_0C_5M_CL_V2.bioMod"
     model_path_2contact = str(name_folder_model) + "/" + "Model2D_7Dof_3C_5M_CL_V2.bioMod"
     model_path_1contact = str(name_folder_model) + "/" + "Model2D_7Dof_2C_5M_CL_V2.bioMod"
+
     ocp, bio_model = prepare_ocp(
         biorbd_model_path=(model_path_1contact,
                            model_path,
@@ -529,7 +554,7 @@ def main():
     #ocp.print(to_console=True, to_graph=False)
     solver = Solver.IPOPT(show_online_optim=False, show_options=dict(show_bounds=True), _linear_solver="MA57")
     #solver.set_linear_solver('ma57')
-    solver.set_maximum_iterations(10000)
+    solver.set_maximum_iterations(2000)
     solver.set_bound_frac(1e-8)
     solver.set_bound_push(1e-8)
     sol = ocp.solve(solver)
@@ -537,8 +562,12 @@ def main():
 # --- Show results --- #
     #sol.print_cost()
     #sol.graphs(show_bounds=True)
-    #save_results(sol, str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl")
-    #visualisation_closed_loop_5phases_reception(bio_model, sol, model_path)
+    save_results_holonomic(sol, str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl", bio_model, 2)
+    name_file_move = str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl"
+    name_file_model = str(name_folder_model) + "/" + "Model2D_7Dof_3C_5M_CL_V2.bioMod"
+
+    graph_all(name_file_move)
+    visualisation_movement(name_file_move, name_file_model)
 
 
 if __name__ == "__main__":
