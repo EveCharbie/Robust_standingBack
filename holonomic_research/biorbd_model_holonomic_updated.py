@@ -243,27 +243,26 @@ class BiorbdModelCustomHolonomic(HolonomicBiorbdModel):
 
         return qddot_u
 
-    """""
-       def compute_q(self, q_u: MX, q_v_init: MX = None) -> MX:
-
-           Compute the dependent joint from the independent joint
-           and integrates them into the variable q
-
-           Parameters
-           ----------
-           q_u: the q state of the independent joint
-           q_v_init
-
-           Returns
-           -------
-           q: states of the dependent and independent joint
-
-
-           q_v = self.compute_v_from_u_explicit_symbolic(q_u)
-           return self.state_from_partition(q_u, q_v)
-       """""
-
     def compute_q(self, q_u: MX, q_v_init: MX = None) -> MX:
+        """
+        Compute the dependent joint from the independent joint
+        and integrates them into the variable q
+
+        Parameters
+        ----------
+        q_u: the q state of the independent joint
+        q_v_init
+
+        Returns
+        -------
+
+        q: states of the dependent and independent joint
+        """
+
+        q_v = self.compute_v_from_u_explicit_symbolic(q_u)
+        return self.state_from_partition(q_u, q_v)
+
+    def compute_q_partition(self, q_u: MX, q_v_init: MX = None) -> MX:
         q_v = self.compute_q_v(q_u, q_v_init)
         return self.state_from_partition(q_u, q_v)
 

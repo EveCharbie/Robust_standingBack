@@ -59,7 +59,7 @@ from bioptim import (
 )
 from casadi import MX, vertcat
 from holonomic_research.biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
-from visualisation import visualisation_closed_loop_5phases_reception, visualisation_movement, graph_all
+#from visualisation import visualisation_closed_loop_5phases_reception, visualisation_movement, graph_all
 from Save import get_created_data_from_pickle
 
 
@@ -227,7 +227,7 @@ def custom_phase_transition_post(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 15
+version = 16
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 #pickle_sol_init = "/home/mickael/Documents/Anais/Robust_standingBack/holonomic_research/Salto_close_loop_landing_4phases_V13.pkl"
@@ -567,7 +567,7 @@ def main():
     name_file_model = str(name_folder_model) + "/" + "Model2D_7Dof_3C_5M_CL_V2.bioMod"
 
     #graph_all(name_file_move)
-    ocp.add_plot_ipopt_outputs()
+    #ocp.add_plot_ipopt_outputs()
     #visualisation_movement(name_file_move, name_file_model)
 
 
