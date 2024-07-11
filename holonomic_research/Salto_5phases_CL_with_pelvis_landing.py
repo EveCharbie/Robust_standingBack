@@ -227,7 +227,7 @@ def custom_phase_transition_post(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 14
+version = 15
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 #pickle_sol_init = "/home/mickael/Documents/Anais/Robust_standingBack/holonomic_research/Salto_close_loop_landing_4phases_V13.pkl"
@@ -368,14 +368,14 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         phase=4,
     )
 
-    constraints.add(
-        ConstraintFcn.TRACK_CONTACT_FORCES,
-        min_bound=min_bound,
-        max_bound=max_bound,
-        node=Node.END,
-        contact_index=2,
-        phase=4,
-    )
+    #constraints.add(
+    #    ConstraintFcn.TRACK_CONTACT_FORCES,
+    #    min_bound=min_bound,
+    #    max_bound=max_bound,
+    #    node=Node.END,
+    #    contact_index=2,
+    #    phase=4,
+    #)
 
     # Path constraint
     pose_at_first_node = [0.0188, 0.1368, -0.1091, 1.78, 0.5437, 0.191, -0.1452,
@@ -554,7 +554,7 @@ def main():
     #ocp.print(to_console=True, to_graph=False)
     solver = Solver.IPOPT(show_online_optim=False, show_options=dict(show_bounds=True), _linear_solver="MA57")
     #solver.set_linear_solver('ma57')
-    solver.set_maximum_iterations(2000)
+    solver.set_maximum_iterations(1000)
     solver.set_bound_frac(1e-8)
     solver.set_bound_push(1e-8)
     sol = ocp.solve(solver)
@@ -566,8 +566,9 @@ def main():
     name_file_move = str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl"
     name_file_model = str(name_folder_model) + "/" + "Model2D_7Dof_3C_5M_CL_V2.bioMod"
 
-    graph_all(name_file_move)
-    visualisation_movement(name_file_move, name_file_model)
+    #graph_all(name_file_move)
+    ocp.add_plot_ipopt_outputs()
+    #visualisation_movement(name_file_move, name_file_model)
 
 
 if __name__ == "__main__":
