@@ -487,10 +487,10 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[4]["q"].max[2, 0] = 2 * np.pi + 0.5
     x_bounds[4]["q"].min[2, 1:] = 2 * np.pi - 0.5
     x_bounds[4]["q"].max[2, 1:] = 2 * np.pi + 0.5
-    x_bounds[4]["q"][:, -1] = pose_landing_end
-    #x_bounds[4]["q"].max[:, -1] = np.array(pose_landing_end) + 0.2 #0.5
-    #x_bounds[4]["q"].min[:, -1] = np.array(pose_landing_end) - 0.2
-    x_bounds[4]["qdot"][:, -1] = [0] * n_qdot
+    #x_bounds[4]["q"][:, -1] = pose_landing_end
+    x_bounds[4]["q"].max[:, -1] = np.array(pose_landing_end) + 0.2 #0.5
+    x_bounds[4]["q"].min[:, -1] = np.array(pose_landing_end) - 0.2
+    #x_bounds[4]["qdot"][:, -1] = [0] * n_qdot
 
     # Initial guess
     x_init = InitialGuessList()
@@ -581,7 +581,7 @@ def main():
 
     # --- Solve the program --- #
     solver = Solver.IPOPT(show_online_optim=False, show_options=dict(show_bounds=False), _linear_solver="MA57")
-    solver.set_maximum_iterations(0)
+    solver.set_maximum_iterations(3000)
     solver.set_bound_frac(1e-8)
     solver.set_bound_push(1e-8)
     sol = ocp.solve(solver)
