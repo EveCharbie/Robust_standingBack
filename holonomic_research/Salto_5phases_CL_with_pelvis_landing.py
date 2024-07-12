@@ -227,7 +227,7 @@ def custom_phase_transition_post(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 19
+version = 20
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 #pickle_sol_init = "/home/mickael/Documents/Anais/Robust_standingBack/holonomic_research/Salto_close_loop_landing_4phases_V13.pkl"
@@ -450,10 +450,10 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[3]["q"].max[1, 1:] = 2.5
     x_bounds[3]["q"].min[2, :] = 3/4 * np.pi
     x_bounds[3]["q"].max[2, :] = 2 * np.pi + 0.5
-    x_bounds[3]["q"].min[5, -1] = pose_landing_start[5] - 0.06 #0.06
-    x_bounds[3]["q"].max[5, -1] = pose_landing_start[5] + 0.06
-    x_bounds[3]["q"].min[6, -1] = pose_landing_start[6] - 0.06
-    x_bounds[3]["q"].max[6, -1] = pose_landing_start[6] + 0.06
+    #x_bounds[3]["q"].min[5, -1] = pose_landing_start[5] - 0.06 #0.06
+    #x_bounds[3]["q"].max[5, -1] = pose_landing_start[5] + 0.06
+    #x_bounds[3]["q"].min[6, -1] = pose_landing_start[6] - 0.06
+    #x_bounds[3]["q"].max[6, -1] = pose_landing_start[6] + 0.06
 
     # Phase 3: Landing
     x_bounds.add("q", bounds=bio_model[4].bounds_from_ranges("q"), phase=4)
@@ -562,7 +562,7 @@ def main():
 
     # --- Solve the program --- #
     solver = Solver.IPOPT(show_online_optim=False, show_options=dict(show_bounds=True), _linear_solver="MA57")
-    solver.set_maximum_iterations(10000)
+    solver.set_maximum_iterations(2000)
     solver.set_bound_frac(1e-8)
     solver.set_bound_push(1e-8)
     sol = ocp.solve(solver)
