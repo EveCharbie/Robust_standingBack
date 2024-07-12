@@ -189,6 +189,66 @@ class BiorbdModelCustomHolonomic(HolonomicBiorbdModel):
         ConfigureProblem.configure_tau(ocp, nlp, as_states=False, as_controls=True)
         ConfigureProblem.configure_dynamics_function(ocp, nlp, DynamicsFunctions.holonomic_torque_driven) #, expand=False
 
+    @staticmethod
+    def holonomic_torque_driven_new(ocp, nlp, mapping, numerical_data_timeseries: dict[str, np.ndarray] = None):
+        """
+        Tell the program which variables are states and controls.
+
+        Parameters
+        ----------
+        ocp: OptimalControlProgram
+            A reference to the ocp
+        nlp: NonLinearProgram
+            A reference to the phase
+        """
+
+        name = "q_u"
+        names_u = [nlp.model.name_dof[i] for i in mapping["q"].to_first.map_idx]
+        axes_idx = ConfigureProblem._apply_phase_mapping(ocp, nlp, name)
+        #names_u = [nlp.model.name_dof[i] for i in nlp.model.independent_joint_index]
+        ConfigureProblem.configure_new_variable(
+            name,
+            names_u,
+            ocp,
+            nlp,
+            True,
+            False,
+            False,
+            axes_idx=axes_idx,
+            # NOTE: not ready for phase mapping yet as it is based on dofnames of the class BioModel
+            # see _set_kinematic_phase_mapping method
+            # axes_idx=ConfigureProblem._apply_phase_mapping(ocp, nlp, name),
+        )
+
+        name = "qdot_u"
+        names_qdot = ConfigureProblem._get_kinematics_based_names(nlp, "qdot")
+        names_udot = [names_qdot[i] for i in mapping["qdot"].to_first.map_idx]
+        axes_idx = ConfigureProblem._apply_phase_mapping(ocp, nlp, name)
+        #names_udot = [names_qdot[i] for i in nlp.model.independent_joint_index]
+        ConfigureProblem.configure_new_variable(
+            name,
+            names_udot,
+            ocp,
+            nlp,
+            True,
+            False,
+            False,
+            axes_idx=axes_idx,
+            # NOTE: not ready for phase mapping yet as it is based on dofnames of the class BioModel
+            # see _set_kinematic_phase_mapping method
+            # axes_idx=ConfigureProblem._apply_phase_mapping(ocp, nlp, name),
+        )
+
+        ConfigureProblem.configure_tau(ocp, nlp, as_states=False, as_controls=True)
+
+        # extra plots
+        ConfigureProblem.configure_qv(ocp, nlp, nlp.model.compute_q_v)
+        ConfigureProblem.configure_qdotv(ocp, nlp, nlp.model._compute_qdot_v)
+        ConfigureProblem.configure_lagrange_multipliers_function(ocp, nlp, nlp.model.compute_the_lagrangian_multipliers)
+
+        ConfigureProblem.configure_dynamics_function(ocp, nlp, DynamicsFunctions.holonomic_torque_driven)
+
+
     def partitioned_forward_dynamics(
         self, q_u, qdot_u, tau, external_forces=None, f_contacts=None, q_v_init=None
     ) -> MX:
@@ -262,78 +322,6 @@ class BiorbdModelCustomHolonomic(HolonomicBiorbdModel):
         q_v = self.compute_v_from_u_explicit_symbolic(q_u)
         return self.state_from_partition(q_u, q_v)
 
-    def compute_q_partition(self, q_u: MX, q_v_init: MX = None) -> MX:
-        q_v = self.compute_q_v(q_u, q_v_init)
-        return self.state_from_partition(q_u, q_v)
-
-    def compute_qdot_v(self, q: MX, qdot_u: MX) -> MX:
-        coupling_matrix_vu = self.coupling_matrix(q)
-        return coupling_matrix_vu @ qdot_u
-
-    def compute_qdot(self, q: MX, qdot_u: MX) -> MX:
-        qdot_v = self.compute_qdot_v(q, qdot_u)
-        return self.state_from_partition(qdot_u, qdot_v)
-
-    def compute_qddot_v(self, q: MX, qdot: MX, qddot_u: MX) -> MX:
-        """
-        Sources
-        -------
-        Docquier, N., Poncelet, A., and Fisette, P.:
-        ROBOTRAN: a powerful symbolic gnerator of multibody models, Mech. Sci., 4, 199–219,
-        https://doi.org/10.5194/ms-4-199-2013, 2013.
-        Equation (17) in the paper.
-        """
-        coupling_matrix_vu = self.coupling_matrix(q)
-        return coupling_matrix_vu @ qddot_u + self.biais_vector(q, qdot)
-
-    def compute_qddot(self, q: MX, qdot: MX, qddot_u: MX) -> MX:
-        """
-        Sources
-        -------
-        Docquier, N., Poncelet, A., and Fisette, P.:
-        ROBOTRAN: a powerful symbolic gnerator of multibody models, Mech. Sci., 4, 199–219,
-        https://doi.org/10.5194/ms-4-199-2013, 2013.
-        Equation (17) in the paper.
-        """
-        qddot_v = self.compute_qddot_v(q, qdot, qddot_u)
-        return self.state_from_partition(qddot_u, qddot_v)
-
-    def compute_the_lagrangian_multipliers(
-            self, q: MX, qdot: MX, qddot: MX, tau: MX, external_forces: MX = None, f_contacts: MX = None
-    ) -> MX:
-        """
-        Sources
-        -------
-        Docquier, N., Poncelet, A., and Fisette, P.:
-        ROBOTRAN: a powerful symbolic gnerator of multibody models, Mech. Sci., 4, 199–219,
-        https://doi.org/10.5194/ms-4-199-2013, 2013.
-        Equation (17) in the paper.
-        """
-        if external_forces is not None:
-            raise NotImplementedError("External forces are not implemented yet.")
-        if f_contacts is not None:
-            raise NotImplementedError("Contact forces are not implemented yet.")
-        partitioned_constraints_jacobian = self.partitioned_constraints_jacobian(q)
-        partitioned_constraints_jacobian_v = partitioned_constraints_jacobian[:, self.nb_independent_joints:]
-        partitioned_constraints_jacobian_v_t_inv = inv(partitioned_constraints_jacobian_v.T)
-
-        partitioned_mass_matrix = self.partitioned_mass_matrix(q)
-        m_vu = partitioned_mass_matrix[self.nb_independent_joints:, : self.nb_independent_joints]
-        m_vv = partitioned_mass_matrix[self.nb_independent_joints:, self.nb_independent_joints:]
-
-        qddot_u = qddot[self._independent_joint_index]
-        qddot_v = qddot[self._dependent_joint_index]
-
-        non_linear_effect = self.partitioned_non_linear_effect(q, qdot, external_forces, f_contacts)
-        non_linear_effect_v = non_linear_effect[self.nb_independent_joints:]
-
-        partitioned_tau = self.partitioned_tau(tau)
-        partitioned_tau_v = partitioned_tau[self.nb_independent_joints:]
-
-        return partitioned_constraints_jacobian_v_t_inv @ (
-                m_vu @ qddot_u + m_vv @ qddot_v + non_linear_effect_v - partitioned_tau_v
-        )
-
     def compute_all_states(self, sol, index_holonomic_model):
         """
         Compute all the states from the solution of the optimal control program
@@ -386,11 +374,11 @@ class BiorbdModelCustomHolonomic(HolonomicBiorbdModel):
         compute_lambdas_func = Function(
             "compute_the_lagrangian_multipliers",
             [q_sym, qdot_sym, qddot_sym, tau_sym],
-            [self.compute_the_lagrangian_multipliers(q_sym, qdot_sym, qddot_sym, tau_sym)],
+            [self._compute_the_lagrangian_multipliers(q_sym, qdot_sym, qddot_sym, tau_sym)],
         )
 
         for i in range(n):
-            q_v_i = self.compute_q_v(states[index_holonomic_model]["q_u"][:, i]).toarray()
+            q_v_i = self.compute_v_from_u_explicit_numeric(states[index_holonomic_model]["q_u"][:, i]).toarray()
             q[:, i] = self.state_from_partition(states[index_holonomic_model]["q_u"][:, i][:, np.newaxis],
                                                 q_v_i).toarray().squeeze()
             qdot[:, i] = self.compute_qdot(q[:, i], states[index_holonomic_model]["qdot_u"][:, i]).toarray().squeeze()
