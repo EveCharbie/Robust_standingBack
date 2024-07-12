@@ -227,7 +227,7 @@ def custom_phase_transition_post(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 18
+version = 19
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 #pickle_sol_init = "/home/mickael/Documents/Anais/Robust_standingBack/holonomic_research/Salto_close_loop_landing_4phases_V13.pkl"
@@ -399,9 +399,9 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds = BoundsList()
     x_bounds.add("q", bounds=bio_model[1].bounds_from_ranges("q"), phase=0)
     x_bounds.add("qdot", bounds=bio_model[1].bounds_from_ranges("qdot"), phase=0)
-    #x_bounds[0]["q"][:, 0] = pose_propulsion_start
-    x_bounds[0]["q"].min[:, 0] = np.array(pose_propulsion_start) - 0.1 # 0.03
-    x_bounds[0]["q"].max[:, 0] = np.array(pose_propulsion_start) + 0.1
+    x_bounds[0]["q"][:, 0] = pose_propulsion_start
+    #x_bounds[0]["q"].min[:, 0] = np.array(pose_propulsion_start) - 0.1 # 0.03
+    #x_bounds[0]["q"].max[:, 0] = np.array(pose_propulsion_start) + 0.1
     x_bounds[0]["qdot"][:, 0] = [0] * n_qdot
     x_bounds[0]["q"].min[2, 1:] = -np.pi / 2
     x_bounds[0]["q"].max[2, 1:] = np.pi / 2
@@ -440,7 +440,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[2]["q_u"].min[3, :-1] = 1.96
     x_bounds[2]["q_u"].max[4, :-1] = -1.72
     x_bounds[2]["q_u"].min[4, :-1] = -2.3
-
 
     # Phase 3: Preparation landing
     x_bounds.add("q", bounds=bio_model[3].bounds_from_ranges("q"), phase=3)
@@ -562,23 +561,17 @@ def main():
     )
 
     # --- Solve the program --- #
-    #ocp.print(to_console=True, to_graph=False)
     solver = Solver.IPOPT(show_online_optim=False, show_options=dict(show_bounds=True), _linear_solver="MA57")
-    #solver.set_linear_solver('ma57')
-    solver.set_maximum_iterations(1000)
+    solver.set_maximum_iterations(10000)
     solver.set_bound_frac(1e-8)
     solver.set_bound_push(1e-8)
     sol = ocp.solve(solver)
 
-# --- Show results --- #
-    #sol.print_cost()
-    #sol.graphs(show_bounds=True)
+# --- Save results --- #
     save_results_holonomic(sol, str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl", bio_model, 2)
     name_file_move = str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl"
     name_file_model = str(name_folder_model) + "/" + "Model2D_7Dof_3C_5M_CL_V2.bioMod"
 
-    #graph_all(name_file_move)
-    #visualisation_movement(name_file_move, name_file_model)
 
 if __name__ == "__main__":
     main()

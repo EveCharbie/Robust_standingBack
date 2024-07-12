@@ -41,3 +41,4 @@ def visu_pyorerun(name_file_movement: str, name_model: str):
 # launch in terminal before: rerun --renderer=gl
 name_file_movement = search_file("Fichier mouvement")
 name_model = search_file("Fichier model")
+visu_pyorerun(name_file_movement, name_model)
