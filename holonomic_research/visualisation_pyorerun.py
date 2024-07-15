@@ -28,7 +28,7 @@ def search_file(message: str):
 def visu_pyorerun(name_file_movement: str, name_model: str):
     data = get_created_data_from_pickle(name_file_movement)
     q = data["q_all"]
-    t_span = data["time_all"]
+    t_span = np.vstack(data["time"])
 
     model = BiorbdModel(name_model)
 
