@@ -226,7 +226,7 @@ def custom_phase_transition_post(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 25
+version = 26
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 #pickle_sol_init = "/home/mickael/Documents/Anais/Robust_standingBack/holonomic_research/Salto_close_loop_landing_4phases_V13.pkl"
@@ -417,12 +417,12 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[0]["q"].min[:, 0] = np.array(pose_propulsion_start) - 0.1 # 0.03
     x_bounds[0]["q"].max[:, 0] = np.array(pose_propulsion_start) + 0.1
     x_bounds[0]["q"][7, 0] = np.array(pose_propulsion_start[7])
-    x_bounds[0]["q"][7, 0] = np.array(pose_propulsion_start[7])
+    x_bounds[0]["q"][7, 1] = np.array(pose_propulsion_start[7])
     x_bounds[0]["qdot"][:, 0] = [0] * n_qdot
     x_bounds[0]["q"].min[2, 1:] = -np.pi / 2
     x_bounds[0]["q"].max[2, 1:] = np.pi / 2
     x_bounds[0]["q"].min[0, :] = np.array(pose_propulsion_start[0]) - 1
-    x_bounds[0]["q"].max[0, :] = np.array(pose_propulsion_start[0]) + 0.5
+    x_bounds[0]["q"].max[0, :] = np.array(pose_propulsion_start[0])
 
     # Phase 1: Flight
     x_bounds.add("q", bounds=bio_model[1].bounds_from_ranges("q"), phase=1)
