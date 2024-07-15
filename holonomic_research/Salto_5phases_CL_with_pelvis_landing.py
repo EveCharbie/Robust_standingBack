@@ -227,7 +227,7 @@ def custom_phase_transition_post(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 23
+version = 24
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 #pickle_sol_init = "/home/mickael/Documents/Anais/Robust_standingBack/holonomic_research/Salto_close_loop_landing_4phases_V13.pkl"
@@ -395,7 +395,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Path constraint
     #pose_propulsion_start = [0.0195, -0.1714, -0.8568, -0.0782, 0.5437, 2.0522, -1.6462, 0.5296]
     #pose_takeout_start = [-0.2777, 0.0399, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119]
-    pose_propulsion_start = [0.0195, -0.1714, -0.37, -0.57, 0.40, 1.14, -1.53, 0.37]
+    pose_propulsion_start = [-0.65, -0.1714, -0.4535, -0.6596, 0.4259, 1.1334, -1.3841, 0.68]
     pose_takeout_start = [-0.2777, 0.0399, 0, 2.51, 0.44, 0, 0, 0.1119]
     pose_salto_start = [-0.6369, 1.0356, 1.5062, 0.3411, 1.3528, 2.1667, -1.9179, 0.0393]
     pose_salto_end = [0.1987, 1.0356, 2.7470, 0.9906, 0.0252, 1.7447, -1.1335, 0.0097]
