@@ -133,9 +133,10 @@ def save_results_holonomic(sol, c3d_file_path, biomodel, index_holo):
     time_total = 0
     time_all = []
     for i in range(len(data["time"])):
+        time_all.append(data["time"][i] + time_total)
         time_total = time_total + data["time"][i][-1]
         time_end_phase.append(time_total)
-    data["time_all"] = np.vstack(data["time"])
+    data["time_all"] = np.vstack(time_all)
     data["time_total"] = time_total
     data["time_end_phase"] = time_end_phase
 
@@ -226,7 +227,7 @@ def custom_phase_transition_post(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 26
+version = 27
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 #pickle_sol_init = "/home/mickael/Documents/Anais/Robust_standingBack/holonomic_research/Salto_close_loop_landing_4phases_V13.pkl"
@@ -427,8 +428,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Phase 1: Flight
     x_bounds.add("q", bounds=bio_model[1].bounds_from_ranges("q"), phase=1)
     x_bounds.add("qdot", bounds=bio_model[1].bounds_from_ranges("qdot"), phase=1)
-    x_bounds[1]["q"].min[0, :] = -1
-    x_bounds[1]["q"].max[0, :] = 1
+    x_bounds[1]["q"].min[0, :] = np.array(pose_propulsion_start[0]) - 1
+    x_bounds[1]["q"].max[0, :] = np.array(pose_propulsion_start[0])
     x_bounds[1]["q"].min[1, :] = 0
     x_bounds[1]["q"].max[1, :] = 2.5
     x_bounds[1]["q"].min[2, 0] = -np.pi / 2
@@ -439,11 +440,12 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[1]["q"].max[2, -1] = np.pi
     x_bounds[1]["q"].min[4, -1] = 1
 
+
     # Phase 2: Tucked phase
     x_bounds.add("q_u", bounds=bio_model[2].bounds_from_ranges("q", mapping=variable_bimapping), phase=2)
     x_bounds.add("qdot_u", bounds=bio_model[2].bounds_from_ranges("qdot", mapping=variable_bimapping), phase=2)
-    x_bounds[2]["q_u"].min[0, :] = -2
-    x_bounds[2]["q_u"].max[0, :] = 1
+    x_bounds[2]["q_u"].min[0, :] = np.array(pose_propulsion_start[0]) - 1
+    x_bounds[2]["q_u"].max[0, :] = np.array(pose_propulsion_start[0])
     x_bounds[2]["q_u"].min[1, 1:] = 0
     x_bounds[2]["q_u"].max[1, 1:] = 2.5
     x_bounds[2]["q_u"].min[2, 0] = 0
@@ -460,8 +462,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Phase 3: Preparation landing
     x_bounds.add("q", bounds=bio_model[3].bounds_from_ranges("q"), phase=3)
     x_bounds.add("qdot", bounds=bio_model[3].bounds_from_ranges("qdot"), phase=3)
-    x_bounds[3]["q"].min[0, :] = -2
-    x_bounds[3]["q"].max[0, :] = 1
+    x_bounds[3]["q"].min[0, :] = np.array(pose_propulsion_start[0]) - 1
+    x_bounds[3]["q"].max[0, :] = np.array(pose_propulsion_start[0])
     x_bounds[3]["q"].min[1, 1:] = 0
     x_bounds[3]["q"].max[1, 1:] = 2.5
     x_bounds[3]["q"].min[2, :] = 3/4 * np.pi
@@ -478,8 +480,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[4]["q"].max[5, 0] = pose_landing_start[5] + 0.06
     x_bounds[4]["q"].min[6, 0] = pose_landing_start[6] - 0.06
     x_bounds[4]["q"].max[6, 0] = pose_landing_start[6] + 0.06
-    x_bounds[4]["q"].min[0, :] = -2
-    x_bounds[4]["q"].max[0, :] = 1
+    x_bounds[4]["q"].min[0, :] = np.array(pose_propulsion_start[0]) - 1
+    x_bounds[4]["q"].max[0, :] = np.array(pose_propulsion_start[0])
     x_bounds[4]["q"].min[1, 0] = 0
     x_bounds[4]["q"].max[1, 0] = 2.5
     x_bounds[4]["q"].min[1, 1:] = -1
@@ -492,6 +494,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[4]["q"].max[:, -1] = np.array(pose_landing_end) + 0.2 #0.5
     x_bounds[4]["q"].min[:, -1] = np.array(pose_landing_end) - 0.2
     #x_bounds[4]["qdot"][:, -1] = [0] * n_qdot
+    x_bounds[4]["q"][7, -1] = np.array(pose_landing_end[7])
 
     # Initial guess
     x_init = InitialGuessList()
