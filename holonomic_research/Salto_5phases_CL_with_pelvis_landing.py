@@ -227,7 +227,7 @@ def custom_phase_transition_post(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 29
+version = 30
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -395,12 +395,12 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     #pose_takeout_start = [-0.2777, 0.0399, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119]
     pose_propulsion_start = [0, 0.14, -0.4535, -0.6596, 0.4259, 1.1334, -1.3841, 0.68]
     pose_takeout_start = [0, 0.0399, 0, 2.51, 0.44, 0, 0, 0.1119]
-    pose_salto_start = [0, 1.0356, 1.5062, 0.3411, 1.3528, 2.1667, -1.9179, 0.0393]
-    pose_salto_end = [0, 1.0356, 2.7470, 0.9906, 0.0252, 1.7447, -1.1335, 0.0097]
-    pose_salto_start_CL = [0, 1.0356, 1.5062, 2.1667, -1.9179, 0.0393]
-    pose_salto_end_CL = [0, 1.0356, 2.7470, 1.7447, -1.1335, 0.0097]
-    pose_landing_start = [0, 1.7551, 5.8322, 0.52, 0.95, 1.72, -0.81, 0.0]
-    pose_landing_end = [0, 0.14, 6.28, 3.1, 0.03, 0.0, 0.0, 0.0]
+    pose_salto_start = [-0.5, 1.0356, 1.5062, 0.3411, 1.3528, 2.1667, -1.9179, 0.0393]
+    pose_salto_end = [-0.5, 1.0356, 2.7470, 0.9906, 0.0252, 1.7447, -1.1335, 0.0097]
+    pose_salto_start_CL = [-0.5, 1.0356, 1.5062, 2.1667, -1.9179, 0.0393]
+    pose_salto_end_CL = [-0.5, 1.0356, 2.7470, 1.7447, -1.1335, 0.0097]
+    pose_landing_start = [-1, 1.7551, 5.8322, 0.52, 0.95, 1.72, -0.81, 0.0]
+    pose_landing_end = [-1, 0.14, 6.28, 3.1, 0.03, 0.0, 0.0, 0.0]
 
     # --- Bounds ---#
     # Initialize x_bounds
@@ -412,7 +412,9 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds = BoundsList()
     x_bounds.add("q", bounds=bio_model[1].bounds_from_ranges("q"), phase=0)
     x_bounds.add("qdot", bounds=bio_model[1].bounds_from_ranges("qdot"), phase=0)
-    #x_bounds[0]["q"][:, 0] = pose_propulsion_start
+    x_bounds[0]["q"][0, 0] = np.array(pose_propulsion_start[0])
+    x_bounds[0]["q"].min[0, 1:] = -1
+    x_bounds[0]["q"].max[0, 1:] = 0.2
     x_bounds[0]["q"].min[:, 0] = np.array(pose_propulsion_start) - 0.1 # 0.03
     x_bounds[0]["q"].max[:, 0] = np.array(pose_propulsion_start) + 0.1
     x_bounds[0]["q"][7, 0] = np.array(pose_propulsion_start[7])
@@ -488,7 +490,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[4]["q"].max[2, 0] = 2 * np.pi + 0.5
     x_bounds[4]["q"].min[2, 1] = 2 * np.pi - 0.5
     x_bounds[4]["q"].max[2, 1] = 2 * np.pi + 0.5
-    #x_bounds[4]["q"][:, -1] = pose_landing_end
+    x_bounds[4]["q"][0, -1] = np.array(pose_landing_end[0])
     x_bounds[4]["q"].max[2:6, -1] = np.array(pose_landing_end[2:6]) + 0.1 #0.5
     x_bounds[4]["q"].min[2:6, -1] = np.array(pose_landing_end[2:6]) - 0.1
     #x_bounds[4]["qdot"][:, -1] = [0] * n_qdot
