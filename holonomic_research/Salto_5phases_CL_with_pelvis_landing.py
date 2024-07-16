@@ -227,11 +227,9 @@ def custom_phase_transition_post(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 28
+version = 29
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
-#pickle_sol_init = "/home/mickael/Documents/Anais/Robust_standingBack/holonomic_research/Salto_close_loop_landing_4phases_V13.pkl"
-#sol = get_created_data_from_pickle(pickle_sol_init)
 
 
 # --- Prepare ocp --- #
@@ -488,11 +486,11 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[4]["q"].max[1, 1:] = 2.5
     x_bounds[4]["q"].min[2, 0] = 3/4 * np.pi
     x_bounds[4]["q"].max[2, 0] = 2 * np.pi + 0.5
-    x_bounds[4]["q"].min[2, 1:] = 2 * np.pi - 0.5
-    x_bounds[4]["q"].max[2, 1:] = 2 * np.pi + 0.5
+    x_bounds[4]["q"].min[2, 1] = 2 * np.pi - 0.5
+    x_bounds[4]["q"].max[2, 1] = 2 * np.pi + 0.5
     #x_bounds[4]["q"][:, -1] = pose_landing_end
-    x_bounds[4]["q"].max[:, -1] = np.array(pose_landing_end) + 0.2 #0.5
-    x_bounds[4]["q"].min[:, -1] = np.array(pose_landing_end) - 0.2
+    x_bounds[4]["q"].max[2:6, -1] = np.array(pose_landing_end[2:6]) + 0.1 #0.5
+    x_bounds[4]["q"].min[2:6, -1] = np.array(pose_landing_end[2:6]) - 0.1
     #x_bounds[4]["qdot"][:, -1] = [0] * n_qdot
     x_bounds[4]["q"][7, -1] = np.array(pose_landing_end[7])
 
@@ -513,16 +511,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_init.add("q", np.array([pose_landing_start, pose_landing_end]).T, interpolation=InterpolationType.LINEAR, phase=4)
     x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=4)
 
-    #x_init.add("q", sol["q"][0], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    #x_init.add("qdot", sol["qdot"][0], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    #x_init.add("q_u", sol["q"][1], interpolation=InterpolationType.EACH_FRAME, phase=2)
-    #x_init.add("qdot_u", sol["qdot"][1], interpolation=InterpolationType.EACH_FRAME, phase=2)
-    #x_init.add("q", sol["q"][2], interpolation=InterpolationType.EACH_FRAME, phase=3)
-    #x_init.add("qdot", sol["qdot"][2], interpolation=InterpolationType.EACH_FRAME, phase=3)
-    #x_init.add("q", sol["q"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
-    #x_init.add("qdot", sol["qdot"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
-
-
     # Define control path constraint
     u_bounds = BoundsList()
     u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
@@ -542,10 +530,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=2)
     u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=3)
     u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=4)
-    #u_init.add("tau", sol["tau"][0][:, :-1], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    #u_init.add("tau", sol["tau"][1][:, :-1], interpolation=InterpolationType.EACH_FRAME, phase=2)
-    #u_init.add("tau", sol["tau"][2][:, :-1], interpolation=InterpolationType.EACH_FRAME, phase=3)
-    #u_init.add("tau", sol["tau"][3][:, :-1], interpolation=InterpolationType.EACH_FRAME, phase=4)
 
     return OptimalControlProgram(
         bio_model=bio_model,
