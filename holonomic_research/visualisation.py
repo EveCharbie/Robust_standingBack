@@ -158,44 +158,52 @@ def graph_all(sol):
     fig, axs = plt.subplots(2, math.ceil(q.shape[0]/2))
     num_col = 0
     num_line = 0
+    y_min = np.min(q)
+    y_max = np.max(q)
     for nb_seg in range(q.shape[0]):
         axs[num_line, num_col].plot(time, q[nb_seg])
         for xline in range(len(time_end_phase)):
             axs[num_line, num_col].axvline(time_end_phase[xline], color="k", linestyle="--")
         axs[num_line, num_col].set_title(dof_names[nb_seg])
+        axs[num_line, num_col].set_ylim(y_min, y_max)
         num_col = num_col + 1
         if nb_seg == math.ceil(q.shape[0]/2) - 1:
             num_col = 0
             num_line = 1
     for ax in axs.flat:
-        ax.set(xlabel='Time [s]', ylabel='Q')
+        ax.set(xlabel='Time [s]', ylabel='Positions [m]')
     for ax in axs.flat:
         ax.label_outer()
-    fig.suptitle("Evolution des Q")
+    #fig.suptitle("Evolution des Q")
 
     # Figure qdot
     fig, axs = plt.subplots(2, math.ceil(qdot.shape[0] / 2))
     num_col = 0
     num_line = 0
+    y_min = np.min(qdot)
+    y_max = np.max(qdot)
     for nb_seg in range(qdot.shape[0]):
         axs[num_line, num_col].plot(time, qdot[nb_seg])
         for xline in range(len(time_end_phase)):
             axs[num_line, num_col].axvline(time_end_phase[xline], color="k", linestyle="--")
         axs[num_line, num_col].set_title(dof_names[nb_seg])
+        axs[num_line, num_col].set_ylim(y_min, y_max)
         num_col = num_col + 1
         if nb_seg == math.ceil(qdot.shape[0] / 2) - 1:
             num_col = 0
             num_line = 1
     for ax in axs.flat:
-        ax.set(xlabel='Time [s]', ylabel='Qdot')
+        ax.set(xlabel='Time [s]', ylabel='Velocities [m/s]')
     for ax in axs.flat:
         ax.label_outer()
-    fig.suptitle("Evolution des Qdot")
+    #fig.suptitle("Evolution des Qdot")
 
     # Figure tau
     fig, axs = plt.subplots(2, math.ceil(tau.shape[0]/2))
     num_col = 0
     num_line = 0
+    y_min = np.min(tau)
+    y_max = np.max(tau)
     for nb_seg in range(tau.shape[0]):
         axs[num_line, num_col].plot(tau[nb_seg])
         value_xline = 0
@@ -203,6 +211,7 @@ def graph_all(sol):
             value_xline = value_xline + data["n_shooting"][xline]
             axs[num_line, num_col].axvline(value_xline, color="k", linestyle="--")
         axs[num_line, num_col].set_title(dof_names[nb_seg + 3])
+        axs[num_line, num_col].set_ylim(y_min, y_max)
         num_col = num_col + 1
         if nb_seg == math.ceil(tau.shape[0]/2) - 1:
             num_col = 0
@@ -211,20 +220,27 @@ def graph_all(sol):
         ax.set(xlabel='Time [s]', ylabel='Tau')
     for ax in axs.flat:
         ax.label_outer()
-    fig.suptitle("Evolution des Tau")
+    #fig.suptitle("Evolution des Tau")
 
     # Figure lambdas
-    fig, axs = plt.subplots(2, math.ceil(lambdas.shape[0]/2))
-    num_col = 0
-    num_line = 0
-    for nb_seg in range(lambdas.shape[0]):
-        axs[num_col].plot(lambdas[nb_seg])
-        num_col = num_col + 1
-    for ax in axs.flat:
-        ax.set(xlabel='Time [s]', ylabel='Lambdas')
-    for ax in axs.flat:
-        ax.label_outer()
-    fig.suptitle("Evolution des Lambdas")
+    #name_ylabel=["Effort normal au tibia [N]", "Effort de cisaillement au tibia [N]"]
+    #fig, axs = plt.subplots(2, math.ceil(lambdas.shape[0]/2))
+    #num_col = 0
+    #num_line = 0
+    #for nb_seg in range(lambdas.shape[0]):
+    #    axs[num_col].plot(lambdas[nb_seg])
+    #    axs[num_col].set_ylabel(name_ylabel[num_col])
+    #    if num_line == 1:
+    #        axs[num_line, num_col].set_xlabel('Time [s]')
+    #    num_col = num_col + 1
+    #fig.suptitle("Evolution des Lambdas")
+    fig = plt.figure()
+    plt.plot(lambdas[0], color='r', label=["Normal force"])
+    plt.plot(lambdas[1], color='g', label=["Shear force"])
+    plt.ylabel("Force on the tibia [N]")
+    plt.xlabel("Shooting point")
+    plt.legend()
+    plt.show()
 
 
 def graph_q(bio_model, sol):
