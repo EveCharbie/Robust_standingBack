@@ -227,7 +227,7 @@ def custom_phase_transition_post(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 34
+version = 35
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -344,16 +344,16 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         phase=0,
     )
 
-    constraints.add(
-        ConstraintFcn.BOUND_STATE,
-        key="q",
-        index=0,
-        node=Node.ALL_SHOOTING,
-        min_bound=-0.2,
-        max_bound=0.2,
-        phase=0,
+    #constraints.add(
+    #    ConstraintFcn.BOUND_STATE,
+    #    key="q",
+    #    index=0,
+    #    node=Node.ALL_SHOOTING,
+    #    min_bound=-0.2,
+    #    max_bound=0.2,
+    #    phase=0,
 
-    )
+    #)
 
     # Phase 2 (Tucked phase):
     holonomic_constraints.add(
@@ -392,16 +392,16 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         phase=4,
     )
 
-    constraints.add(
-        ConstraintFcn.BOUND_STATE,
-        key="q",
-        index=0,
-        node=Node.ALL_SHOOTING,
-        min_bound=-0.5,
-        max_bound=-0.2,
-        phase=4,
+    #constraints.add(
+    #    ConstraintFcn.BOUND_STATE,
+    #    key="q",
+    #    index=0,
+    #    node=Node.ALL_SHOOTING,
+    #    min_bound=-0.5,
+    #    max_bound=-0.2,
+    #    phase=4,
 
-    )
+    #)
 
     #constraints.add(
     #    ConstraintFcn.TRACK_CONTACT_FORCES,
@@ -415,7 +415,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Path constraint
     #pose_propulsion_start = [0, -0.1714, -0.8568, -0.0782, 0.5437, 2.0522, -1.6462, 0.5296]
     #pose_takeout_start = [0, 0.0399, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119]
-    pose_propulsion_start = [0, 0.14, -0.4535, -0.6596, 0.4259, 1.1334, -1.3841, 0.68]
+    #pose_propulsion_start = [0, 0.14, -0.4535, -0.6596, 0.4259, 1.1334, -1.3841, 0.68]
+    pose_propulsion_start = [0, 0, -0.4863, 2.2846, 1.8192, 1.6769, -1.7079, 0.581]
     pose_takeout_start = [0, 0.0399, 0, 2.51, 0.44, 0, 0, 0.1119]
     pose_salto_start = [0, 1.0356, 1.5062, 0.3411, 1.3528, 2.1667, -1.9179, 0.0393]
     pose_salto_end = [0, 1.0356, 2.7470, 0.9906, 0.0252, 1.7447, -1.1335, 0.0097]
