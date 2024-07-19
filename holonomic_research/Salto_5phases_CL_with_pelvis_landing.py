@@ -241,7 +241,7 @@ def custom_phase_transition_post(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 36
+version = 37
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -341,15 +341,15 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     holonomic_constraints = HolonomicConstraintsList()
 
     # Phase 0 (Propulsion):
-    constraints.add(
-        ConstraintFcn.TRACK_MARKERS,
-        marker_index="Foot_Toe",
-        axes=Axis.Z,
-        max_bound=0,
-        min_bound=0,
-        node=Node.START,
-        phase=0,
-    )
+    #constraints.add(
+    #    ConstraintFcn.TRACK_MARKERS,
+    #    marker_index="Foot_Toe",
+    #    axes=Axis.Z,
+    #    max_bound=0,
+    #    min_bound=0,
+    #    node=Node.START,
+    #    phase=0,
+    #)
 
     constraints.add(
         CoM_over_toes,
@@ -423,25 +423,25 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         phase=4,
     )
 
-    constraints.add(
-        ConstraintFcn.TRACK_MARKERS,
-        marker_index="Foot_Toe",
-        axes=Axis.Z,
-        max_bound=0,
-        min_bound=0,
-        node=Node.END,
-        phase=4,
-    )
+    #constraints.add(
+    #    ConstraintFcn.TRACK_MARKERS,
+    #    marker_index="Foot_Toe",
+    #    axes=Axis.Z,
+    #    max_bound=0,
+    #    min_bound=0,
+    #    node=Node.END,
+    #    phase=4,
+    #)
 
-    constraints.add(
-        ConstraintFcn.TRACK_MARKERS,
-        marker_index="Foot_Toe",
-        axes=Axis.Y,
-        max_bound=0.1,
-        min_bound=-0.1,
-        node=Node.END,
-        phase=4,
-    )
+    #constraints.add(
+    #    ConstraintFcn.TRACK_MARKERS,
+    #    marker_index="Foot_Toe",
+    #    axes=Axis.Y,
+    #    max_bound=0.1,
+    #    min_bound=-0.1,
+    #    node=Node.END,
+    #    phase=4,
+    #)
 
     constraints.add(
         CoM_over_toes,
