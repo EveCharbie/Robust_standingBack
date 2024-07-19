@@ -32,6 +32,7 @@ Phase 4: Landing
 
 # --- Import package --- #
 import numpy as np
+import casadi as cas
 import pickle
 from bioptim import (
     BiorbdModel,
@@ -149,6 +150,19 @@ def save_results_holonomic(sol, c3d_file_path, biomodel, index_holo):
         pickle.dump(data, file)
 
 
+def CoM_over_toes(controller: PenaltyController) -> cas.MX:
+    #q_roots = controller.states["q_roots"].cx_start
+    #q_joints = controller.states["q_joints"].cx_start
+    #q = cas.vertcat(q_roots, q_joints)
+    q = controller.states["q"].cx_start
+    CoM_pos = controller.model.center_of_mass(q)
+    CoM_pos_y = CoM_pos[1]
+    marker_index = controller.model.marker_index("Foot_Toe")
+    marker_pos = controller.model.markers(q)[marker_index]
+    marker_pos_y = marker_pos[1]
+    return marker_pos_y - CoM_pos_y
+
+
 def custom_phase_transition_pre(
         controllers: list[PenaltyController, PenaltyController]) -> MX:
     """
@@ -227,7 +241,7 @@ def custom_phase_transition_post(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 35
+version = 36
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -289,11 +303,12 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, with_contact=True, phase=0)
     dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, phase=1)
     dynamics.add(
-        bio_model[2].holonomic_torque_driven_new,
+        #bio_model[2].holonomic_torque_driven_new,
+        DynamicsFcn.HOLONOMIC_TORQUE_DRIVEN,
         #expand_dynamics=True,
         #expand_continuity=False,
-        dynamic_function=DynamicsFunctions.holonomic_torque_driven,
-        mapping=variable_bimapping,
+        #dynamic_function=DynamicsFunctions.holonomic_torque_driven,
+        #mapping=variable_bimapping,
         phase=2
     )
 
@@ -326,6 +341,22 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     holonomic_constraints = HolonomicConstraintsList()
 
     # Phase 0 (Propulsion):
+    constraints.add(
+        ConstraintFcn.TRACK_MARKERS,
+        marker_index="Foot_Toe",
+        axes=Axis.Z,
+        max_bound=0,
+        min_bound=0,
+        node=Node.START,
+        phase=0,
+    )
+
+    constraints.add(
+        CoM_over_toes,
+        node=Node.START,
+        phase=0,
+    )
+
     constraints.add(
         ConstraintFcn.NON_SLIPPING,
         node=Node.END,
@@ -392,6 +423,32 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         phase=4,
     )
 
+    constraints.add(
+        ConstraintFcn.TRACK_MARKERS,
+        marker_index="Foot_Toe",
+        axes=Axis.Z,
+        max_bound=0,
+        min_bound=0,
+        node=Node.END,
+        phase=4,
+    )
+
+    constraints.add(
+        ConstraintFcn.TRACK_MARKERS,
+        marker_index="Foot_Toe",
+        axes=Axis.Y,
+        max_bound=0.1,
+        min_bound=-0.1,
+        node=Node.END,
+        phase=4,
+    )
+
+    constraints.add(
+        CoM_over_toes,
+        node=Node.END,
+        phase=4,
+    )
+
     #constraints.add(
     #    ConstraintFcn.BOUND_STATE,
     #    key="q",
@@ -415,8 +472,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Path constraint
     #pose_propulsion_start = [0, -0.1714, -0.8568, -0.0782, 0.5437, 2.0522, -1.6462, 0.5296]
     #pose_takeout_start = [0, 0.0399, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119]
-    #pose_propulsion_start = [0, 0.14, -0.4535, -0.6596, 0.4259, 1.1334, -1.3841, 0.68]
-    pose_propulsion_start = [0, 0, -0.4863, 2.2846, 1.8192, 1.6769, -1.7079, 0.581]
+    pose_propulsion_start = [0, 0.14, -0.4535, -0.6596, 0.4259, 1.1334, -1.3841, 0.68]
+    #pose_propulsion_start = [0, 0, -0.4863, -0.24, 0.11, 1.6769, -1.7079, 0.581]
     pose_takeout_start = [0, 0.0399, 0, 2.51, 0.44, 0, 0, 0.1119]
     pose_salto_start = [0, 1.0356, 1.5062, 0.3411, 1.3528, 2.1667, -1.9179, 0.0393]
     pose_salto_end = [0, 1.0356, 2.7470, 0.9906, 0.0252, 1.7447, -1.1335, 0.0097]
@@ -440,8 +497,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[0]["q"].max[0, 1:] = 0.2
     x_bounds[0]["q"].min[:, 0] = np.array(pose_propulsion_start) - 0.1 # 0.03
     x_bounds[0]["q"].max[:, 0] = np.array(pose_propulsion_start) + 0.1
-    x_bounds[0]["q"][7, 0] = np.array(pose_propulsion_start[7])
-    x_bounds[0]["q"][7, 1] = np.array(pose_propulsion_start[7])
+    #x_bounds[0]["q"][7, 0] = np.array(pose_propulsion_start[7])
+    #x_bounds[0]["q"][7, 1] = np.array(pose_propulsion_start[7])
     x_bounds[0]["qdot"][:, 0] = [0] * n_qdot
     x_bounds[0]["q"].min[2, 1:] = -np.pi / 2
     x_bounds[0]["q"].max[2, 1:] = np.pi / 2
@@ -517,7 +574,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[4]["q"].min[2:6, -1] = np.array(pose_landing_end[2:6]) - 0.1
     #x_bounds[4]["qdot"][:, -1] = [0] * n_qdot
     #x_bounds[4]["q"][0, -1] = np.array(pose_propulsion_start[0])
-    x_bounds[4]["q"][7, -1] = np.array(pose_landing_end[7])
+    #x_bounds[4]["q"][7, -1] = np.array(pose_landing_end[7])
 
     # Initial guess
     x_init = InitialGuessList()
@@ -585,7 +642,7 @@ def main():
                            model_path,
                            model_path,
                            model_path,
-                           model_path_2contact),
+                           model_path_1contact),
         phase_time=(0.1, 0.2, 0.3, 0.3, 0.3),
         n_shooting=(10, 20, 30, 30, 30),
         min_bound=0.01,
@@ -593,18 +650,20 @@ def main():
     )
 
     # --- Solve the program --- #
-    solver = Solver.IPOPT(show_online_optim=False, show_options=dict(show_bounds=False), _linear_solver="MA57")
+    solver = Solver.IPOPT(show_online_optim=True, show_options=dict(show_bounds=True), _linear_solver="MA57")
     solver.set_maximum_iterations(3000)
     solver.set_bound_frac(1e-8)
     solver.set_bound_push(1e-8)
     sol = ocp.solve(solver)
     #sol.print_cost()
-    #sol.graphs(show_bounds=True)
+
 
 # --- Save results --- #
     save_results_holonomic(sol, str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl", bio_model, 2)
     name_file_move = str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl"
     name_file_model = str(name_folder_model) + "/" + "Model2D_7Dof_3C_5M_CL_V2.bioMod"
+
+    sol.graphs(show_bounds=True,save_name="Graph")
 
 
 if __name__ == "__main__":

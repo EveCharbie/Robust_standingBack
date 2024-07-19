@@ -320,3 +320,11 @@ contact	Foot_Toe
 	position	0.00000000000   -0.0300000000   -0.15000000000
 	axis	yz
 endcontact
+
+marker	 Foot_Toe
+	parent	Foot
+	position 0.00000000000   -0.0300000000   -0.15000000000
+	technical 1
+endmarker
+
+
