@@ -241,7 +241,7 @@ def custom_phase_transition_post(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 37
+version = 38
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -351,11 +351,11 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     #    phase=0,
     #)
 
-    constraints.add(
-        CoM_over_toes,
-        node=Node.START,
-        phase=0,
-    )
+    #constraints.add(
+    #    CoM_over_toes,
+    #    node=Node.START,
+    #    phase=0,
+    #)
 
     constraints.add(
         ConstraintFcn.NON_SLIPPING,
@@ -443,22 +443,12 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     #    phase=4,
     #)
 
-    constraints.add(
-        CoM_over_toes,
-        node=Node.END,
-        phase=4,
-    )
-
     #constraints.add(
-    #    ConstraintFcn.BOUND_STATE,
-    #    key="q",
-    #    index=0,
-    #    node=Node.ALL_SHOOTING,
-    #    min_bound=-0.5,
-    #    max_bound=-0.2,
+    #    CoM_over_toes,
+    #    node=Node.END,
     #    phase=4,
-
     #)
+
 
     #constraints.add(
     #    ConstraintFcn.TRACK_CONTACT_FORCES,
@@ -663,7 +653,7 @@ def main():
     name_file_move = str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl"
     name_file_model = str(name_folder_model) + "/" + "Model2D_7Dof_3C_5M_CL_V2.bioMod"
 
-    sol.graphs(show_bounds=True,save_name="Graph")
+    sol.graphs(show_bounds=True, save_name=str(movement) + "_" + str(nb_phase) + "phases_V" + str(version))
 
 
 if __name__ == "__main__":

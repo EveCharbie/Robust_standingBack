@@ -249,12 +249,12 @@ contact	Foot_Toe
 	axis	yz
 endcontact
 
-marker	Foot_Heel
+marker	Foot_Heel_marker
 	parent	Foot
 	position	0.00000000000   -0.0300000000    0.05000000000
 endmarker
 
-marker	Foot_Toe
+marker	Foot_Toe_marker
 	parent	Foot
 	position	0.00000000000   -0.05   -0.22
 endmarker
