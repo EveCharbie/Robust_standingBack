@@ -245,7 +245,7 @@ endmarker
 
 contact	Foot_Toe
 	parent	Foot
-	position	0.00000000000   -0.05   -0.22
+	position	0.00000000000   -0.03   -0.15
 	axis	yz
 endcontact
 
@@ -256,7 +256,7 @@ endmarker
 
 marker	Foot_Toe_marker
 	parent	Foot
-	position	0.00000000000   -0.05   -0.22
+	position	0.00000000000   -0.03   -0.15
 endmarker
 
 

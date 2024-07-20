@@ -243,3 +243,14 @@ marker	 ANKLE
 	technical 1
 endmarker
 
+marker	Foot_Heel_marker
+	parent	Foot
+	position	0.00000000000   -0.0300000000    0.05000000000
+endmarker
+
+marker	Foot_Toe_marker
+	parent	Foot
+	position	0.00000000000   -0.03   -0.15
+endmarker
+
+
