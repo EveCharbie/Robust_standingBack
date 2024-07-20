@@ -157,7 +157,7 @@ def CoM_over_toes(controller: PenaltyController) -> cas.MX:
     q = controller.states["q"].cx_start
     CoM_pos = controller.model.center_of_mass(q)
     CoM_pos_y = CoM_pos[1]
-    marker_index = controller.model.marker_index("Foot_Toe")
+    marker_index = controller.model.marker_index("Foot_Toe_marker")
     marker_pos = controller.model.markers(q)[marker_index]
     marker_pos_y = marker_pos[1]
     return marker_pos_y - CoM_pos_y
@@ -241,7 +241,7 @@ def custom_phase_transition_post(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 39
+version = 40
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -341,21 +341,21 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     holonomic_constraints = HolonomicConstraintsList()
 
     # Phase 0 (Propulsion):
-    constraints.add(
-        ConstraintFcn.TRACK_MARKERS,
-        marker_index="Foot_Toe_marker",
-        axes=Axis.Z,
-        max_bound=0,
-        min_bound=0,
-        node=Node.START,
-        phase=0,
-    )
-
     #constraints.add(
-    #    CoM_over_toes,
+    #    ConstraintFcn.TRACK_MARKERS,
+    #    marker_index="Foot_Toe_marker",
+    #    axes=Axis.Z,
+    #    max_bound=0,
+    #    min_bound=0,
     #    node=Node.START,
     #    phase=0,
     #)
+
+    constraints.add(
+        CoM_over_toes,
+        node=Node.START,
+        phase=0,
+    )
 
     constraints.add(
         ConstraintFcn.NON_SLIPPING,
@@ -443,27 +443,17 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     #    phase=4,
     #)
 
-    #constraints.add(
-    #    CoM_over_toes,
-    #    node=Node.END,
-    #    phase=4,
-    #)
-
-
-    #constraints.add(
-    #    ConstraintFcn.TRACK_CONTACT_FORCES,
-    #    min_bound=min_bound,
-    #    max_bound=max_bound,
-    #    node=Node.END,
-    #    contact_index=2,
-    #    phase=4,
-    #)
+    constraints.add(
+        CoM_over_toes,
+        node=Node.END,
+        phase=4,
+    )
 
     # Path constraint
     #pose_propulsion_start = [0, -0.1714, -0.8568, -0.0782, 0.5437, 2.0522, -1.6462, 0.5296]
     #pose_takeout_start = [0, 0.0399, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119]
-    pose_propulsion_start = [0, 0.14, -0.4535, -0.6596, 0.4259, 1.1334, -1.3841, 0.68]
-    #pose_propulsion_start = [0, 0, -0.4863, -0.24, 0.11, 1.6769, -1.7079, 0.581]
+    #pose_propulsion_start = [0, 0.14, -0.4535, -0.6596, 0.4259, 1.1334, -1.3841, 0.68] #model bras en arriere
+    pose_propulsion_start = [0, 0, -0.4863, -0.24, 0.11, 1.6769, -1.7079, 0.581] # model utiliser de base
     pose_takeout_start = [0, 0.0399, 0, 2.51, 0.44, 0, 0, 0.1119]
     pose_salto_start = [0, 1.0356, 1.5062, 0.3411, 1.3528, 2.1667, -1.9179, 0.0393]
     pose_salto_end = [0, 1.0356, 2.7470, 0.9906, 0.0252, 1.7447, -1.1335, 0.0097]
