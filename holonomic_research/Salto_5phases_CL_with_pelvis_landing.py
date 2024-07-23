@@ -239,9 +239,31 @@ def custom_phase_transition_post(
     return states_pre - states_post
 
 
+def custom_contraint_lambdas(
+        controller: PenaltyController, bio_model: BiorbdModelCustomHolonomic) -> MX:
+
+    # Recuperer les q
+    q_u = controller.states["q_u"].cx
+    qdot_u = controller.states["qdot_u"].cx
+    tau = controller.controls["tau"].cx #TODO: Problem mapping tau
+    pelvis_mx = MX.zeros(3)
+    new_tau = vertcat(pelvis_mx, tau)
+
+    # Calculer lambdas
+    lambdas = bio_model.compute_the_lagrangian_multipliers(q_u, qdot_u, new_tau)
+
+    # Contrainte lagrange_0 (min_bound = -1, max_bound = 1)
+    lagrange_0 = lambdas[0]
+
+    # Contrainte lagrange_1 (min_bound = L_1/L_0 = -0.2, max_bound = L_1/L_0 = 0.2)
+    lagrange_1 = lambdas[1]
+
+    return lagrange_1 / lagrange_0
+
+
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 45
+version = 46
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -341,15 +363,21 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     holonomic_constraints = HolonomicConstraintsList()
 
     # Phase 0 (Propulsion):
-    constraints.add(
-        ConstraintFcn.TRACK_MARKERS,
-        marker_index="Foot_Toe_marker",
-        axes=Axis.Z,
-        max_bound=0,
-        min_bound=0,
-        node=Node.START,
-        phase=0,
-    )
+    #constraints.add(
+    #    ConstraintFcn.TRACK_MARKERS,
+    #    marker_index="Foot_Toe_marker",
+    #    axes=Axis.Z,
+    #    max_bound=0,
+    #    min_bound=0,
+    #    node=Node.START,
+    #    phase=0,
+    #)
+    #constraints.add(
+    #    custom_contraint_lambdas,
+    #    node=Node.ALL_SHOOTING,
+    #    bio_model=bio_model[2],
+    #    phase=2,
+    #)
 
     #constraints.add(
     #    ConstraintFcn.TRACK_MARKERS,
@@ -433,15 +461,15 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         phase=4,
     )
 
-    constraints.add(
-        ConstraintFcn.TRACK_MARKERS,
-        marker_index="Foot_Toe_marker",
-        axes=Axis.Z,
-        max_bound=0,
-        min_bound=0,
-        node=Node.END,
-        phase=4,
-    )
+    #constraints.add(
+    #    ConstraintFcn.TRACK_MARKERS,
+    #    marker_index="Foot_Toe_marker",
+    #    axes=Axis.Z,
+    #    max_bound=0,
+    #    min_bound=0,
+    #    node=Node.END,
+    #    phase=4,
+    #)
 
     #constraints.add(
     #    ConstraintFcn.TRACK_MARKERS,
@@ -483,7 +511,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds = BoundsList()
     x_bounds.add("q", bounds=bio_model[1].bounds_from_ranges("q"), phase=0)
     x_bounds.add("qdot", bounds=bio_model[1].bounds_from_ranges("qdot"), phase=0)
-    x_bounds[0]["q"][0, 0] = np.array(pose_propulsion_start[0])
     x_bounds[0]["q"].min[0, 1:] = -0.5
     x_bounds[0]["q"].max[0, 1:] = 0.2
     x_bounds[0]["q"].min[:, 0] = np.array(pose_propulsion_start) - 0.3 # 0.03
@@ -500,7 +527,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds.add("q", bounds=bio_model[1].bounds_from_ranges("q"), phase=1)
     x_bounds.add("qdot", bounds=bio_model[1].bounds_from_ranges("qdot"), phase=1)
     x_bounds[1]["q"].min[0, :] = -0.5
-    x_bounds[1]["q"].max[0, :] = 0
+    x_bounds[1]["q"].max[0, :] = 0.2
     x_bounds[1]["q"].min[1, :] = 0
     x_bounds[1]["q"].max[1, :] = 2.5
     x_bounds[1]["q"].min[2, 0] = -np.pi / 2
@@ -516,7 +543,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds.add("q_u", bounds=bio_model[2].bounds_from_ranges("q", mapping=variable_bimapping), phase=2)
     x_bounds.add("qdot_u", bounds=bio_model[2].bounds_from_ranges("qdot", mapping=variable_bimapping), phase=2)
     x_bounds[2]["q_u"].min[0, :] = - 0.5
-    x_bounds[2]["q_u"].max[0, :] = 0
+    x_bounds[2]["q_u"].max[0, :] = 0.2
     x_bounds[2]["q_u"].min[1, 1:] = 0
     x_bounds[2]["q_u"].max[1, 1:] = 2.5
     x_bounds[2]["q_u"].min[2, 0] = 0
@@ -552,7 +579,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[4]["q"].min[6, 0] = pose_landing_start[6] - 0.06
     x_bounds[4]["q"].max[6, 0] = pose_landing_start[6] + 0.06
     x_bounds[4]["q"].min[0, :] = - 0.5
-    x_bounds[4]["q"].max[0, :] = 0
+    x_bounds[4]["q"].max[0, :] = 0.2
     x_bounds[4]["q"].min[1, 0] = 0
     x_bounds[4]["q"].max[1, 0] = 2.5
     x_bounds[4]["q"].min[1, 1:] = -1
