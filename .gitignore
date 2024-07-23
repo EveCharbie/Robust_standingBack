@@ -128,12 +128,16 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-data_analysis/c3d/
+.DS_Store
 
-data_analysis/reconstructions/
+.idea/
 
 *.xz
 
 *.CSV
 
 USB_Anais
+
+data_analysis/c3d/
+
+data_analysis/reconstructions/

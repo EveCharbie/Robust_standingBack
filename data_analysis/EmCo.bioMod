@@ -644,7 +644,6 @@ external_forces 0
 		technical 1
 	endmarker
 
-
 // Informations about PiedD segment
 	// Segment
 	segment	PiedD
@@ -793,8 +792,7 @@ external_forces 0
 		parent	JambeG
 		position	0.0717614411	0.0065972924	-0.3624751110
 		technical 1
-	endmarker
-
+    endmarker
 
 // Informations about PiedG segment
 	// Segment
@@ -847,4 +845,124 @@ external_forces 0
 		technical 1
 	endmarker
 
-
+		//Markers
+	marker	 insole_D_mid_7
+		parent	JambeD
+		position 	0.03873296699059934 -0.06875358187158864 -0.04571995020021192
+		technical 1
+	endmarker
+	marker	 insole_D_up_6
+		parent	JambeD
+		position 	0.05928543050927443 -0.037471628935101094 -0.022778092117520736
+		technical 1
+	endmarker
+	marker	 insole_D_down_6
+		parent	JambeD
+		position 	0.05648637128906156 -0.05694316540061354 -0.07086828514771283
+		technical 1
+	endmarker
+	marker	 insole_D_up_5
+		parent	JambeD
+		position 	0.06418249985964843 0.006536699152622315 -0.022227006899731738
+		technical 1
+	endmarker
+	marker	 insole_D_up_4
+		parent	JambeD
+		position 	0.038879570386410094 0.047069594193981136 -0.031317993124178614
+		technical 1
+	endmarker
+	marker	 insole_D_down_4
+		parent	JambeD
+		position 	0.03917825205921038 0.03979239080056271 -0.09356747407984184
+		technical 1
+	endmarker
+	marker	 insole_D_up_3
+		parent	JambeD
+		position 	-0.007195599744891409 0.05146259421182744 -0.031603760048302273
+		technical 1
+	endmarker
+	marker	 insole_D_up_2
+		parent	JambeD
+		position 	-0.049642855659249224 -0.001842625662118084 -0.0269046277967892
+		technical 1
+	endmarker
+	marker	 insole_D_down_2
+		parent	JambeD
+		position 	-0.057795999002979936 -0.01604217342230612 -0.08346062726273314
+		technical 1
+	endmarker
+	marker	 insole_D_mid_1
+		parent	JambeD
+		position 	-0.04995898790811934 -0.04249548086480858 -0.05400147371920415
+		technical 1
+	endmarker
+	marker	 insole_D_down_3
+		parent	JambeD
+		position 	-0.0275254177197357 0.037482464534286164 -0.09385965577425244
+		technical 1
+	endmarker
+	marker	 insole_D_down_5
+		parent	JambeD
+		position 	0.06770150784520462 0.005991508643966789 -0.08282768795492593
+		technical 1
+	endmarker
+	marker	 insole_G_mid_7
+		parent	JambeG
+		position 	-0.04770268224433013 -0.06298365727481163 -0.036694340079522825
+		technical 1
+	endmarker
+	marker	 insole_G_up_6
+		parent	JambeG
+		position 	-0.06352813605566404 -0.0072816545056322846 -0.014194381262036232
+		technical 1
+	endmarker
+	marker	 insole_G_down_6
+		parent	JambeG
+		position 	-0.06448418019438659 -0.01978057044991638 -0.07581231672014062
+		technical 1
+	endmarker
+	marker	 insole_G_up_5
+		parent	JambeG
+		position 	-0.04815237144751569 0.03583800831726827 -0.023310217710341204
+		technical 1
+	endmarker
+	marker	 insole_G_down_5
+		parent	JambeG
+		position 	-0.04889036681165638 0.022975690534202058 -0.08333800690533581
+		technical 1
+	endmarker
+	marker	 insole_G_up_4
+		parent	JambeG
+		position 	-0.0008908600817174352 0.054000822667343296 -0.02376928471967417
+		technical 1
+	endmarker
+	marker	 insole_G_down_4
+		parent	JambeG
+		position 	-0.005693094613287715 0.03892117337143696 -0.08828421841911727
+		technical 1
+	endmarker
+	marker	 insole_G_up_2
+		parent	JambeG
+		position 	0.05144873532754906 -0.027697036404626948 -0.004700144174710946
+		technical 1
+	endmarker
+	marker	 insole_G_down_2
+		parent	JambeG
+		position 	0.05629431284685249 -0.029937645642805447 -0.0638160264714689
+		technical 1
+	endmarker
+	marker	 insole_G_mid_1
+		parent	JambeG
+		position 	0.03784628064979803 -0.056063381406715136 -0.03460787574375091
+		technical 1
+	endmarker
+	marker	 insole_G_up_3
+		parent	JambeG
+		position 	0.047952493679830434 0.019530764717745543 -0.0070710541913141306
+		technical 1
+	endmarker
+	marker	 insole_G_down_3
+		parent	JambeG
+		position 	0.047241525979239446 0.010603240856845192 -0.07932747669730049
+		technical 1
+	endmarker
