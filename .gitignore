@@ -131,3 +131,9 @@ dmypy.json
 data_analysis/c3d/
 
 data_analysis/reconstructions/
+
+*.xz
+
+*.CSV
+
+USB_Anais
