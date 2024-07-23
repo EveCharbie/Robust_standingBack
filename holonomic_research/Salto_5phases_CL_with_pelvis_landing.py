@@ -241,7 +241,7 @@ def custom_phase_transition_post(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 44
+version = 45
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -351,15 +351,15 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         phase=0,
     )
 
-    constraints.add(
-        ConstraintFcn.TRACK_MARKERS,
-        marker_index="Foot_Toe_marker",
-        axes=Axis.Y,
-        max_bound=0.1,
-        min_bound=-0.1,
-        node=Node.START,
-        phase=0,
-    )
+    #constraints.add(
+    #    ConstraintFcn.TRACK_MARKERS,
+    #    marker_index="Foot_Toe_marker",
+    #    axes=Axis.Y,
+    #    max_bound=0.1,
+    #    min_bound=-0.1,
+    #    node=Node.START,
+    #    phase=0,
+    #)
 
     constraints.add(
         CoM_over_toes,
@@ -443,15 +443,15 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         phase=4,
     )
 
-    constraints.add(
-        ConstraintFcn.TRACK_MARKERS,
-        marker_index="Foot_Toe_marker",
-        axes=Axis.Y,
-        max_bound=0.1,
-        min_bound=-0.1,
-        node=Node.END,
-        phase=4,
-    )
+    #constraints.add(
+    #    ConstraintFcn.TRACK_MARKERS,
+    #    marker_index="Foot_Toe_marker",
+    #    axes=Axis.Y,
+    #    max_bound=0.1,
+    #    min_bound=-0.1,
+    #    node=Node.END,
+    #    phase=4,
+    #)
 
     constraints.add(
         CoM_over_toes,
@@ -463,8 +463,9 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     #pose_propulsion_start = [0, -0.1714, -0.8568, -0.0782, 0.5437, 2.0522, -1.6462, 0.5296]
     #pose_takeout_start = [0, 0.0399, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119]
     #pose_propulsion_start = [0, 0.14, -0.4535, -0.6596, 0.4259, 1.1334, -1.3841, 0.68] #model bras en arriere
-    pose_propulsion_start = [0, 0, -0.4863, -0.24, 0.11, 1.6769, -1.7079, 0.581] # model utiliser de base
-    pose_takeout_start = [0, 0.0399, 0, 2.51, 0.44, 0, 0, 0.1119]
+    pose_propulsion_start = [0, -0.1714, -0.4863, -0.24, 0.11, 1.6769, -1.7079, 0.581] # model utiliser de base
+    #pose_takeout_start = [0, 0.0399, 0, 2.51, 0.44, 0, 0, 0.1119]
+    pose_takeout_start = [-0.15, 0.0399, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119] # New take out
     pose_salto_start = [0, 1.0356, 1.5062, 0.3411, 1.3528, 2.1667, -1.9179, 0.0393]
     pose_salto_end = [0, 1.0356, 2.7470, 0.9906, 0.0252, 1.7447, -1.1335, 0.0097]
     pose_salto_start_CL = [0, 1.0356, 1.5062, 2.1667, -1.9179, 0.0393]
@@ -560,8 +561,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[4]["q"].max[2, 0] = 2 * np.pi + 0.5
     x_bounds[4]["q"].min[2, 1] = 2 * np.pi - 0.5
     x_bounds[4]["q"].max[2, 1] = 2 * np.pi + 0.5
-    x_bounds[4]["q"].max[2:6, -1] = np.array(pose_landing_end[2:6]) + 0.1 #0.5
-    x_bounds[4]["q"].min[2:6, -1] = np.array(pose_landing_end[2:6]) - 0.1
+    x_bounds[4]["q"].max[2:6, -1] = np.array(pose_landing_end[2:6]) + 0.2 #0.5
+    x_bounds[4]["q"].min[2:6, -1] = np.array(pose_landing_end[2:6]) - 0.2
     #x_bounds[4]["qdot"][:, -1] = [0] * n_qdot
     #x_bounds[4]["q"][0, -1] = np.array(pose_propulsion_start[0])
     #x_bounds[4]["q"][7, -1] = np.array(pose_landing_end[7])
@@ -650,9 +651,6 @@ def main():
 
 # --- Save results --- #
     save_results_holonomic(sol, str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl", bio_model, 2)
-    name_file_move = str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl"
-    name_file_model = str(name_folder_model) + "/" + "Model2D_7Dof_3C_5M_CL_V2.bioMod"
-
     sol.graphs(show_bounds=True, save_name=str(movement) + "_" + str(nb_phase) + "phases_V" + str(version))
 
 
