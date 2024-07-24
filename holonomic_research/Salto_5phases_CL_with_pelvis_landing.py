@@ -263,7 +263,7 @@ def custom_contraint_lambdas(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 46
+version = 47
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -379,15 +379,15 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     #    phase=2,
     #)
 
-    #constraints.add(
-    #    ConstraintFcn.TRACK_MARKERS,
-    #    marker_index="Foot_Toe_marker",
-    #    axes=Axis.Y,
-    #    max_bound=0.1,
-    #    min_bound=-0.1,
-    #    node=Node.START,
-    #    phase=0,
-    #)
+    constraints.add(
+        ConstraintFcn.TRACK_MARKERS,
+        marker_index="Foot_Toe_marker",
+        axes=Axis.Y,
+        max_bound=0.1,
+        min_bound=-0.1,
+        node=Node.START,
+        phase=0,
+    )
 
     constraints.add(
         CoM_over_toes,
@@ -471,15 +471,15 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     #    phase=4,
     #)
 
-    #constraints.add(
-    #    ConstraintFcn.TRACK_MARKERS,
-    #    marker_index="Foot_Toe_marker",
-    #    axes=Axis.Y,
-    #    max_bound=0.1,
-    #    min_bound=-0.1,
-    #    node=Node.END,
-    #    phase=4,
-    #)
+    constraints.add(
+        ConstraintFcn.TRACK_MARKERS,
+        marker_index="Foot_Toe_marker",
+        axes=Axis.Y,
+        max_bound=0.1,
+        min_bound=-0.1,
+        node=Node.END,
+        phase=4,
+    )
 
     constraints.add(
         CoM_over_toes,
@@ -499,6 +499,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     pose_salto_start_CL = [0, 1.0356, 1.5062, 2.1667, -1.9179, 0.0393]
     pose_salto_end_CL = [0, 1.0356, 2.7470, 1.7447, -1.1335, 0.0097]
     pose_landing_start = [0, 1.7551, 5.8322, 0.52, 0.95, 1.72, -0.81, 0.0]
+    #pose_landing_start = [0, 0.14, 5.8322, 0.52, 0.95, 1.72, -0.81, 0.0] # Changer pelvis Z
     pose_landing_end = [0, 0.14, 6.28, 3.1, 0.03, 0.0, 0.0, 0.0]
 
     # --- Bounds ---#
@@ -528,7 +529,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds.add("qdot", bounds=bio_model[1].bounds_from_ranges("qdot"), phase=1)
     x_bounds[1]["q"].min[0, :] = -0.5
     x_bounds[1]["q"].max[0, :] = 0.2
-    x_bounds[1]["q"].min[1, :] = 0
+    x_bounds[1]["q"].min[1, :] = -1
     x_bounds[1]["q"].max[1, :] = 2.5
     x_bounds[1]["q"].min[2, 0] = -np.pi / 2
     x_bounds[1]["q"].max[2, 0] = np.pi / 2
@@ -544,7 +545,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds.add("qdot_u", bounds=bio_model[2].bounds_from_ranges("qdot", mapping=variable_bimapping), phase=2)
     x_bounds[2]["q_u"].min[0, :] = - 0.5
     x_bounds[2]["q_u"].max[0, :] = 0.2
-    x_bounds[2]["q_u"].min[1, 1:] = 0
+    x_bounds[2]["q_u"].min[1, 1:] = -1
     x_bounds[2]["q_u"].max[1, 1:] = 2.5
     x_bounds[2]["q_u"].min[2, 0] = 0
     x_bounds[2]["q_u"].max[2, 0] = np.pi / 2
@@ -588,8 +589,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[4]["q"].max[2, 0] = 2 * np.pi + 0.5
     x_bounds[4]["q"].min[2, 1] = 2 * np.pi - 0.5
     x_bounds[4]["q"].max[2, 1] = 2 * np.pi + 0.5
-    x_bounds[4]["q"].max[2:6, -1] = np.array(pose_landing_end[2:6]) + 0.2 #0.5
-    x_bounds[4]["q"].min[2:6, -1] = np.array(pose_landing_end[2:6]) - 0.2
+    x_bounds[4]["q"].max[:, -1] = np.array(pose_landing_end) + 0.2 #0.5
+    x_bounds[4]["q"].min[:, -1] = np.array(pose_landing_end) - 0.2
     #x_bounds[4]["qdot"][:, -1] = [0] * n_qdot
     #x_bounds[4]["q"][0, -1] = np.array(pose_propulsion_start[0])
     #x_bounds[4]["q"][7, -1] = np.array(pose_landing_end[7])
@@ -669,7 +670,7 @@ def main():
 
     # --- Solve the program --- #
     solver = Solver.IPOPT(show_online_optim=True, show_options=dict(show_bounds=True), _linear_solver="MA57")
-    solver.set_maximum_iterations(3000)
+    solver.set_maximum_iterations(10000)
     solver.set_bound_frac(1e-8)
     solver.set_bound_push(1e-8)
     sol = ocp.solve(solver)
