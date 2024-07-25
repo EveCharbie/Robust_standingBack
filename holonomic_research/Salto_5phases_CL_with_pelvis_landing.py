@@ -282,7 +282,7 @@ def custom_contraint_lambdas_cisaillement(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 48
+version = 49
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -410,15 +410,15 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     #    phase=2,
     #)
 
-    #constraints.add(
-    #    ConstraintFcn.TRACK_MARKERS,
-    #    marker_index="Foot_Toe_marker",
-    #    axes=Axis.Y,
-    #    max_bound=0.1,
-    #    min_bound=-0.1,
-    #    node=Node.START,
-    #    phase=0,
-    #)
+    constraints.add(
+        ConstraintFcn.TRACK_MARKERS,
+        marker_index="Foot_Toe_marker",
+        axes=Axis.Y,
+        max_bound=0.1,
+        min_bound=-0.1,
+        node=Node.START,
+        phase=0,
+    )
 
     constraints.add(
         CoM_over_toes,
@@ -502,15 +502,15 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         phase=4,
     )
 
-    #constraints.add(
-    #    ConstraintFcn.TRACK_MARKERS,
-    #    marker_index="Foot_Toe_marker",
-    #    axes=Axis.Y,
-    #    max_bound=0.1,
-    #    min_bound=-0.1,
-    #    node=Node.END,
-    #    phase=4,
-    #)
+    constraints.add(
+        ConstraintFcn.TRACK_MARKERS,
+        marker_index="Foot_Toe_marker",
+        axes=Axis.Y,
+        max_bound=0.1,
+        min_bound=-0.1,
+        node=Node.END,
+        phase=4,
+    )
 
     constraints.add(
         CoM_over_toes,
@@ -706,13 +706,12 @@ def main():
     solver.set_bound_push(1e-8)
     #ocp.add_plot_penalty()
     sol = ocp.solve(solver)
-
+    sol.print_cost()
 
 
 # --- Save results --- #
     save_results_holonomic(sol, str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl", bio_model, 2)
     sol.graphs(show_bounds=True, save_name=str(movement) + "_" + str(nb_phase) + "phases_V" + str(version))
-    sol.print_cost()
 
 
 if __name__ == "__main__":
