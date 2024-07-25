@@ -115,7 +115,7 @@ def save_results_holonomic(sol, c3d_file_path, biomodel, index_holo):
     data["time"] = time
     data["cost"] = sol.cost
     data["iterations"] = sol.iterations
-    # data["detailed_cost"] = sol.detailed_cost
+    # data["detailed_cost"] = sol.add_detailed_cost
     data["status"] = sol.status
     data["real_time_to_optimize"] = sol.real_time_to_optimize
     data["phase_time"] = sol.phases_dt
@@ -239,13 +239,32 @@ def custom_phase_transition_post(
     return states_pre - states_post
 
 
-def custom_contraint_lambdas(
+def custom_contraint_lambdas_normal(
         controller: PenaltyController, bio_model: BiorbdModelCustomHolonomic) -> MX:
 
     # Recuperer les q
     q_u = controller.states["q_u"].cx
     qdot_u = controller.states["qdot_u"].cx
-    tau = controller.controls["tau"].cx #TODO: Problem mapping tau
+    tau = controller.controls["tau"].cx
+    pelvis_mx = MX.zeros(3)
+    new_tau = vertcat(pelvis_mx, tau)
+
+    # Calculer lambdas
+    lambdas = bio_model.compute_the_lagrangian_multipliers(q_u, qdot_u, new_tau)
+
+    # Contrainte lagrange_0 (min_bound = -1, max_bound = 1)
+    lagrange_0 = lambdas[0]
+
+    return lagrange_0
+
+
+def custom_contraint_lambdas_cisaillement(
+        controller: PenaltyController, bio_model: BiorbdModelCustomHolonomic) -> MX:
+
+    # Recuperer les q
+    q_u = controller.states["q_u"].cx
+    qdot_u = controller.states["qdot_u"].cx
+    tau = controller.controls["tau"].cx
     pelvis_mx = MX.zeros(3)
     new_tau = vertcat(pelvis_mx, tau)
 
@@ -263,7 +282,7 @@ def custom_contraint_lambdas(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 47
+version = 48
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -363,31 +382,43 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     holonomic_constraints = HolonomicConstraintsList()
 
     # Phase 0 (Propulsion):
-    #constraints.add(
-    #    ConstraintFcn.TRACK_MARKERS,
-    #    marker_index="Foot_Toe_marker",
-    #    axes=Axis.Z,
-    #    max_bound=0,
-    #    min_bound=0,
-    #    node=Node.START,
-    #    phase=0,
-    #)
-    #constraints.add(
-    #    custom_contraint_lambdas,
-    #    node=Node.ALL_SHOOTING,
-    #    bio_model=bio_model[2],
-    #    phase=2,
-    #)
-
     constraints.add(
         ConstraintFcn.TRACK_MARKERS,
         marker_index="Foot_Toe_marker",
-        axes=Axis.Y,
-        max_bound=0.1,
-        min_bound=-0.1,
+        axes=Axis.Z,
+        max_bound=0,
+        min_bound=0,
         node=Node.START,
         phase=0,
     )
+
+    #constraints.add(
+    #    custom_contraint_lambdas_cisaillement,
+    #    node=Node.ALL_SHOOTING,
+    #    bio_model=bio_model[2],
+    #    max_bound = 0.2,
+    #    min_bound = -0.2,
+    #    phase=2,
+    #)
+
+    #constraints.add(
+    #    custom_contraint_lambdas_normal,
+    #    node=Node.ALL_SHOOTING,
+    #    bio_model=bio_model[2],
+    #    max_bound = 1,
+    #    min_bound = -1,
+    #    phase=2,
+    #)
+
+    #constraints.add(
+    #    ConstraintFcn.TRACK_MARKERS,
+    #    marker_index="Foot_Toe_marker",
+    #    axes=Axis.Y,
+    #    max_bound=0.1,
+    #    min_bound=-0.1,
+    #    node=Node.START,
+    #    phase=0,
+    #)
 
     constraints.add(
         CoM_over_toes,
@@ -461,25 +492,25 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         phase=4,
     )
 
-    #constraints.add(
-    #    ConstraintFcn.TRACK_MARKERS,
-    #    marker_index="Foot_Toe_marker",
-    #    axes=Axis.Z,
-    #    max_bound=0,
-    #    min_bound=0,
-    #    node=Node.END,
-    #    phase=4,
-    #)
-
     constraints.add(
         ConstraintFcn.TRACK_MARKERS,
         marker_index="Foot_Toe_marker",
-        axes=Axis.Y,
-        max_bound=0.1,
-        min_bound=-0.1,
+        axes=Axis.Z,
+        max_bound=0,
+        min_bound=0,
         node=Node.END,
         phase=4,
     )
+
+    #constraints.add(
+    #    ConstraintFcn.TRACK_MARKERS,
+    #    marker_index="Foot_Toe_marker",
+    #    axes=Axis.Y,
+    #    max_bound=0.1,
+    #    min_bound=-0.1,
+    #    node=Node.END,
+    #    phase=4,
+    #)
 
     constraints.add(
         CoM_over_toes,
@@ -491,16 +522,16 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     #pose_propulsion_start = [0, -0.1714, -0.8568, -0.0782, 0.5437, 2.0522, -1.6462, 0.5296]
     #pose_takeout_start = [0, 0.0399, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119]
     #pose_propulsion_start = [0, 0.14, -0.4535, -0.6596, 0.4259, 1.1334, -1.3841, 0.68] #model bras en arriere
-    pose_propulsion_start = [0, -0.1714, -0.4863, -0.24, 0.11, 1.6769, -1.7079, 0.581] # model utiliser de base
+    pose_propulsion_start = [0, 0.6286, -0.4863, -0.24, 0.11, 1.6769, -1.7079, 0.581] # model utiliser de base
     #pose_takeout_start = [0, 0.0399, 0, 2.51, 0.44, 0, 0, 0.1119]
-    pose_takeout_start = [-0.15, 0.0399, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119] # New take out
-    pose_salto_start = [0, 1.0356, 1.5062, 0.3411, 1.3528, 2.1667, -1.9179, 0.0393]
-    pose_salto_end = [0, 1.0356, 2.7470, 0.9906, 0.0252, 1.7447, -1.1335, 0.0097]
-    pose_salto_start_CL = [0, 1.0356, 1.5062, 2.1667, -1.9179, 0.0393]
-    pose_salto_end_CL = [0, 1.0356, 2.7470, 1.7447, -1.1335, 0.0097]
-    pose_landing_start = [0, 1.7551, 5.8322, 0.52, 0.95, 1.72, -0.81, 0.0]
+    pose_takeout_start = [-0.15, 0.8399, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119] # New take out
+    pose_salto_start = [0, 1.8356, 1.5062, 0.3411, 1.3528, 2.1667, -1.9179, 0.0393]
+    pose_salto_end = [0, 1.8356, 2.7470, 0.9906, 0.0252, 1.7447, -1.1335, 0.0097]
+    pose_salto_start_CL = [0, 1.8356, 1.5062, 2.1667, -1.9179, 0.0393]
+    pose_salto_end_CL = [0, 1.8356, 2.7470, 1.7447, -1.1335, 0.0097]
+    pose_landing_start = [0, 2.5551, 5.8322, 0.52, 0.95, 1.72, -0.81, 0.0]
     #pose_landing_start = [0, 0.14, 5.8322, 0.52, 0.95, 1.72, -0.81, 0.0] # Changer pelvis Z
-    pose_landing_end = [0, 0.14, 6.28, 3.1, 0.03, 0.0, 0.0, 0.0]
+    pose_landing_end = [0, 0.94, 6.28, 3.1, 0.03, 0.0, 0.0, 0.0]
 
     # --- Bounds ---#
     # Initialize x_bounds
@@ -529,8 +560,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds.add("qdot", bounds=bio_model[1].bounds_from_ranges("qdot"), phase=1)
     x_bounds[1]["q"].min[0, :] = -0.5
     x_bounds[1]["q"].max[0, :] = 0.2
-    x_bounds[1]["q"].min[1, :] = -1
-    x_bounds[1]["q"].max[1, :] = 2.5
+    x_bounds[1]["q"].min[1, :] = 0
+    x_bounds[1]["q"].max[1, :] = 3
     x_bounds[1]["q"].min[2, 0] = -np.pi / 2
     x_bounds[1]["q"].max[2, 0] = np.pi / 2
     x_bounds[1]["q"].min[2, 1] = -np.pi / 4
@@ -545,8 +576,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds.add("qdot_u", bounds=bio_model[2].bounds_from_ranges("qdot", mapping=variable_bimapping), phase=2)
     x_bounds[2]["q_u"].min[0, :] = - 0.5
     x_bounds[2]["q_u"].max[0, :] = 0.2
-    x_bounds[2]["q_u"].min[1, 1:] = -1
-    x_bounds[2]["q_u"].max[1, 1:] = 2.5
+    x_bounds[2]["q_u"].min[1, 1:] = 0
+    x_bounds[2]["q_u"].max[1, 1:] = 3
     x_bounds[2]["q_u"].min[2, 0] = 0
     x_bounds[2]["q_u"].max[2, 0] = np.pi / 2
     x_bounds[2]["q_u"].min[2, 1] = np.pi / 8
@@ -564,31 +595,31 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[3]["q"].min[0, :] = - 0.5
     x_bounds[3]["q"].max[0, :] = 0.2
     x_bounds[3]["q"].min[1, 1:] = 0
-    x_bounds[3]["q"].max[1, 1:] = 2.5
+    x_bounds[3]["q"].max[1, 1:] = 3
     x_bounds[3]["q"].min[2, :] = 3/4 * np.pi
     x_bounds[3]["q"].max[2, :] = 2 * np.pi + 0.5
-    x_bounds[3]["q"].min[5, -1] = pose_landing_start[5] - 0.06 #0.06
-    x_bounds[3]["q"].max[5, -1] = pose_landing_start[5] + 0.06
-    x_bounds[3]["q"].min[6, -1] = pose_landing_start[6] - 0.06
-    x_bounds[3]["q"].max[6, -1] = pose_landing_start[6] + 0.06
+    x_bounds[3]["q"].min[5, -1] = pose_landing_start[5] - 1 #0.06
+    x_bounds[3]["q"].max[5, -1] = pose_landing_start[5] + 0.1
+    x_bounds[3]["q"].min[6, -1] = pose_landing_start[6] - 1
+    x_bounds[3]["q"].max[6, -1] = pose_landing_start[6] + 0.1
 
     # Phase 3: Landing
     x_bounds.add("q", bounds=bio_model[4].bounds_from_ranges("q"), phase=4)
     x_bounds.add("qdot", bounds=bio_model[4].bounds_from_ranges("qdot"), phase=4)
-    x_bounds[4]["q"].min[5, 0] = pose_landing_start[5] - 0.06 #0.06
-    x_bounds[4]["q"].max[5, 0] = pose_landing_start[5] + 0.06
-    x_bounds[4]["q"].min[6, 0] = pose_landing_start[6] - 0.06
-    x_bounds[4]["q"].max[6, 0] = pose_landing_start[6] + 0.06
+    x_bounds[4]["q"].min[5, 0] = pose_landing_start[5] - 1 #0.06
+    x_bounds[4]["q"].max[5, 0] = pose_landing_start[5] + 0.1
+    x_bounds[4]["q"].min[6, 0] = pose_landing_start[6] - 1
+    x_bounds[4]["q"].max[6, 0] = pose_landing_start[6] + 0.1
     x_bounds[4]["q"].min[0, :] = - 0.5
     x_bounds[4]["q"].max[0, :] = 0.2
     x_bounds[4]["q"].min[1, 0] = 0
-    x_bounds[4]["q"].max[1, 0] = 2.5
+    x_bounds[4]["q"].max[1, 0] = 3
     x_bounds[4]["q"].min[1, 1:] = -1
     x_bounds[4]["q"].max[1, 1:] = 2.5
-    x_bounds[4]["q"].min[2, 0] = 3/4 * np.pi
-    x_bounds[4]["q"].max[2, 0] = 2 * np.pi + 0.5
-    x_bounds[4]["q"].min[2, 1] = 2 * np.pi - 0.5
-    x_bounds[4]["q"].max[2, 1] = 2 * np.pi + 0.5
+    x_bounds[4]["q"].min[2, 0] = 2/4 * np.pi
+    x_bounds[4]["q"].max[2, 0] = 2 * np.pi + 1.66
+    x_bounds[4]["q"].min[2, 1] = 2 * np.pi - 0.8
+    x_bounds[4]["q"].max[2, 1] = 2 * np.pi + 1.66
     x_bounds[4]["q"].max[:, -1] = np.array(pose_landing_end) + 0.2 #0.5
     x_bounds[4]["q"].min[:, -1] = np.array(pose_landing_end) - 0.2
     #x_bounds[4]["qdot"][:, -1] = [0] * n_qdot
@@ -673,13 +704,15 @@ def main():
     solver.set_maximum_iterations(10000)
     solver.set_bound_frac(1e-8)
     solver.set_bound_push(1e-8)
+    #ocp.add_plot_penalty()
     sol = ocp.solve(solver)
-    #sol.print_cost()
+
 
 
 # --- Save results --- #
     save_results_holonomic(sol, str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl", bio_model, 2)
     sol.graphs(show_bounds=True, save_name=str(movement) + "_" + str(nb_phase) + "phases_V" + str(version))
+    sol.print_cost()
 
 
 if __name__ == "__main__":

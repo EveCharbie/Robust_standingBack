@@ -3,7 +3,7 @@ version 4
 gravity 0 0 -9.81
 
 segment	Pelvis
-	RT -0.1 0 0	xyz 0 0 0.8
+	RT -0.1 0 0	xyz 0 0 0
     translations yz
 	rotations	 x
 	mass	11.58
