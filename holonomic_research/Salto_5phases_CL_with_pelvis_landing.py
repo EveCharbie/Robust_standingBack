@@ -282,7 +282,7 @@ def custom_contraint_lambdas_cisaillement(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 49
+version = 50
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -344,29 +344,10 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, with_contact=True, phase=0)
     dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, phase=1)
     dynamics.add(
-        #bio_model[2].holonomic_torque_driven_new,
         DynamicsFcn.HOLONOMIC_TORQUE_DRIVEN,
-        #expand_dynamics=True,
-        #expand_continuity=False,
-        #dynamic_function=DynamicsFunctions.holonomic_torque_driven,
-        #mapping=variable_bimapping,
         phase=2
     )
 
-    #dynamics.add(
-    #    bio_model[2].holonomic_torque_driven,
-    #    #expand_dynamics=True,
-    #    #expand_continuity=False,
-    #    dynamic_function=DynamicsFunctions.holonomic_torque_driven,
-    #    mapping=variable_bimapping,
-    #    phase=2
-    #)
-
-    #dynamics.add(
-    #    DynamicsFcn.HOLONOMIC_TORQUE_DRIVEN,
-        #mapping=variable_bimapping,
-    #    phase=2
-    #)
     dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, phase=3)
     dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, with_contact=True, phase=4)
 
@@ -392,23 +373,23 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         phase=0,
     )
 
-    #constraints.add(
-    #    custom_contraint_lambdas_cisaillement,
-    #    node=Node.ALL_SHOOTING,
-    #    bio_model=bio_model[2],
-    #    max_bound = 0.2,
-    #    min_bound = -0.2,
-    #    phase=2,
-    #)
+    constraints.add(
+        custom_contraint_lambdas_cisaillement,
+        node=Node.ALL_SHOOTING,
+        bio_model=bio_model[2],
+        max_bound=0.2,
+        min_bound=-0.2,
+        phase=2,
+    )
 
-    #constraints.add(
-    #    custom_contraint_lambdas_normal,
-    #    node=Node.ALL_SHOOTING,
-    #    bio_model=bio_model[2],
-    #    max_bound = 1,
-    #    min_bound = -1,
-    #    phase=2,
-    #)
+    constraints.add(
+        custom_contraint_lambdas_normal,
+        node=Node.ALL_SHOOTING,
+        bio_model=bio_model[2],
+        max_bound=1,
+        min_bound=-1,
+        phase=2,
+    )
 
     constraints.add(
         ConstraintFcn.TRACK_MARKERS,
@@ -443,17 +424,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         contact_index=1,
         phase=0,
     )
-
-    #constraints.add(
-    #    ConstraintFcn.BOUND_STATE,
-    #    key="q",
-    #    index=0,
-    #    node=Node.ALL_SHOOTING,
-    #    min_bound=-0.2,
-    #    max_bound=0.2,
-    #    phase=0,
-
-    #)
 
     # Phase 2 (Tucked phase):
     holonomic_constraints.add(
@@ -521,7 +491,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Path constraint
     #pose_propulsion_start = [0, -0.1714, -0.8568, -0.0782, 0.5437, 2.0522, -1.6462, 0.5296]
     #pose_takeout_start = [0, 0.0399, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119]
-    #pose_propulsion_start = [0, 0.14, -0.4535, -0.6596, 0.4259, 1.1334, -1.3841, 0.68] #model bras en arriere
+    #pose_propulsion_start = [0, 0.6286, -0.4535, -0.6596, 0.4259, 1.1334, -1.3841, 0.68] #model bras en arriere
     pose_propulsion_start = [0, 0.6286, -0.4863, -0.24, 0.11, 1.6769, -1.7079, 0.581] # model utiliser de base
     #pose_takeout_start = [0, 0.0399, 0, 2.51, 0.44, 0, 0, 0.1119]
     pose_takeout_start = [-0.15, 0.8399, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119] # New take out
