@@ -65,7 +65,7 @@ from Save import get_created_data_from_pickle
 
 
 # --- Save results --- #
-def save_results_holonomic(sol, c3d_file_path, biomodel, index_holo):
+def save_results(sol, c3d_file_path):
     """
     Solving the ocp
     Parameters
@@ -83,7 +83,6 @@ def save_results_holonomic(sol, c3d_file_path, biomodel, index_holo):
 
     q = []
     qdot = []
-    qddot =[]
     tau = []
     time = []
 
@@ -93,24 +92,13 @@ def save_results_holonomic(sol, c3d_file_path, biomodel, index_holo):
         tau = controls["tau"]
     else:
         for i in range(len(states)):
-            if i == index_holo:
-                q_holo, qdot_holo, qddot_holo, lambdas = BiorbdModelCustomHolonomic.compute_all_states(
-                    biomodel[index_holo], sol, index_holo)
-                q.append(q_holo)
-                qdot.append(qdot_holo)
-                qddot.append(qddot_holo)
-                tau.append(controls[i]["tau"])
-                data["lambda"] = lambdas
-                time.append(list_time[i])
-            else:
-                q.append(states[i]["q"])
-                qdot.append(states[i]["qdot"])
-                tau.append(controls[i]["tau"])
-                time.append(list_time[i])
+            q.append(states[i]["q"])
+            qdot.append(states[i]["qdot"])
+            tau.append(controls[i]["tau"])
+            time.append(list_time[i])
 
     data["q"] = q
     data["qdot"] = qdot
-    data["qddot"] = qddot
     data["tau"] = tau
     data["time"] = time
     data["cost"] = sol.cost
@@ -128,7 +116,6 @@ def save_results_holonomic(sol, c3d_file_path, biomodel, index_holo):
     data["dof_names"] = sol.ocp.nlp[0].dof_names
     data["q_all"] = np.hstack(data["q"])
     data["qdot_all"] = np.hstack(data["qdot"])
-    data["qddot_all"] = np.hstack(data["qddot"])
     data["tau_all"] = np.hstack(data["tau"])
     time_end_phase = []
     time_total = 0
@@ -324,12 +311,10 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     )
 
     # Path constraint
-    pose_propulsion_start = [0, 0.6286, -0.4863, -0.24, 0.11, 1.6769, -1.7079, 0.581] # model utiliser de base
-    pose_takeout_start = [-0.15, 0.8399, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119] # New take out
+    pose_propulsion_start = [0, 0.6286, -0.4535, -0.6596, 0.4259, 1.1334, -1.3841, 0.68]
+    pose_takeout_start = [0, 0.8399, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119] # New take out
     pose_salto_start = [0, 1.8356, 1.5062, 0.3411, 1.3528, 2.1667, -1.9179, 0.0393]
     pose_salto_end = [0, 1.8356, 2.7470, 0.9906, 0.0252, 1.7447, -1.1335, 0.0097]
-    pose_salto_start_CL = [0, 1.8356, 1.5062, 2.1667, -1.9179, 0.0393]
-    pose_salto_end_CL = [0, 1.8356, 2.7470, 1.7447, -1.1335, 0.0097]
     pose_landing_start = [0, 2.5551, 5.8322, 0.52, 0.95, 1.72, -0.81, 0.0]
     pose_landing_end = [0, 0.94, 6.28, 3.1, 0.03, 0.0, 0.0, 0.0]
 
@@ -381,10 +366,10 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[2]["q"].max[2, 1] = 2 * np.pi
     x_bounds[2]["q"].min[2, 2] = 3/4 * np.pi
     x_bounds[2]["q"].max[2, 2] = 3/2 * np.pi
-    x_bounds[2]["q"].max[3, :-1] = 2.6
-    x_bounds[2]["q"].min[3, :-1] = 1.96
-    x_bounds[2]["q"].max[4, :-1] = -1.72
-    x_bounds[2]["q"].min[4, :-1] = -2.3
+    x_bounds[2]["q"].max[5, :-1] = 2.6
+    x_bounds[2]["q"].min[5, :-1] = 1.96
+    x_bounds[2]["q"].max[6, :-1] = -1.72
+    x_bounds[2]["q"].min[6, :-1] = -2.3
 
     # Phase 3: Preparation landing
     x_bounds.add("q", bounds=bio_model[3].bounds_from_ranges("q"), phase=3)
@@ -480,8 +465,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
 # --- Load model --- #
 def main():
-    model_path = str(name_folder_model) + "/" + "Model2D_7Dof_0C_5M_CL_V2.bioMod"
-    model_path_1contact = str(name_folder_model) + "/" + "Model2D_7Dof_2C_5M_CL_V2.bioMod"
+    model_path = str(name_folder_model) + "/" + "Model2D_8Dof_0C_5M.bioMod"
+    model_path_1contact = str(name_folder_model) + "/" + "Model2D_8Dof_2C_5M.bioMod"
 
     ocp, bio_model = prepare_ocp(
         biorbd_model_path=(model_path_1contact,
@@ -506,7 +491,7 @@ def main():
 
 
 # --- Save results --- #
-    save_results_holonomic(sol, str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl", bio_model, 2)
+    save_results(sol, str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl")
     sol.graphs(show_bounds=True, save_name=str(movement) + "_" + str(nb_phase) + "phases_V" + str(version))
 
 
