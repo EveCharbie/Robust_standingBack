@@ -258,6 +258,48 @@ def custom_contraint_lambdas_normal(
     return lagrange_0
 
 
+def custom_contraint_lambdas_cisaillement_1(
+        controller: PenaltyController, bio_model: BiorbdModelCustomHolonomic) -> MX:
+    # Recuperer les q
+    q_u = controller.states["q_u"].cx
+    qdot_u = controller.states["qdot_u"].cx
+    tau = controller.controls["tau"].cx
+    pelvis_mx = MX.zeros(3)
+    new_tau = vertcat(pelvis_mx, tau)
+
+    # Calculer lambdas
+    lambdas = bio_model.compute_the_lagrangian_multipliers(q_u, qdot_u, new_tau)
+
+    # Contrainte lagrange_0 (min_bound = -1, max_bound = 1)
+    lagrange_0 = lambdas[0]
+
+    # Contrainte lagrange_1 (min_bound = L_1/L_0 = -0.2, max_bound = L_1/L_0 = 0.2)
+    lagrange_1 = lambdas[1]
+
+    return lagrange_1 - lagrange_0 <= 0
+
+
+def custom_contraint_lambdas_cisaillement_2(
+        controller: PenaltyController, bio_model: BiorbdModelCustomHolonomic) -> MX:
+    # Recuperer les q
+    q_u = controller.states["q_u"].cx
+    qdot_u = controller.states["qdot_u"].cx
+    tau = controller.controls["tau"].cx
+    pelvis_mx = MX.zeros(3)
+    new_tau = vertcat(pelvis_mx, tau)
+
+    # Calculer lambdas
+    lambdas = bio_model.compute_the_lagrangian_multipliers(q_u, qdot_u, new_tau)
+
+    # Contrainte lagrange_0 (min_bound = -1, max_bound = 1)
+    lagrange_0 = lambdas[0]
+
+    # Contrainte lagrange_1 (min_bound = L_1/L_0 = -0.2, max_bound = L_1/L_0 = 0.2)
+    lagrange_1 = lambdas[1]
+
+    return lagrange_1 - 0.01 * lagrange_0 >= 0
+
+
 def custom_contraint_lambdas_cisaillement(
         controller: PenaltyController, bio_model: BiorbdModelCustomHolonomic) -> MX:
 
@@ -276,13 +318,32 @@ def custom_contraint_lambdas_cisaillement(
 
     # Contrainte lagrange_1 (min_bound = L_1/L_0 = -0.2, max_bound = L_1/L_0 = 0.2)
     lagrange_1 = lambdas[1]
+    constraints = ConstraintList()
 
+    constraints.add(
+        custom_contraint_lambdas_cisaillement_1,
+        node=Node.ALL_SHOOTING,
+        bio_model=bio_model,
+        max_bound=0,
+        min_bound=-np.pi,
+    )
+
+    constraints.add(
+        custom_contraint_lambdas_cisaillement_2,
+        node=Node.ALL_SHOOTING,
+        bio_model=bio_model,
+        max_bound=np.pi,
+        min_bound=0,
+    )
+
+    #lagrange_1 - lagrange_0 <= 0
+    #lagrange_1 - 0.01 * lagrange_0 >= 0
     return lagrange_1 / lagrange_0
 
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 52
+version = 53
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -296,10 +357,14 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
                  BiorbdModel(biorbd_model_path[4]),
                  )
 
-    tau_min_total = [0, 0, 0, -325.531, -138, -981.1876, -735.3286, -343.9806]
-    tau_max_total = [0, 0, 0, 325.531, 138, 981.1876, 735.3286, 343.9806]
-    tau_min = [i * 0.9 for i in tau_min_total]
-    tau_max = [i * 0.9 for i in tau_max_total]
+    #tau_min_total = [0, 0, 0, -325.531, -138, -981.1876, -735.3286, -343.9806]
+    #tau_max_total = [0, 0, 0, 325.531, 138, 981.1876, 735.3286, 343.9806]
+    tau_min_total = [0, 0, 0, -325.531, -138, -500, -367.6643, -343.9806]
+    tau_max_total = [0, 0, 0, 325.531, 138, 500, 367.6643, 343.9806]
+    #tau_min = [0, 0, 0, -162.7655, -69, -490.5938, -367.6643, -171.9903]
+    #tau_max = [0, 0, 0, 162.7655, 69, 490.5938, 367.6643, 171.9903]
+    tau_min = [i * 1 for i in tau_min_total]
+    tau_max = [i * 1 for i in tau_max_total]
     tau_init = 0
     variable_bimapping = BiMappingList()
     dof_mapping = BiMappingList()
@@ -374,24 +439,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     )
 
     constraints.add(
-        custom_contraint_lambdas_cisaillement,
-        node=Node.ALL_SHOOTING,
-        bio_model=bio_model[2],
-        max_bound=1,
-        min_bound=0.01,
-        phase=2,
-    )
-
-    constraints.add(
-        custom_contraint_lambdas_normal,
-        node=Node.ALL_SHOOTING,
-        bio_model=bio_model[2],
-        max_bound=np.inf,
-        min_bound=1,
-        phase=2,
-    )
-
-    constraints.add(
         ConstraintFcn.TRACK_MARKERS,
         marker_index="Foot_Toe_marker",
         axes=Axis.Y,
@@ -450,6 +497,24 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     bio_model[2].set_holonomic_configuration(
         constraints_list=holonomic_constraints, independent_joint_index=[0, 1, 2, 5, 6, 7],
         dependent_joint_index=[3, 4],
+    )
+
+    constraints.add(
+        custom_contraint_lambdas_cisaillement,
+        node=Node.ALL_SHOOTING,
+        bio_model=bio_model[2],
+        max_bound=1,
+        min_bound=0.01,
+        phase=2,
+    )
+
+    constraints.add(
+        custom_contraint_lambdas_normal,
+        node=Node.ALL_SHOOTING,
+        bio_model=bio_model[2],
+        max_bound=np.inf,
+        min_bound=1,
+        phase=2,
     )
 
     # Phase 4 (Landing):
