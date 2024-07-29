@@ -282,7 +282,7 @@ def custom_contraint_lambdas_cisaillement(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 51
+version = 52
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -418,12 +418,21 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
     constraints.add(
         ConstraintFcn.TRACK_CONTACT_FORCES,
-        min_bound=min_bound,
-        max_bound=max_bound,
+        min_bound=0.01,
+        max_bound=np.inf,
         node=Node.ALL_SHOOTING,
         contact_index=1,
         phase=0,
     )
+
+    #constraints.add(
+    #    ConstraintFcn.TRACK_CONTACT_FORCES,
+    #    min_bound=0.01,
+    #    max_bound=np.inf,
+    #    node=Node.ALL_SHOOTING,
+    #    contact_index=0,
+    #    phase=0,
+    #)
 
     # Phase 2 (Tucked phase):
     holonomic_constraints.add(
@@ -446,8 +455,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Phase 4 (Landing):
     constraints.add(
         ConstraintFcn.TRACK_CONTACT_FORCES,
-        min_bound=min_bound,
-        max_bound=max_bound,
+        min_bound=0.01,
+        max_bound=np.inf,
         node=Node.END,
         contact_index=0,
         phase=4,
@@ -455,8 +464,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
     constraints.add(
         ConstraintFcn.TRACK_CONTACT_FORCES,
-        min_bound=min_bound,
-        max_bound=max_bound,
+        min_bound=0.01,
+        max_bound=np.inf,
         node=Node.END,
         contact_index=1,
         phase=4,
@@ -485,6 +494,15 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     constraints.add(
         CoM_over_toes,
         node=Node.END,
+        phase=4,
+    )
+
+    constraints.add(
+        ConstraintFcn.NON_SLIPPING,
+        node=Node.START,
+        normal_component_idx=1,
+        tangential_component_idx=0,
+        static_friction_coefficient=0.33,
         phase=4,
     )
 
