@@ -351,7 +351,7 @@ def custom_contraint_lambdas_cisaillement(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 56
+version = 57
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -365,12 +365,12 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
                  BiorbdModel(biorbd_model_path[4]),
                  )
 
-    tau_min_total = [0, 0, 0, -325.531, -138, -981.1876, -735.3286, -343.9806]
-    tau_max_total = [0, 0, 0, 325.531, 138, 981.1876, 735.3286, 343.9806]
-    #tau_min_total = [0, 0, 0, -162.7655, -69, -490.5938, -367.6643, -171.9903]
-    #tau_max_total = [0, 0, 0, 162.7655, 69, 490.5938, 367.6643, 171.9903]
-    tau_min = [i * 0.9 for i in tau_min_total]
-    tau_max = [i * 0.9 for i in tau_max_total]
+    #tau_min_total = [0, 0, 0, -325.531, -138, -981.1876, -735.3286, -343.9806]
+    #tau_max_total = [0, 0, 0, 325.531, 138, 981.1876, 735.3286, 343.9806]
+    tau_min_total = [0, 0, 0, -162.7655, -69, -490.5938, -367.6643, -171.9903]
+    tau_max_total = [0, 0, 0, 162.7655, 69, 490.5938, 367.6643, 171.9903]
+    tau_min = [i * 1 for i in tau_min_total]
+    tau_max = [i * 1 for i in tau_max_total]
     tau_init = 0
     variable_bimapping = BiMappingList()
     dof_mapping = BiMappingList()
