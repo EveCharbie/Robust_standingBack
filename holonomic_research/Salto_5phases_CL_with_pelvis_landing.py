@@ -86,6 +86,8 @@ def save_results_holonomic(sol, c3d_file_path, biomodel, index_holo):
     qddot =[]
     tau = []
     time = []
+    min_bounds = []
+    max_bounds = []
 
     if len(sol.ocp.n_shooting) == 1:
         q = states["q_u"]
@@ -102,17 +104,23 @@ def save_results_holonomic(sol, c3d_file_path, biomodel, index_holo):
                 tau.append(controls[i]["tau"])
                 data["lambda"] = lambdas
                 time.append(list_time[i])
+                min_bounds.append(sol.ocp.nlp[i].x_bounds['q_u'].min)
+                max_bounds.append(sol.ocp.nlp[i].x_bounds['q_u'].max)
             else:
                 q.append(states[i]["q"])
                 qdot.append(states[i]["qdot"])
                 tau.append(controls[i]["tau"])
                 time.append(list_time[i])
+                min_bounds.append(sol.ocp.nlp[i].x_bounds['q'].min)
+                max_bounds.append(sol.ocp.nlp[i].x_bounds['q'].max)
 
     data["q"] = q
     data["qdot"] = qdot
     data["qddot"] = qddot
     data["tau"] = tau
     data["time"] = time
+    data["min_bounds"] = min_bounds
+    data["max_bounds"] = max_bounds
     data["cost"] = sol.cost
     data["iterations"] = sol.iterations
     # data["detailed_cost"] = sol.add_detailed_cost
@@ -343,7 +351,7 @@ def custom_contraint_lambdas_cisaillement(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 55
+version = 56
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -516,14 +524,14 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     )
 
     # Phase 4 (Landing):
-    constraints.add(
-        ConstraintFcn.TRACK_CONTACT_FORCES,
-        min_bound=0.01,
-        max_bound=np.inf,
-        node=Node.ALL_SHOOTING,
-        contact_index=0,
-        phase=4,
-    )
+    #constraints.add(
+    #    ConstraintFcn.TRACK_CONTACT_FORCES,
+    #    min_bound=0,
+    #    max_bound=np.inf,
+    #    node=Node.END,
+    #    contact_index=0,
+    #    phase=4,
+    #)
 
     constraints.add(
         ConstraintFcn.TRACK_CONTACT_FORCES,
