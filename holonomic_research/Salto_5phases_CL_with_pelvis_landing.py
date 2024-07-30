@@ -343,7 +343,7 @@ def custom_contraint_lambdas_cisaillement(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 53
+version = 54
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -596,44 +596,44 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds = BoundsList()
     x_bounds.add("q", bounds=bio_model[1].bounds_from_ranges("q"), phase=0)
     x_bounds.add("qdot", bounds=bio_model[1].bounds_from_ranges("qdot"), phase=0)
-    x_bounds[0]["q"].min[0, 1:] = -0.5
-    x_bounds[0]["q"].max[0, 1:] = 0.2
+    x_bounds[0]["q"].min[0, 1:] = -1
+    x_bounds[0]["q"].max[0, 1:] = 1
     x_bounds[0]["q"].min[:, 0] = np.array(pose_propulsion_start) - 0.3 # 0.03
     x_bounds[0]["q"].max[:, 0] = np.array(pose_propulsion_start) + 0.3
     #x_bounds[0]["q"][7, 0] = np.array(pose_propulsion_start[7])
     #x_bounds[0]["q"][7, 1] = np.array(pose_propulsion_start[7])
     x_bounds[0]["qdot"][:, 0] = [0] * n_qdot
-    x_bounds[0]["q"].min[2, 1:] = -np.pi / 2
-    x_bounds[0]["q"].max[2, 1:] = np.pi / 2
+    x_bounds[0]["q"].min[2, 1:] = -np.pi
+    x_bounds[0]["q"].max[2, 1:] = np.pi
     x_bounds[0]["q"].min[0, :] = - 1
     x_bounds[0]["q"].max[0, :] = 0
 
     # Phase 1: Flight
     x_bounds.add("q", bounds=bio_model[1].bounds_from_ranges("q"), phase=1)
     x_bounds.add("qdot", bounds=bio_model[1].bounds_from_ranges("qdot"), phase=1)
-    x_bounds[1]["q"].min[0, :] = -0.5
-    x_bounds[1]["q"].max[0, :] = 0.2
+    x_bounds[1]["q"].min[0, :] = -1
+    x_bounds[1]["q"].max[0, :] = 1
     x_bounds[1]["q"].min[1, :] = 0
     x_bounds[1]["q"].max[1, :] = 3
-    x_bounds[1]["q"].min[2, 0] = -np.pi / 2
-    x_bounds[1]["q"].max[2, 0] = np.pi / 2
-    x_bounds[1]["q"].min[2, 1] = -np.pi / 4
-    x_bounds[1]["q"].max[2, 1] = np.pi / 2
-    x_bounds[1]["q"].min[2, -1] = np.pi / 2
-    x_bounds[1]["q"].max[2, -1] = np.pi
-    x_bounds[1]["q"].min[4, -1] = 1
+    x_bounds[1]["q"].min[2, 0] = -np.pi
+    x_bounds[1]["q"].max[2, 0] = np.pi * 1.5
+    x_bounds[1]["q"].min[2, 1] = -np.pi
+    x_bounds[1]["q"].max[2, 1] = np.pi * 1.5
+    x_bounds[1]["q"].min[2, -1] = -np.pi
+    x_bounds[1]["q"].max[2, -1] = np.pi * 1.5
+    #x_bounds[1]["q"].min[4, -1] = 1
 
 
     # Phase 2: Tucked phase
     x_bounds.add("q_u", bounds=bio_model[2].bounds_from_ranges("q", mapping=variable_bimapping), phase=2)
     x_bounds.add("qdot_u", bounds=bio_model[2].bounds_from_ranges("qdot", mapping=variable_bimapping), phase=2)
-    x_bounds[2]["q_u"].min[0, :] = - 0.5
-    x_bounds[2]["q_u"].max[0, :] = 0.2
+    x_bounds[2]["q_u"].min[0, :] = - 1
+    x_bounds[2]["q_u"].max[0, :] = 1
     x_bounds[2]["q_u"].min[1, 1:] = 0
     x_bounds[2]["q_u"].max[1, 1:] = 3
-    x_bounds[2]["q_u"].min[2, 0] = 0
-    x_bounds[2]["q_u"].max[2, 0] = np.pi / 2
-    x_bounds[2]["q_u"].min[2, 1] = np.pi / 8
+    x_bounds[2]["q_u"].min[2, 0] = -np.pi
+    x_bounds[2]["q_u"].max[2, 0] = np.pi * 1.5
+    x_bounds[2]["q_u"].min[2, 1] = -np.pi
     x_bounds[2]["q_u"].max[2, 1] = 2 * np.pi
     x_bounds[2]["q_u"].min[2, 2] = 3/4 * np.pi
     x_bounds[2]["q_u"].max[2, 2] = 3/2 * np.pi
@@ -645,8 +645,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Phase 3: Preparation landing
     x_bounds.add("q", bounds=bio_model[3].bounds_from_ranges("q"), phase=3)
     x_bounds.add("qdot", bounds=bio_model[3].bounds_from_ranges("qdot"), phase=3)
-    x_bounds[3]["q"].min[0, :] = - 0.5
-    x_bounds[3]["q"].max[0, :] = 0.2
+    x_bounds[3]["q"].min[0, :] = -1
+    x_bounds[3]["q"].max[0, :] = 1
     x_bounds[3]["q"].min[1, 1:] = 0
     x_bounds[3]["q"].max[1, 1:] = 3
     x_bounds[3]["q"].min[2, :] = 3/4 * np.pi
@@ -663,8 +663,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[4]["q"].max[5, 0] = pose_landing_start[5] + 0.1
     x_bounds[4]["q"].min[6, 0] = pose_landing_start[6] - 1
     x_bounds[4]["q"].max[6, 0] = pose_landing_start[6] + 0.1
-    x_bounds[4]["q"].min[0, :] = - 0.5
-    x_bounds[4]["q"].max[0, :] = 0.2
+    x_bounds[4]["q"].min[0, :] = -1
+    x_bounds[4]["q"].max[0, :] = 1
     x_bounds[4]["q"].min[1, 0] = 0
     x_bounds[4]["q"].max[1, 0] = 3
     x_bounds[4]["q"].min[1, 1:] = -1
