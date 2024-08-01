@@ -310,7 +310,7 @@ def custom_contraint_lambdas_cisaillement_2(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 59
+version = 60
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -328,8 +328,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     tau_max_total = [0, 0, 0, 325.531, 138, 981.1876, 735.3286, 343.9806]
     #tau_min_total = [0, 0, 0, -162.7655, -69, -490.5938, -367.6643, -171.9903]
     #tau_max_total = [0, 0, 0, 162.7655, 69, 490.5938, 367.6643, 171.9903]
-    tau_min = [i * 0.5 for i in tau_min_total]
-    tau_max = [i * 0.5 for i in tau_max_total]
+    tau_min = [i * 0.9 for i in tau_min_total]
+    tau_max = [i * 0.9 for i in tau_max_total]
     tau_init = 0
     variable_bimapping = BiMappingList()
     dof_mapping = BiMappingList()
