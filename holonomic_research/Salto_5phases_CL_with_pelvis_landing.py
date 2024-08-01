@@ -284,7 +284,7 @@ def custom_contraint_lambdas_cisaillement_1(
     # Contrainte lagrange_1 (min_bound = L_1/L_0 = -0.2, max_bound = L_1/L_0 = 0.2)
     lagrange_1 = lambdas[1]
 
-    return lagrange_1 - lagrange_0 <= 0
+    return lagrange_1 - lagrange_0
 
 
 def custom_contraint_lambdas_cisaillement_2(
@@ -305,53 +305,12 @@ def custom_contraint_lambdas_cisaillement_2(
     # Contrainte lagrange_1 (min_bound = L_1/L_0 = -0.2, max_bound = L_1/L_0 = 0.2)
     lagrange_1 = lambdas[1]
 
-    return lagrange_1 - 0.01 * lagrange_0 >= 0
-
-
-def custom_contraint_lambdas_cisaillement(
-        controller: PenaltyController, bio_model: BiorbdModelCustomHolonomic) -> MX:
-
-    # Recuperer les q
-    q_u = controller.states["q_u"].cx
-    qdot_u = controller.states["qdot_u"].cx
-    tau = controller.controls["tau"].cx
-    pelvis_mx = MX.zeros(3)
-    new_tau = vertcat(pelvis_mx, tau)
-
-    # Calculer lambdas
-    lambdas = bio_model.compute_the_lagrangian_multipliers(q_u, qdot_u, new_tau)
-
-    # Contrainte lagrange_0 (min_bound = -1, max_bound = 1)
-    lagrange_0 = lambdas[0]
-
-    # Contrainte lagrange_1 (min_bound = L_1/L_0 = -0.2, max_bound = L_1/L_0 = 0.2)
-    lagrange_1 = lambdas[1]
-    constraints = ConstraintList()
-
-    constraints.add(
-        custom_contraint_lambdas_cisaillement_1,
-        node=Node.ALL_SHOOTING,
-        bio_model=bio_model,
-        max_bound=0,
-        min_bound=-np.pi,
-    )
-
-    constraints.add(
-        custom_contraint_lambdas_cisaillement_2,
-        node=Node.ALL_SHOOTING,
-        bio_model=bio_model,
-        max_bound=np.pi,
-        min_bound=0,
-    )
-
-    #lagrange_1 - lagrange_0 <= 0
-    #lagrange_1 - 0.01 * lagrange_0 >= 0
-    return lagrange_1 / lagrange_0
+    return lagrange_1 - 0.01 * lagrange_0
 
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 58
+version = 59
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -462,7 +421,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
     constraints.add(
         ConstraintFcn.NON_SLIPPING,
-        node=Node.END,
+        node=Node.ALL_SHOOTING,
         normal_component_idx=1,
         tangential_component_idx=0,
         static_friction_coefficient=0.33,
@@ -477,15 +436,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         contact_index=1,
         phase=0,
     )
-
-    #constraints.add(
-    #    ConstraintFcn.TRACK_CONTACT_FORCES,
-    #    min_bound=0.01,
-    #    max_bound=np.inf,
-    #    node=Node.ALL_SHOOTING,
-    #    contact_index=0,
-    #    phase=0,
-    #)
 
     # Phase 2 (Tucked phase):
     holonomic_constraints.add(
@@ -506,11 +456,20 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     )
 
     constraints.add(
-        custom_contraint_lambdas_cisaillement,
+        custom_contraint_lambdas_cisaillement_1,
         node=Node.ALL_SHOOTING,
         bio_model=bio_model[2],
-        max_bound=1,
-        min_bound=0.01,
+        max_bound=0,
+        min_bound=-np.inf,
+        phase=2,
+    )
+
+    constraints.add(
+        custom_contraint_lambdas_cisaillement_2,
+        node=Node.ALL_SHOOTING,
+        bio_model=bio_model[2],
+        max_bound=np.inf,
+        min_bound=0,
         phase=2,
     )
 
@@ -524,14 +483,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     )
 
     # Phase 4 (Landing):
-    #constraints.add(
-    #    ConstraintFcn.TRACK_CONTACT_FORCES,
-    #    min_bound=0,
-    #    max_bound=np.inf,
-    #    node=Node.END,
-    #    contact_index=0,
-    #    phase=4,
-    #)
 
     constraints.add(
         ConstraintFcn.TRACK_CONTACT_FORCES,
@@ -570,7 +521,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
     constraints.add(
         ConstraintFcn.NON_SLIPPING,
-        node=Node.START,
+        node=Node.ALL_SHOOTING,
         normal_component_idx=1,
         tangential_component_idx=0,
         static_friction_coefficient=0.33,
