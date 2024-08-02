@@ -310,7 +310,7 @@ def custom_contraint_lambdas_cisaillement_2(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 60
+version = 61
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -421,7 +421,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
     constraints.add(
         ConstraintFcn.NON_SLIPPING,
-        node=Node.ALL_SHOOTING,
+        node=Node.END,
         normal_component_idx=1,
         tangential_component_idx=0,
         static_friction_coefficient=0.33,
@@ -521,7 +521,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
     constraints.add(
         ConstraintFcn.NON_SLIPPING,
-        node=Node.ALL_SHOOTING,
+        node=Node.START,
         normal_component_idx=1,
         tangential_component_idx=0,
         static_friction_coefficient=0.33,
@@ -568,6 +568,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Phase 1: Flight
     x_bounds.add("q", bounds=bio_model[1].bounds_from_ranges("q"), phase=1)
     x_bounds.add("qdot", bounds=bio_model[1].bounds_from_ranges("qdot"), phase=1)
+    #x_bounds[1]["q"].min[3:, 0] = np.array(pose_takeout_start[3:]) - 0.3 # 0.03
+    #x_bounds[1]["q"].max[3:, 0] = np.array(pose_takeout_start[3:]) + 0.3
     x_bounds[1]["q"].min[0, :] = -1
     x_bounds[1]["q"].max[0, :] = 1
     x_bounds[1]["q"].min[1, :] = 0
