@@ -86,8 +86,12 @@ def save_results_holonomic(sol, c3d_file_path, biomodel, index_holo):
     qddot =[]
     tau = []
     time = []
-    min_bounds = []
-    max_bounds = []
+    min_bounds_q = []
+    max_bounds_q = []
+    min_bounds_qdot = []
+    max_bounds_qdot = []
+    min_bounds_tau = []
+    max_bounds_tau = []
 
     if len(sol.ocp.n_shooting) == 1:
         q = states["q_u"]
@@ -104,23 +108,35 @@ def save_results_holonomic(sol, c3d_file_path, biomodel, index_holo):
                 tau.append(controls[i]["tau"])
                 data["lambda"] = lambdas
                 time.append(list_time[i])
-                min_bounds.append(sol.ocp.nlp[i].x_bounds['q_u'].min)
-                max_bounds.append(sol.ocp.nlp[i].x_bounds['q_u'].max)
+                min_bounds_q.append(sol.ocp.nlp[i].x_bounds['q_u'].min)
+                max_bounds_q.append(sol.ocp.nlp[i].x_bounds['q_u'].max)
+                min_bounds_qdot.append(sol.ocp.nlp[i].x_bounds['qdot_u'].min)
+                max_bounds_qdot.append(sol.ocp.nlp[i].x_bounds['qdot_u'].max)
+                min_bounds_tau.append(sol.ocp.nlp[i].u_bounds["tau"].min)
+                max_bounds_tau.append(sol.ocp.nlp[i].u_bounds["tau"].max)
             else:
                 q.append(states[i]["q"])
                 qdot.append(states[i]["qdot"])
                 tau.append(controls[i]["tau"])
                 time.append(list_time[i])
-                min_bounds.append(sol.ocp.nlp[i].x_bounds['q'].min)
-                max_bounds.append(sol.ocp.nlp[i].x_bounds['q'].max)
+                min_bounds_q.append(sol.ocp.nlp[i].x_bounds['q'].min)
+                max_bounds_q.append(sol.ocp.nlp[i].x_bounds['q'].max)
+                min_bounds_qdot.append(sol.ocp.nlp[i].x_bounds['qdot'].min)
+                max_bounds_qdot.append(sol.ocp.nlp[i].x_bounds['qdot'].max)
+                min_bounds_tau.append(sol.ocp.nlp[i].u_bounds["tau"].min)
+                max_bounds_tau.append(sol.ocp.nlp[i].u_bounds["tau"].max)
 
     data["q"] = q
     data["qdot"] = qdot
     data["qddot"] = qddot
     data["tau"] = tau
     data["time"] = time
-    data["min_bounds"] = min_bounds
-    data["max_bounds"] = max_bounds
+    data["min_bounds_q"] = min_bounds_q
+    data["max_bounds_q"] = max_bounds_q
+    data["min_bounds_qdot"] = min_bounds_qdot
+    data["max_bounds_qdot"] = max_bounds_qdot
+    data["min_bounds_tau"] = min_bounds_q
+    data["max_bounds_tau"] = max_bounds_q
     data["cost"] = sol.cost
     data["iterations"] = sol.iterations
     # data["detailed_cost"] = sol.add_detailed_cost
@@ -310,7 +326,7 @@ def custom_contraint_lambdas_cisaillement_2(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 66
+version = 67
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -421,10 +437,10 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
     constraints.add(
         ConstraintFcn.NON_SLIPPING,
-        node=Node.ALL_SHOOTING,
+        node=Node.END,
         normal_component_idx=1,
         tangential_component_idx=0,
-        static_friction_coefficient=5,
+        static_friction_coefficient=0.5,
         phase=0,
     )
 
@@ -521,10 +537,10 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
     constraints.add(
         ConstraintFcn.NON_SLIPPING,
-        node=Node.ALL_SHOOTING,
+        node=Node.START,
         normal_component_idx=1,
         tangential_component_idx=0,
-        static_friction_coefficient=5,
+        static_friction_coefficient=0.5,
         phase=4,
     )
 
@@ -553,9 +569,9 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds = BoundsList()
     x_bounds.add("q", bounds=bio_model[1].bounds_from_ranges("q"), phase=0)
     x_bounds.add("qdot", bounds=bio_model[1].bounds_from_ranges("qdot"), phase=0)
-    x_bounds[0]["q"].min[:, 0] = np.array(pose_propulsion_start) - 0.3 # 0.03
-    x_bounds[0]["q"].max[:, 0] = np.array(pose_propulsion_start) + 0.3
-    x_bounds[0]["q"].min[4, 0] = 0
+    #x_bounds[0]["q"].min[:, 0] = np.array(pose_propulsion_start) - 0.5
+    #x_bounds[0]["q"].max[:, 0] = np.array(pose_propulsion_start) + 0.3
+    #x_bounds[0]["q"].min[4, 0] = 0
     #x_bounds[0]["q"][7, 0] = np.array(pose_propulsion_start[7])
     #x_bounds[0]["q"][7, 1] = np.array(pose_propulsion_start[7])
     x_bounds[0]["qdot"][:, 0] = [0] * n_qdot
@@ -563,8 +579,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[0]["q"].max[2, 1:] = np.pi
     x_bounds[0]["q"].min[0, :] = -1
     x_bounds[0]["q"].max[0, :] = 1
-    #x_bounds[0]["qdot"].min[3, :] = 0
-    #x_bounds[0]["qdot"].max[3, :] = np.inf
+    x_bounds[0]["qdot"].min[3, :] = 0   # A commenter si marche pas
+    x_bounds[0]["q"].min[3, 2] = np.pi/2
 
 
     # Phase 1: Flight
