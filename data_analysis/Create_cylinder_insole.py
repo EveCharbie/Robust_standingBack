@@ -97,7 +97,7 @@ def find_activation_sensor(distance_sensor_y, position_activation_y):
     return resume
 
 
-def cartography_insole(file_insole, file_info_insole, fig_name: str, FLAG_PLOT=False):
+def cartography_insole(file_insole, file_info_insole, FLAG_PLOT=False):
     """
     Plot the cartography of the insoles
     Parameters
@@ -106,8 +106,6 @@ def cartography_insole(file_insole, file_info_insole, fig_name: str, FLAG_PLOT=F
         File of the insole
     file_info_insole:
         File of the information of the insole
-    fig_name:
-        Name of the figure
     FLAG_PLOT:
         Flag to plot the results
 
@@ -136,7 +134,7 @@ def cartography_insole(file_insole, file_info_insole, fig_name: str, FLAG_PLOT=F
         axs[1].set_xlabel("Position X (mm)", fontsize=14)
         axs[1].set_ylabel("Position Y (mm)", fontsize=14)
         axs[1].title.set_text("Insole Left")
-        plt.savefig("Figures/" + fig_name + ".svg")
+        plt.savefig("Figures/cartography.svg")
         fig.clf()
 
 
@@ -710,12 +708,12 @@ def find_index_by_name(list: list, word: str):
     return index_finding
 
 
-def points_to_ellipse(data, fig_name, markers_name, FLAG_PLOT: False) -> list:
+def points_to_ellipse(markers_insole_L_xy, fig_name, markers_name, FLAG_PLOT: False) -> list:
     """
     Find the ellipse parameters from the markers
     Parameters
     ----------
-    data:
+    markers_insole_L_xy:
         Data of the markers
     fig_name:
         Name of the figure
@@ -728,24 +726,29 @@ def points_to_ellipse(data, fig_name, markers_name, FLAG_PLOT: False) -> list:
     -------
     ellipse_parameters:
         Parameters of the ellipse
+
+    ellipse equation:
+        (((x-xc)cos(theta) + (y-yc)sin(theta))**2) / a**2 + (((x-xc)sin(theta) - (y-yc)cos(theta))**2) / b**2 = 1
+
     """
 
-    data = np.array(data.T)
+    markers_insole_L_xy = np.array(markers_insole_L_xy.T)
     norm = []
     position = ["up", "down", "mid"]
-    index_doublon = ["2", "3", "4", "5", "6"]
+    up_down_paired_markers_index = ["2", "3", "4", "5", "6"]
     index_marker_parameter = {}
     for i in range(len(position)):
         index_marker_parameter["marker_" + str(position[i])] = find_index_by_name(markers_name, position[i])
-    for i in range(len(index_doublon)):
-        index_marker_parameter["marker_" + str(index_doublon[i])] = find_index_by_name(markers_name, index_doublon[i])
+    for i in range(len(up_down_paired_markers_index)):
+        index_marker_parameter["marker_" + str(up_down_paired_markers_index[i])] = find_index_by_name(markers_name, up_down_paired_markers_index[i])
         norm.append(
             norm_2D(
-                data[index_marker_parameter["marker_" + str(index_doublon[i])][0], :],
-                data[index_marker_parameter["marker_" + str(index_doublon[i])][1], :],
+                markers_insole_L_xy[index_marker_parameter["marker_" + str(up_down_paired_markers_index[i])][0], :],
+                markers_insole_L_xy[index_marker_parameter["marker_" + str(up_down_paired_markers_index[i])][1], :],
             )
         )
-    print(norm)
+    print(f"The horizontal distance between the up-down marker pairs are : {np.array(norm) * 100} cm")
+    print("Please note that the markers were not perfectly aligned one on top of the other, so this measure is not indicative of the tilt of the tibia.")
 
     # Generate an initial guess for the ellipse parameters
     theta_gauss = 0
@@ -760,14 +763,7 @@ def points_to_ellipse(data, fig_name, markers_name, FLAG_PLOT: False) -> list:
     # y center of the ellipse (yc)
     ellipse_param = cas.MX.sym("parameters", 5)
 
-    # centers_index = [
-    #     [index_marker_parameter["marker_up"] + index_marker_parameter["marker_mid"], "up+mid"],
-    #     [index_marker_parameter["marker_down"] + index_marker_parameter["marker_mid"], "down+mid"],
-    #     [index_marker_parameter["marker_up"] + index_marker_parameter["marker_mid"] + index_marker_parameter[
-    #          "marker_up"], "all"]]
-    # TODO: Takes into account markers in front of the knee
-
-    centers_index = [
+    ellipses_markers_index = [
         [index_marker_parameter["marker_up"], "up"],
         [index_marker_parameter["marker_down"], "down"],
         [index_marker_parameter["marker_up"] + index_marker_parameter["marker_down"], "up_down"],
@@ -775,19 +771,18 @@ def points_to_ellipse(data, fig_name, markers_name, FLAG_PLOT: False) -> list:
 
     ellipse = []
 
-    for i in range(len(centers_index)):
-        centers = data[centers_index[i][0], :]
-        mean_centers = np.mean(centers, axis=0)
-        x0 = np.array([theta_gauss, width_gauss, height_gauss, mean_centers[0], mean_centers[1]])
+    for i in range(len(ellipses_markers_index)):
+        markers_for_this_ellispe = markers_insole_L_xy[ellipses_markers_index[i][0], :]
+        mean_marker_position = np.mean(markers_for_this_ellispe, axis=0)
+        x0 = np.array([theta_gauss, width_gauss, height_gauss, mean_marker_position[0], mean_marker_position[1]])
 
         # Objective (minimize squared distance between points and ellipse boundary)
         f = 0
-        for indices_this_time in range(centers.shape[0]):
-            cos_angle = cas.cos(np.pi - ellipse_param[0])
-            sin_angle = cas.sin(np.pi - ellipse_param[0])
+        for indices_this_time in range(markers_for_this_ellispe.shape[0]):
 
-            xc = centers[indices_this_time, 0] - ellipse_param[3]
-            yc = centers[indices_this_time, 1] - ellipse_param[4]
+            # Position of the marker in the referential of the ellipse center
+            x_marker = markers_for_this_ellispe[indices_this_time, 0] - ellipse_param[3]
+            y_marker = markers_for_this_ellispe[indices_this_time, 1] - ellipse_param[4]
 
             xct = xc * cos_angle - yc * sin_angle
             yct = xc * sin_angle + yc * cos_angle
@@ -823,11 +818,11 @@ def points_to_ellipse(data, fig_name, markers_name, FLAG_PLOT: False) -> list:
             "center_x_ellipse": center_x_opt,
             "center_y_ellipse": center_y_opt,
             "angle": theta_opt,
-            "index_markers": centers_index[i][0],
-            "type_markers": centers_index[i][1],
+            "index_markers": ellipses_markers_index[i][0],
+            "type_markers": ellipses_markers_index[i][1],
         }
         print("Paramètres optimaux de l'ellipse: \t" + fig_name)
-        print("Type ellipse: " + str(centers_index[i][1]))
+        print("Type ellipse: " + str(ellipses_markers_index[i][1]))
         print("Grande diagonale de l'ellipse: " + str(width_opt))
         print("Petite diagonale de l'ellipse: " + str(height_opt))
         print("Centre x de l'ellipse: " + str(center_x_opt))
@@ -868,20 +863,20 @@ def points_to_ellipse(data, fig_name, markers_name, FLAG_PLOT: False) -> list:
 
         # Integration markers
         up_markers = ax.plot(
-            data[index_marker_parameter["marker_up"], 0],
-            data[index_marker_parameter["marker_up"], 1],
+            markers_insole_L_xy[index_marker_parameter["marker_up"], 0],
+            markers_insole_L_xy[index_marker_parameter["marker_up"], 1],
             "ro",
             label="markers up",
         )
         down_markers = ax.plot(
-            data[index_marker_parameter["marker_down"], 0],
-            data[index_marker_parameter["marker_down"], 1],
+            markers_insole_L_xy[index_marker_parameter["marker_down"], 0],
+            markers_insole_L_xy[index_marker_parameter["marker_down"], 1],
             "bo",
             label="markers down",
         )
         mid_markers = ax.plot(
-            data[index_marker_parameter["marker_mid"], 0],
-            data[index_marker_parameter["marker_mid"], 1],
+            markers_insole_L_xy[index_marker_parameter["marker_mid"], 0],
+            markers_insole_L_xy[index_marker_parameter["marker_mid"], 1],
             "go",
             label="markers mid",
         )
@@ -1225,7 +1220,5 @@ def position_insole(marker_list: list, model):
             position_markers[:, i] = model.markers()[marker_list[i]].to_array()
         center = np.mean(position_markers, axis=1)
     else:
-        position_markers = None
-        center = None
-        print("ERROR: La liste doit contenir les index des markers dans le modèle !")
+        raise RuntimeError("ERROR: The marker list must contain the index of the markers that are in the biorbd model.")
     return center, position_markers
