@@ -64,7 +64,7 @@ markers_insole_L = pd.read_csv(
 )
 # Load coordonnees_insoles: manufacturer file that link the number of the sensor with its coordinates on the insole.
 insoles_coordonnees = pd.read_csv(
-    "coordonnees_insoles.csv",
+    data_folder + "coordonnees_insoles.csv",
     sep=";",
     decimal=",",
     low_memory=False,

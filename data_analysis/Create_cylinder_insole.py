@@ -750,11 +750,6 @@ def points_to_ellipse(markers_insole_L_xy, fig_name, markers_name, FLAG_PLOT: Fa
     print(f"The horizontal distance between the up-down marker pairs are : {np.array(norm) * 100} cm")
     print("Please note that the markers were not perfectly aligned one on top of the other, so this measure is not indicative of the tilt of the tibia.")
 
-    # Generate an initial guess for the ellipse parameters
-    theta_gauss = 0
-    width_gauss = 1
-    height_gauss = 1
-
     # State the optimization problem with the following variables
     # Angle (theta)
     # width of the ellipse (a)
@@ -764,9 +759,9 @@ def points_to_ellipse(markers_insole_L_xy, fig_name, markers_name, FLAG_PLOT: Fa
     ellipse_param = cas.MX.sym("parameters", 5)
 
     ellipses_markers_index = [
-        [index_marker_parameter["marker_up"], "up"],
-        [index_marker_parameter["marker_down"], "down"],
-        [index_marker_parameter["marker_up"] + index_marker_parameter["marker_down"], "up_down"],
+        [index_marker_parameter["marker_up"] + index_marker_parameter["marker_mid"], "up"],
+        [index_marker_parameter["marker_down"] + index_marker_parameter["marker_mid"], "down"],
+        [index_marker_parameter["marker_up"] + index_marker_parameter["marker_down"] + index_marker_parameter["marker_mid"], "up_down"],
     ]
 
     ellipse = []
@@ -774,43 +769,163 @@ def points_to_ellipse(markers_insole_L_xy, fig_name, markers_name, FLAG_PLOT: Fa
     for i in range(len(ellipses_markers_index)):
         markers_for_this_ellispe = markers_insole_L_xy[ellipses_markers_index[i][0], :]
         mean_marker_position = np.mean(markers_for_this_ellispe, axis=0)
+
+        # Generate a good intial guess for the ellipse parameters
+        eigvals, eigvecs = np.linalg.eigh(np.cov(markers_for_this_ellispe[:, 0], markers_for_this_ellispe[:, 1]))
+        order = eigvals.argsort()[::-1]
+        eigvals, eigvecs = eigvals[order], eigvecs[:, order]
+        vx, vy = eigvecs[:, 0][0], eigvecs[:, 0][1]
+        theta_gauss = np.arctan2(vy, vx)
+        width_gauss, height_gauss = 2 * 2 * np.sqrt(eigvals)
         x0 = np.array([theta_gauss, width_gauss, height_gauss, mean_marker_position[0], mean_marker_position[1]])
 
-        # Objective (minimize squared distance between points and ellipse boundary)
-        f = 0
+        # Min area version
+        # Objective (minimize area of the ellipse)
+        f = np.pi * ellipse_param[1] * ellipse_param[2]  # ellipse air = pi * a * b
+
+        # Constraints (all point are inside the ellipse)
+        g = []
+        lbg = []
+        ubg = []
         for indices_this_time in range(markers_for_this_ellispe.shape[0]):
 
-            # Position of the marker in the referential of the ellipse center
-            x_marker = markers_for_this_ellispe[indices_this_time, 0] - ellipse_param[3]
-            y_marker = markers_for_this_ellispe[indices_this_time, 1] - ellipse_param[4]
+            cos_angle = cas.cos(np.pi-ellipse_param[0])
+            sin_angle = cas.sin(np.pi-ellipse_param[0])
+
+            xc = markers_for_this_ellispe[indices_this_time, 0] - ellipse_param[3]
+            yc = markers_for_this_ellispe[indices_this_time, 1] - ellipse_param[4]
 
             xct = xc * cos_angle - yc * sin_angle
             yct = xc * sin_angle + yc * cos_angle
 
-            f += (
-                (xct**2 / (((ellipse_param[1]) / 2) ** 2))
-                + (yct**2 / (((ellipse_param[2]) / 2) ** 2))
-                - cas.sqrt(xc**2 + yc**2)
-            ) ** 2
+            rad_cc = (xct ** 2 / (ellipse_param[1] / 2.) ** 2) + (yct ** 2 / (ellipse_param[2] / 2.) ** 2)
 
+            g += [rad_cc]
+
+            lbg += [-cas.inf]
+            ubg += [1]
+
+        nlp = {"x": ellipse_param, "f": f, "g": cas.vertcat(*g)}
+        opts = {"ipopt.print_level": 5}
+        solver = cas.nlpsol("solver", "ipopt", nlp, opts)
+        sol = solver(x0=x0, lbx=[-2 * np.pi, 0, 0, mean_marker_position[0]-0.01, mean_marker_position[1]-0.01], ubx=[np.pi, 2, 2, mean_marker_position[0]+0.01,mean_marker_position[0]+0.01], lbg=lbg, ubg=ubg)
+
+        # theta_opt = float(sol["x"][0])
+        # width_opt = float(sol["x"][1])
+        # height_opt = float(sol["x"][2])
+        # center_x_opt = float(sol["x"][3])
+        # center_y_opt = float(sol["x"][4])
+
+        theta_opt_first_pass = float(sol["x"][0])
+        width_opt_first_pass = float(sol["x"][1])
+        height_opt_first_pass = float(sol["x"][2])
+        center_x_opt_first_pass = float(sol["x"][3])
+        center_y_opt_first_pass = float(sol["x"][4])
+
+        x0 = np.array([theta_opt_first_pass, width_opt_first_pass, height_opt_first_pass, center_x_opt_first_pass, center_y_opt_first_pass])
+        theta_range = np.sort(np.array([theta_opt_first_pass * 0.9, theta_opt_first_pass * 1.1]))
+        width_range = np.sort(np.array([width_opt_first_pass * 0.9, width_opt_first_pass * 1.1]))
+        height_range = np.sort(np.array([height_opt_first_pass * 0.9, height_opt_first_pass * 1.1]))
+        center_x_range = np.sort(np.array([center_x_opt_first_pass * 0.9, center_x_opt_first_pass * 1.1]))
+        center_y_range = np.sort(np.array([center_y_opt_first_pass * 0.9, center_y_opt_first_pass * 1.1]))
+        lbx = np.array([theta_range[0], width_range[0], height_range[0], center_x_range[0], center_y_range[0]])
+        ubx = np.array([theta_range[1], width_range[1], height_range[1], center_x_range[1], center_y_range[1]])
+
+        # new version
+        f = 0
+        for indices_this_time in range(markers_for_this_ellispe.shape[0]):
+
+            cos_angle = cas.cos(np.pi-ellipse_param[0])
+            sin_angle = cas.sin(np.pi-ellipse_param[0])
+
+            # Position of the marker in the referential of the ellipse center
+            xc = markers_for_this_ellispe[indices_this_time, 0] - ellipse_param[3]
+            yc = markers_for_this_ellispe[indices_this_time, 1] - ellipse_param[4]
+
+            xct = xc * cos_angle - yc * sin_angle
+            yct = xc * sin_angle + yc * cos_angle
+
+            rad_cc = (xct ** 2 / (ellipse_param[1] / 2.) ** 2) + (yct ** 2 / (ellipse_param[2] / 2.) ** 2)
+
+            # Sum of squared distances
+            f += (rad_cc - 1) ** 2
+
+
+        # # # CharGPT version
+        # # # Objective (minimize squared distance between points and ellipse boundary)
+        # # f = 0
+        # # for indices_this_time in range(markers_for_this_ellispe.shape[0]):
+        # #
+        # #     # Position of the marker in the referential of the ellipse center
+        # #     x_marker = markers_for_this_ellispe[indices_this_time, 0] - ellipse_param[3]
+        # #     y_marker = markers_for_this_ellispe[indices_this_time, 1] - ellipse_param[4]
+        # #
+        # #     # Transform the coordinates into the ellipse's coordinate system
+        # #     x_trans = (x_marker - ellipse_param[3]) * cas.cos(ellipse_param[0]) + (y_marker - ellipse_param[4]) * cas.sin(ellipse_param[0])
+        # #     y_trans = (y_marker - ellipse_param[4]) * cas.cos(ellipse_param[0]) - (x_marker - ellipse_param[3]) * cas.sin(ellipse_param[0])
+        # #
+        # #     # Define the implicit function for the ellipse
+        # #     dist = ((x_trans / ellipse_param[1]) ** 2 + (y_trans / ellipse_param[2]) ** 2) - 1
+        # #
+        # #     # Sum of squared distances
+        # #     f += dist ** 2
+        #
+        # # # Old version
+        # # f = 0
+        # # cos_angle = cas.cos(np.pi - ellipse_param[0])
+        # # sin_angle = cas.sin(np.pi - ellipse_param[0])
+        # # for indices_this_time in range(markers_for_this_ellispe.shape[0]):
+        # #
+        # #     xc = markers_for_this_ellispe[indices_this_time, 0] - ellipse_param[3]
+        # #     yc = markers_for_this_ellispe[indices_this_time, 1] - ellipse_param[4]
+        # #
+        # #     xct = xc * cos_angle - yc * sin_angle
+        # #     yct = xc * sin_angle + yc * cos_angle
+        # #
+        # #     f += (
+        # #         (xct**2 / (((ellipse_param[1]) / 2) ** 2))
+        # #         + (yct**2 / (((ellipse_param[2]) / 2) ** 2))
+        # #         - cas.sqrt(xc**2 + yc**2)
+        # #     ) ** 2
+        #
+        # # Analytical version -> Grad_f = nan
+        # f = 0
+        # for indices_this_time in range(markers_for_this_ellispe.shape[0]):
+        #     # Position of the marker in the referential of the ellipse center
+        #     x_marker = markers_for_this_ellispe[indices_this_time, 0] - ellipse_param[3]
+        #     y_marker = markers_for_this_ellispe[indices_this_time, 1] - ellipse_param[4]
+        #
+        #     # Slope of the line segment between the center of the ellipse and the (x_marker, y_marker) point
+        #     slope = y_marker / x_marker
+        #
+        #     # Position of the ellipse boundary in the direction of the marker (not necessarily the smallest distance)
+        #     # from the parametrical equation describing the position of the ellipse boundary
+        #     # x = xc + a*cos(t)
+        #     # y = yc + b*sin(t)
+        #     # and by imposing the slope, we can get
+        #     t = cas.arctan((ellipse_param[1]/2. * cas.sin(ellipse_param[0]) - slope * ellipse_param[1]/2. * cas.cos(ellipse_param[0])) / (ellipse_param[2]/2. * cas.cos(ellipse_param[0]) + slope * ellipse_param[2]/2. * cas.sin(ellipse_param[0])))
+        #
+        #     # If x_marker is 0 (aka if the marker is aligned with the center of the ellipse) we have to treat it separately
+        #     y_special = (ellipse_param[1]/2.)**2 * (ellipse_param[2]/2.)**2 / ((ellipse_param[2]/2.)**2 * cas.sin(ellipse_param[0])**2 + (ellipse_param[1]/2.)**2 * cas.cos(ellipse_param[0])**2)
+        #
+        #     xct = cas.if_else(x_marker == 0, 0, ellipse_param[1]/2. * cas.cos(t))
+        #     yct = cas.if_else(x_marker == 0, y_special, ellipse_param[2]/2. * cas.sin(t))
+        #
+        #     # Minimize the squared norm of the distance between the marker and the point on the ellipse boundary
+        #     f += (xct - x_marker) ** 2 + (yct - y_marker) ** 2
+        #
         nlp = {"x": ellipse_param, "f": f}
         opts = {"ipopt.print_level": 5}
         solver = cas.nlpsol("solver", "ipopt", nlp, opts)
-        sol = solver(
-            x0=x0,
-            lbx=[-np.pi, 0, 0, mean_centers[0] - 0.5, mean_centers[1] - 0.5],
-            ubx=[np.pi, 0.2, 0.3, mean_centers[0] + 0.5, mean_centers[1] + 0.5],
-        )
+        sol = solver(x0=x0, lbx=lbx, ubx=ubx)
 
-        if solver.stats()["success"]:
-            success_out = True
-            theta_opt = float(sol["x"][0])
-            width_opt = float(sol["x"][1])
-            height_opt = float(sol["x"][2])
-            center_x_opt = float(sol["x"][3])
-            center_y_opt = float(sol["x"][4])
-        else:
-            print("Ellipse did not converge, trying again")
+        theta_opt = float(sol["x"][0])
+        width_opt = float(sol["x"][1])
+        height_opt = float(sol["x"][2])
+        center_x_opt = float(sol["x"][3])
+        center_y_opt = float(sol["x"][4])
+        if not solver.stats()["success"]:
+            raise RuntimeError("Ellipse did not converge, trying again !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
         parameters_ellipse = {
             "a": width_opt,
@@ -838,26 +953,26 @@ def points_to_ellipse(markers_insole_L_xy, fig_name, markers_name, FLAG_PLOT: Fa
         # Creation de l'ellipse
         ellipse_up = Ellipse(
             xy=(ellipse[0]["center_x_ellipse"], ellipse[0]["center_y_ellipse"]),
-            width=ellipse[0]["a"] / 2,
-            height=ellipse[0]["b"] / 2,
+            width=ellipse[0]["a"],
+            height=ellipse[0]["b"],
             angle=ellipse[0]["angle"] * 180 / np.pi,
             facecolor="red",
             alpha=0.5,
         )
         ellipse_down = Ellipse(
             xy=(ellipse[1]["center_x_ellipse"], ellipse[1]["center_y_ellipse"]),
-            width=ellipse[1]["a"] / 2,
-            height=ellipse[1]["b"] / 2,
+            width=ellipse[1]["a"],
+            height=ellipse[1]["b"],
             angle=ellipse[1]["angle"] * 180 / np.pi,
             facecolor="blue",
             alpha=0.5,
         )
         ellipse_all = Ellipse(
             xy=(ellipse[2]["center_x_ellipse"], ellipse[2]["center_y_ellipse"]),
-            width=ellipse[2]["a"] / 2,
-            height=ellipse[2]["b"] / 2,
+            width=ellipse[2]["a"],
+            height=ellipse[2]["b"],
             angle=ellipse[2]["angle"] * 180 / np.pi,
-            facecolor="orange",
+            facecolor="green",
             alpha=0.5,
         )
 
@@ -893,9 +1008,9 @@ def points_to_ellipse(markers_insole_L_xy, fig_name, markers_name, FLAG_PLOT: Fa
         plt.legend(handles=[up_markers[0], down_markers[0], mid_markers[0]])
 
         # Displaying and saving the figure
-        plt.savefig(fig_name + ".svg")
+        plt.savefig(fig_name + ".png")
         plt.show()
-        plt.close(plt)
+        plt.close()
 
     return ellipse
 

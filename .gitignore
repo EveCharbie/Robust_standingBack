@@ -143,3 +143,5 @@ data_analysis/c3d/
 data_analysis/reconstructions/
 
 *.svg
+
+*.png
