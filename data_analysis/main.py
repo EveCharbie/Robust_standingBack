@@ -90,8 +90,6 @@ cartography_insole(
 parameters_ellipse_L = points_to_ellipse(
     markers_insole_L_xy=markers_insole_L_xy, fig_name="Ellipse_insole_L", markers_name=markers_insole_L_name, FLAG_PLOT=True
 )
-center_ellipse_L = np.array([parameters_ellipse_L[2]["center_x_ellipse"], parameters_ellipse_L[2]["center_y_ellipse"]])
-
 # TODO: Further optimization to fit cells (minimize error position (position sensor - position marker)
 #  TODO: + keep sensors at a constant distance from markers
 
@@ -103,15 +101,18 @@ position_activation_R, position_activation_L = position_activation(
     FLAG_PLOT=True,
 )
 
-# Second optimisation
-distance_opti_L = minimize_distance(
+# Wrap the insoles optimally on the tibia cylinder
+x_opt, y_opt = minimize_distance(
     position_markers=markers_insole_L_xy,
-    position_activation=position_activation_L["activation"],
-    insole_coordinates_y=position_activation_L["distance_sensor_y"],
-    ellipse_center=center_ellipse_L,
-    ellipse_axes=(parameters_ellipse_L[2]["a"], parameters_ellipse_L[2]["b"]),
-    ellipse_angle=parameters_ellipse_L[2]["angle"],
+    markers_insole_name=markers_insole_L_name,
+    insole_activations=position_activation_L,
+    ellipse_theta=parameters_ellipse_L[2]["angle"],
+    ellipse_width=parameters_ellipse_L[2]["a"],
+    ellipse_height=parameters_ellipse_L[2]["b"],
+    ellipse_center_x=parameters_ellipse_L[2]["center_x_ellipse"],
+    ellipse_center_y=parameters_ellipse_L[2]["center_y_ellipse"],
 )
+
 
 # TODO: Vector sum of activations
 
