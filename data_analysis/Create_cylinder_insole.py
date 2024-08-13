@@ -117,7 +117,7 @@ def cartography_insole(file_insole, file_info_insole, FLAG_PLOT=False):
     sensor_45 = file_insole.columns[
         1:-1
     ].to_list()  #  List sensor on the insole size 45 (without columns Sync and Time)
-    coordonnees_insole_45 = file_info_insole.loc[0:7, sensor_45]
+    coordonnees_insole = file_info_insole.loc[0:7, sensor_45]
 
     # Plot : Insoles
     if FLAG_PLOT:
@@ -125,17 +125,18 @@ def cartography_insole(file_insole, file_info_insole, FLAG_PLOT=False):
         fig.suptitle("Insoles cartography")
 
         # Subplot 1 : insoles R
-        axs[0].plot(coordonnees_insole_45.iloc[7, :], coordonnees_insole_45.iloc[6, :], "ro")
+        axs[0].plot(coordonnees_insole.iloc[7, :], coordonnees_insole.iloc[6, :], "ro")
         axs[0].set_ylabel("Position Y (mm)", fontsize=14)
         axs[0].title.set_text("Insole Right")
 
         # Subplot 2 : insoles L
-        axs[1].plot(coordonnees_insole_45.iloc[5, :], coordonnees_insole_45.iloc[4, :], "ro")
+        axs[1].plot(coordonnees_insole.iloc[5, :], coordonnees_insole.iloc[4, :], "ro")
         axs[1].set_xlabel("Position X (mm)", fontsize=14)
         axs[1].set_ylabel("Position Y (mm)", fontsize=14)
         axs[1].title.set_text("Insole Left")
         plt.savefig("Figures/cartography.svg")
         fig.clf()
+    return
 
 
 def position_activation(file_insole_R, file_insole_L, file_info_insole, FLAG_PLOT=False):
@@ -480,6 +481,7 @@ def position_activation(file_insole_R, file_insole_L, file_info_insole, FLAG_PLO
             "insole_R_down_2",
         ],
         "position_activation": position_activation_R / 1000,
+        "all_sensors_positions": np.array(file_info_insole.iloc[7, :], file_info_insole.iloc[6, :]) / 1000,
     }
 
     activation_L = {
@@ -501,6 +503,7 @@ def position_activation(file_insole_R, file_insole_L, file_info_insole, FLAG_PLO
             "insole_G_down_2",
         ],
         "position_activation": position_activation_L / 1000,
+        "all_sensors_positions": np.array(file_info_insole.iloc[5, :], file_info_insole.iloc[4, :]) / 1000,
     }
 
     return activation_R, activation_L
@@ -710,12 +713,12 @@ def find_index_by_name(list: list, word: str):
     return index_finding
 
 
-def points_to_ellipse(markers_insole_L_xy, fig_name, markers_name, FLAG_PLOT: False) -> list:
+def points_to_ellipse(markers_insole_xy, fig_name, markers_name, FLAG_PLOT: False) -> list:
     """
     Find the ellipse parameters from the markers
     Parameters
     ----------
-    markers_insole_L_xy:
+    markers_insole_xy:
         Data of the markers
     fig_name:
         Name of the figure
@@ -734,7 +737,7 @@ def points_to_ellipse(markers_insole_L_xy, fig_name, markers_name, FLAG_PLOT: Fa
 
     """
 
-    markers_insole_L_xy = np.array(markers_insole_L_xy.T)
+    markers_insole_xy = np.array(markers_insole_xy.T)
     norm = []
     position = ["up", "down", "mid"]
     up_down_paired_markers_index = ["2", "3", "4", "5", "6"]
@@ -745,8 +748,8 @@ def points_to_ellipse(markers_insole_L_xy, fig_name, markers_name, FLAG_PLOT: Fa
         index_marker_parameter["marker_" + str(up_down_paired_markers_index[i])] = find_index_by_name(markers_name, up_down_paired_markers_index[i])
         norm.append(
             norm_2D(
-                markers_insole_L_xy[index_marker_parameter["marker_" + str(up_down_paired_markers_index[i])][0], :],
-                markers_insole_L_xy[index_marker_parameter["marker_" + str(up_down_paired_markers_index[i])][1], :],
+                markers_insole_xy[index_marker_parameter["marker_" + str(up_down_paired_markers_index[i])][0], :],
+                markers_insole_xy[index_marker_parameter["marker_" + str(up_down_paired_markers_index[i])][1], :],
             )
         )
     print(f"The horizontal distance between the up-down marker pairs are : {np.array(norm) * 100} cm")
@@ -769,7 +772,7 @@ def points_to_ellipse(markers_insole_L_xy, fig_name, markers_name, FLAG_PLOT: Fa
     ellipse = []
 
     for i in range(len(ellipses_markers_index)):
-        markers_for_this_ellispe = markers_insole_L_xy[ellipses_markers_index[i][0], :]
+        markers_for_this_ellispe = markers_insole_xy[ellipses_markers_index[i][0], :]
         mean_marker_position = np.mean(markers_for_this_ellispe, axis=0)
 
         # Generate a good intial guess for the ellipse parameters
@@ -887,7 +890,7 @@ def points_to_ellipse(markers_insole_L_xy, fig_name, markers_name, FLAG_PLOT: Fa
             xy=(ellipse[0]["center_x_ellipse"], ellipse[0]["center_y_ellipse"]),
             width=ellipse[0]["a"],
             height=ellipse[0]["b"],
-            angle=ellipse[0]["angle"] * 180 / np.pi,
+            angle=(np.pi - ellipse[0]["angle"]) * 180 / np.pi,
             facecolor="red",
             alpha=0.5,
         )
@@ -895,7 +898,7 @@ def points_to_ellipse(markers_insole_L_xy, fig_name, markers_name, FLAG_PLOT: Fa
             xy=(ellipse[1]["center_x_ellipse"], ellipse[1]["center_y_ellipse"]),
             width=ellipse[1]["a"],
             height=ellipse[1]["b"],
-            angle=ellipse[1]["angle"] * 180 / np.pi,
+            angle=(np.pi - ellipse[1]["angle"]) * 180 / np.pi,
             facecolor="blue",
             alpha=0.5,
         )
@@ -903,27 +906,27 @@ def points_to_ellipse(markers_insole_L_xy, fig_name, markers_name, FLAG_PLOT: Fa
             xy=(ellipse[2]["center_x_ellipse"], ellipse[2]["center_y_ellipse"]),
             width=ellipse[2]["a"],
             height=ellipse[2]["b"],
-            angle=ellipse[2]["angle"] * 180 / np.pi,
+            angle=(np.pi - ellipse[2]["angle"]) * 180 / np.pi,
             facecolor="green",
             alpha=0.5,
         )
 
         # Integration markers
         up_markers = ax.plot(
-            markers_insole_L_xy[index_marker_parameter["marker_up"], 0],
-            markers_insole_L_xy[index_marker_parameter["marker_up"], 1],
+            markers_insole_xy[index_marker_parameter["marker_up"], 0],
+            markers_insole_xy[index_marker_parameter["marker_up"], 1],
             "ro",
             label="markers up",
         )
         down_markers = ax.plot(
-            markers_insole_L_xy[index_marker_parameter["marker_down"], 0],
-            markers_insole_L_xy[index_marker_parameter["marker_down"], 1],
+            markers_insole_xy[index_marker_parameter["marker_down"], 0],
+            markers_insole_xy[index_marker_parameter["marker_down"], 1],
             "bo",
             label="markers down",
         )
         mid_markers = ax.plot(
-            markers_insole_L_xy[index_marker_parameter["marker_mid"], 0],
-            markers_insole_L_xy[index_marker_parameter["marker_mid"], 1],
+            markers_insole_xy[index_marker_parameter["marker_mid"], 0],
+            markers_insole_xy[index_marker_parameter["marker_mid"], 1],
             "go",
             label="markers mid",
         )
@@ -955,7 +958,8 @@ def minimize_distance(
     ellipse_height,
     ellipse_center_x,
     ellipse_center_y,
-    FLAG_PLOT=False,
+    fig_name,
+    FLAG_PLOT=True,
 ):
     """
     Roll the insoles around the tibia ellipse.
@@ -971,18 +975,8 @@ def minimize_distance(
 
     """
     # Sensor to marker correspondence
+    sensor_columns = np.sort(np.array(list(set(list(insole_activations["all_sensors_positions"])))))  # Get single values of column position (x coordinate) in meters
     names_in_order = ["mid_1", "up_2", "down_2", "up_3", "down_3", "up_4", "down_4", "up_5", "down_5", "up_6", "down_6", "mid_7"]
-    which_sensor_to_tie_with = {"up_2": "mid_1",
-                                "down_2": "mid_1",
-                                "up_3": "up_2",
-                                "down_3": "down_2",
-                                "up_4": "up_3",
-                                "down_4": "down_3",
-                                "up_5": "down_4",
-                                "down_5": "down_4",
-                                "up_6": "up_5",
-                                "down_6": "down_5",
-                                "mid_7": "down_6"}
 
     sensors_and_markers_index = {}
     nb_sensors = 0
@@ -998,17 +992,17 @@ def minimize_distance(
                 marker_idx = i
         sensors_and_markers_index[name] = [sensor_idx, marker_idx]
 
-    # Change insole ref to put the zero on the first line
-    x, y = change_ref_marker(position_markers[0]), change_ref_marker(position_markers[1])
-
     # Optimization variables
-    x_sensors = cas.MX.sym("x_sensors", nb_sensors)  # Only for implicit constraint
-    y_sensors = cas.MX.sym("y_sensors", nb_sensors)  # Only for implicit constraint
+    x_sensors = cas.MX.sym("x_sensors", nb_sensors)
+    y_sensors = cas.MX.sym("y_sensors", nb_sensors)
+    x_columns = cas.MX.sym("x_columns", len(sensor_columns))
+    y_columns = cas.MX.sym("y_columns", len(sensor_columns))
 
     f = 0
     g = []
     lbg = []
     ubg = []
+    x0 = np.zeros((nb_sensors * 2 + len(sensor_columns) * 2, ))
 
     cos_angle = cas.cos(np.pi - ellipse_theta)
     sin_angle = cas.sin(np.pi - ellipse_theta)
@@ -1020,68 +1014,186 @@ def minimize_distance(
         if i_sensor is None:
             continue
 
-        # The sensors must be on the ellipse
-        g += [(x_sensors[i_sensor] * cos_angle + y_sensors[i_sensor] * sin_angle) ** 2 / ellipse_width ** 2 + (
-                    x_sensors[i_sensor] * sin_angle - y_sensors[i_sensor] * cos_angle) ** 2 / ellipse_height ** 2]
-        lbg += [1]
-        ubg += [1]
-
         # Minimize distance between markers and insoles activations
         if sensors_and_markers_index[name][1] is not None:
             i_marker = sensors_and_markers_index[name][1]
             f += (x_sensors[i_sensor] - position_markers[0, i_marker]) ** 2 + (y_sensors[i_sensor] - position_markers[1, i_marker]) ** 2
+            x0[i_sensor] = position_markers[0, i_marker]
+            x0[i_sensor + nb_sensors] = position_markers[1, i_marker]
 
-        # Impose that the distance between the sensors are the same as those on the insoles
-        if name in which_sensor_to_tie_with:
-            i_other_sensor = sensors_and_markers_index[which_sensor_to_tie_with[name]][0]
-            distance_sensors = cas.sqrt((x_sensors[i_sensor] - x_sensors[i_other_sensor])**2 + (y_sensors[i_sensor] - y_sensors[i_other_sensor])**2)
-            distance_on_insoles = cas.fabs(insole_activations["position_activation"][1, i_sensor] - insole_activations["position_activation"][1, i_other_sensor])
-            f += (distance_sensors - distance_on_insoles) ** 2
+        # Impose that the distance between the sensors and the columns are the same as those on the insoles
+        if np.round(insole_activations["position_activation"][1, i_sensor], 7) in np.round(sensor_columns, 7):
+            i_column_equal = np.where(np.round(insole_activations["position_activation"][1, i_sensor], 7) == np.round(sensor_columns, 7))[0][0]
+            g += [x_sensors[i_sensor] - x_columns[i_column_equal], y_sensors[i_sensor] - y_columns[i_column_equal]]
+            lbg += [0, 0]
+            ubg += [0, 0]
+        else:
+            i_sensor_before = np.where(insole_activations["position_activation"][1, i_sensor] > sensor_columns)[0][-1]
+            distance_sensors_before = (x_sensors[i_sensor] - x_columns[i_sensor_before])**2 + (y_sensors[i_sensor] - y_columns[i_sensor_before])**2
+            distance_on_insoles_before = (insole_activations["position_activation"][1, i_sensor] - sensor_columns[i_sensor_before])**2
+            g += [distance_sensors_before - distance_on_insoles_before]
+            lbg += [0]
+            ubg += [0]
 
-    nlp = {"x": cas.vertcat(x_sensors, y_sensors), "f": f, "g": cas.vertcat(*g)}
+            # The sensors must be on the ellipse
+            g += [((x_sensors[i_sensor] - ellipse_center_x) * cos_angle + (
+                        y_sensors[i_sensor] - ellipse_center_y) * sin_angle) ** 2 / (ellipse_width / 2.) ** 2 +
+                  ((x_sensors[i_sensor] - ellipse_center_x) * sin_angle - (
+                              y_sensors[i_sensor] - ellipse_center_y) * cos_angle) ** 2 / (ellipse_height / 2.) ** 2]
+            lbg += [1]
+            ubg += [1]
+
+    g += [cas.sqrt((x_columns[1:] - x_columns[:-1])**2 + (y_columns[1:] - y_columns[:-1])**2)]
+    lbg += [sensor_columns[1:] - sensor_columns[:-1]]
+    ubg += [sensor_columns[1:] - sensor_columns[:-1]]
+
+    for i_column in range(len(sensor_columns)):
+        # The sensors must be on the ellipse
+        g += [((x_columns[i_column] - ellipse_center_x) * cos_angle + (y_columns[i_column] - ellipse_center_y) * sin_angle) ** 2 / (ellipse_width/2.) ** 2 +
+              ((x_columns[i_column] - ellipse_center_x) * sin_angle - (y_columns[i_column] - ellipse_center_y) * cos_angle) ** 2 / (ellipse_height/2.) ** 2]
+        lbg += [1]
+        ubg += [1]
+
+        # Initial guess for the position of the column
+        if fig_name[-1] == 'L':
+            x0[2*nb_sensors + i_column] = position_markers[0, 0] - i_column * 0.01504
+            x0[2*nb_sensors + len(sensor_columns) + i_column] = position_markers[1, 0] + i_column * 0.01504
+        elif fig_name[-1] == 'R':
+            x0[2*nb_sensors + i_column] = position_markers[0, 0] + i_column * 0.01504
+            x0[2*nb_sensors + len(sensor_columns) + i_column] = position_markers[1, 0] + i_column * 0.01504
+        else:
+            raise RuntimeError("Please contact the lazy dev aka EveCharbie :p")
+
+    nlp = {"x": cas.vertcat(x_sensors, y_sensors, x_columns, y_columns), "f": f, "g": cas.vertcat(*g)}
     opts = {"ipopt.print_level": 5}
     solver = cas.nlpsol("solver", "ipopt", nlp, opts)
-    # TODO: position of the markers as init
-    x0 = np.zeros((nb_sensors * 2,))  # Initial guess for the optimization variables
 
-    sol = solver(x0=x0, lbx=[-np.inf] * nb_sensors * 2, ubx=[np.inf] * nb_sensors * 2, lbg=lbg, ubg=ubg)
+    sol = solver(x0=x0, lbx=[-np.inf] * (nb_sensors * 2 + len(sensor_columns) * 2), ubx=[np.inf] * (nb_sensors * 2 + len(sensor_columns) * 2), lbg=cas.vertcat(*lbg), ubg=cas.vertcat(*ubg))
 
     if not solver.stats()["success"]:
+        x_sensors = x0[:nb_sensors]
+        y_sensors = x0[nb_sensors: 2*nb_sensors]
+        x_columns = x0[2*nb_sensors:2*nb_sensors+len(sensor_columns)]
+        y_columns = x0[2*nb_sensors+len(sensor_columns):]
+        cos_angle = cas.cos(np.pi - ellipse_theta)
+        sin_angle = cas.sin(np.pi - ellipse_theta)
+        for name in names_in_order:
+            i_sensor = sensors_and_markers_index[name][0]
+            if i_sensor is None:
+                continue
+            if sensors_and_markers_index[name][1] is not None:
+                i_marker = sensors_and_markers_index[name][1]
+                print("f += ", (x_sensors[i_sensor] - position_markers[0, i_marker]) ** 2 + (
+                            y_sensors[i_sensor] - position_markers[1, i_marker]) ** 2)
+            if np.round(insole_activations["position_activation"][1, i_sensor], 7) in np.round(sensor_columns, 7):
+                i_column_equal = np.where(
+                    np.round(insole_activations["position_activation"][1, i_sensor], 7) == np.round(sensor_columns, 7))[
+                    0][0]
+                print("g += ", [x_sensors[i_sensor] - x_columns[i_column_equal], y_sensors[i_sensor] - y_columns[i_column_equal]])
+            else:
+                i_sensor_before = np.where(insole_activations["position_activation"][1, i_sensor] > sensor_columns)[0][
+                    -1]
+                distance_sensors_before = (x_sensors[i_sensor] - x_columns[i_sensor_before]) ** 2 + (
+                            y_sensors[i_sensor] - y_columns[i_sensor_before]) ** 2
+                distance_on_insoles_before = (insole_activations["position_activation"][1, i_sensor] - sensor_columns[i_sensor_before]) ** 2
+                print("g += ", [distance_sensors_before - distance_on_insoles_before])
+                print("g += ", [((x_sensors[i_sensor] - ellipse_center_x) * cos_angle + (y_sensors[i_sensor] - ellipse_center_y) * sin_angle) ** 2 / (ellipse_width / 2.) ** 2 + ((x_sensors[i_sensor] - ellipse_center_x) * sin_angle - (y_sensors[i_sensor] - ellipse_center_y) * cos_angle) ** 2 / (ellipse_height / 2.) ** 2])
+
+        print("g += ", [cas.sqrt((x_columns[1:] - x_columns[:-1]) ** 2 + (y_columns[1:] - y_columns[:-1]) ** 2)])
+        for i_column in range(len(sensor_columns)):
+            print("g += ", [((x_columns[i_column] - ellipse_center_x) * cos_angle + (
+                        y_columns[i_column] - ellipse_center_y) * sin_angle) ** 2 / (ellipse_width / 2.) ** 2 +
+                  ((x_columns[i_column] - ellipse_center_x) * sin_angle - (
+                              y_columns[i_column] - ellipse_center_y) * cos_angle) ** 2 / (ellipse_height / 2.) ** 2])
+
         raise RuntimeError(
             "Insole wrapping did not converge, trying again !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
     x_opt = sol["x"][:nb_sensors]
-    y_opt = sol["x"][nb_sensors:]
+    y_opt = sol["x"][nb_sensors:2*nb_sensors]
+    x_columns_opt = sol["x"][2*nb_sensors: 2*nb_sensors + len(sensor_columns)]
+    y_columns_opt = sol["x"][2*nb_sensors + len(sensor_columns): ]
 
-    fig, ax = plt.subplots()
-    fig.suptitle("Representation optimization insole")
+    distance = []
+    for name in names_in_order:
+        i_sensor = sensors_and_markers_index[name][0]
+        if i_sensor is None:
+            continue
+        if sensors_and_markers_index[name][1] is not None:
+            i_marker = sensors_and_markers_index[name][1]
+            distance += [np.abs(np.sqrt((x_opt[i_sensor] - position_markers[0, i_marker]) ** 2 + (
+                        y_opt[i_sensor] - position_markers[1, i_marker]) ** 2))]
+    print("Mean distance between markers and sensors : ", np.mean(np.array(distance)) * 100, " cm")
 
-    # Ellipse
-    ellipse = Ellipse(
-        xy=(ellipse_center_x, ellipse_center_y),
-        width=ellipse_width / 2.,
-        height=ellipse_height / 2.,
-        angle=ellipse_theta * 180 / np.pi,
-        facecolor="red",
-        alpha=0.5,
-    )
-    ax.add_patch(ellipse)
-    ax.set_aspect("equal")
-    ax.set_xlabel(" Position in x")
-    ax.set_ylabel(" Position in y")
+    if FLAG_PLOT:
+        fig, ax = plt.subplots()
+        fig.suptitle("Representation optimization insole")
 
-    # Position markers
-    ax.plot(position_markers[0, :], position_markers[1, :], ".b", label="markers")
+        # Ellipse
+        ellipse = Ellipse(
+            xy=(ellipse_center_x, ellipse_center_y),
+            width=ellipse_width,
+            height=ellipse_height,
+            angle=(np.pi - ellipse_theta) * 180 / np.pi,
+            facecolor="red",
+            alpha=0.5,
+        )
+        ax.add_patch(ellipse)
+        ax.set_aspect("equal")
+        ax.set_xlabel(" Position in x")
+        ax.set_ylabel(" Position in y")
 
-    # Position activation
-    ax.plot(x_opt, y_opt, "-g", label="activation")
+        # Position markers
+        ax.plot(position_markers[0, :], position_markers[1, :], ".b", label="markers from Mocap")
 
-    # Visualisation
-    plt.savefig("Figures/fit_activations_on_elispe.png")
-    plt.close(fig)
+        # Position columns
+        ax.plot(x_columns_opt, y_columns_opt, "-g", label="columns of sensors")
+        for i_column in range(len(sensor_columns)):
+            ax.text(float(x_columns_opt[i_column]), float(y_columns_opt[i_column]), str(i_column), color="g")
 
-    return x_opt, y_opt
+        # Position activation
+        ax.plot(x_opt, y_opt, ".g", label="activation from marker pushes")
 
+        # Visualisation
+        plt.legend()
+        plt.savefig(f"Figures/{fig_name}.png")
+        plt.close(fig)
+
+    return x_opt, y_opt, x_columns_opt, y_columns_opt, sensor_columns
+
+def get_force_orientation(x_columns_opt, y_columns_opt, ellipse_center_x, ellipse_center_y, FLAG_PLOT):
+    """
+    Find the unit vector that goes from the sensor columns to the center of the ellipse.
+    Since the ellipse is close to a circle, this approximation should be OK.
+    Parameters
+    ----------
+    x_columns_opt
+    y_columns_opt
+    ellipse_center_x
+    ellipse_center_y
+
+    TODO: doc
+    Returns
+    -------
+
+    """
+    force_orientation = np.zeros((x_columns_opt.shape[0], 2))
+    for i_column in range(x_columns_opt.shape[0]):
+        vector = np.array([x_columns_opt[i_column] - ellipse_center_x, y_columns_opt[i_column] - ellipse_center_y]).reshape(-1, )
+        norm = np.linalg.norm(vector)
+        force_orientation[i_column, :] = vector / norm
+
+    if FLAG_PLOT:
+        fig = plt.figure()
+        for i_column in range(x_columns_opt.shape[0]):
+            plt.plot(np.array([float(x_columns_opt[i_column]), float(x_columns_opt[i_column]) + force_orientation[i_column, 0]]),
+                     np.array([float(y_columns_opt[i_column]), float(y_columns_opt[i_column]) + force_orientation[i_column, 1]]),
+                     '-m')
+        plt.plot(ellipse_center_x, ellipse_center_y, 'or')
+        plt.savefig("Figures/force_orientation.png")
+        plt.close(fig)
+
+    return force_orientation
 
 def find_tangent(ellipse_center, ellipse_axes, ellipse_theta, point, fig_name: str, FLAG_PLOT=False):
     """
@@ -1248,3 +1360,24 @@ def position_insole(marker_list: list, model):
     else:
         raise RuntimeError("ERROR: The marker list must contain the index of the markers that are in the biorbd model.")
     return center, position_markers
+
+def get_force_from_insoles(insole_data, force_orientation, position_activation, sensor_columns, FLAG_PLOT=True):
+    insole_data_array = np.array(insole_data.iloc[3:, 1:-1])
+    nb_cells = position_activation["all_sensors_positions"].shape[0]
+    force_data_per_cell = np.zeros((insole_data_array.shape[0], insole_data_array.shape[1], 2))
+    for i_cell in range(nb_cells):
+        position_activation_this_time = position_activation["all_sensors_positions"][i_cell]
+        force_orientation_this_time = force_orientation[np.where(position_activation_this_time == sensor_columns), :]
+        for i_frame in range(insole_data_array.shape[0]):
+            force_data_per_cell[i_frame, i_cell, :] = insole_data_array[i_frame, i_cell] * force_orientation_this_time
+    force_data = np.sum(force_data_per_cell, axis=1)
+
+    if FLAG_PLOT:
+        fig = plt.figure()
+        plt.plot(force_data[:, 0], '-r', label="Force X")
+        plt.plot(force_data[:, 1], '-b', label="Force Y")
+        plt.legend()
+        plt.savefig("Figures/force.png")
+        plt.close(fig)
+
+    return force_data

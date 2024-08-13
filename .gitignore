@@ -145,3 +145,5 @@ data_analysis/reconstructions/
 *.svg
 
 *.png
+
+*.pkl
