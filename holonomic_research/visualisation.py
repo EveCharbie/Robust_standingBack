@@ -7,6 +7,8 @@ from bioptim import (
     HolonomicConstraintsList,
     HolonomicConstraintsFcn,
 )
+import matplotlib.pyplot as plt
+import math
 
 
 # --- Visualisation -- #
@@ -41,7 +43,7 @@ def visualisation_movement(name_file_movement: str, name_file_model: str):
 
     """
     data = get_created_data_from_pickle(name_file_movement)
-    Q = np.concatenate(data["q"], axis=1)
+    Q = np.hstack(data["q"])
     visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
     visu.load_movement(Q)
     visu.exec()
@@ -138,332 +140,128 @@ def visualisation_dedoublement_phase(name_file_movement: str, name_file_model: s
         visu_3.exec()
 
 
-def visualisation_closed_loop_5phases(bio_model, sol, model_path):
-    """
-    Code to visualize a simulation composed of 5 phases
-    (preparation propulsion, propulsion, flight, tucked phase, preparation landing)
-    and with a holonomic constraints body-body
-    Parameters
-    ----------
-    bio_model:
-        Model of the simulation
-    sol:
-        The solution to the ocp at the current pool
-    model_path:
-        Path of the model used
+def graph_all(sol):
+    data = get_created_data_from_pickle(sol)
+    lambdas = data["lambda"]
+    q = data["q_all"]
+    qdot = data["qdot_all"]
+    qddot = data["qddot_all"]
+    tau = data["tau_all"]
+    dof_names = data["dof_names"]
 
-    Returns
-    -------
+    # Time
+    time_total = data["time_total"]
+    time_end_phase = data["time_end_phase"]
+    time = data["time_all"]
 
-    """
-    q_0 = sol.states[0]["q"]
-    q_1 = sol.states[1]["q"]
-    q_2 = sol.states[2]["q"]
-    q_holo = np.zeros((bio_model[0].nb_q, sol.states[3]["q_u"].shape[1]))
-    q_4 = sol.states[4]["q"]
-    for i, ui in enumerate(sol.states[3]["q_u"].T):
-        # vi = bio_model.compute_v_from_u_numeric(ui, v_init=DM(np.zeros(2))).toarray()
-        vi = bio_model[3].compute_v_from_u_explicit_numeric(ui).toarray()
-        qi = bio_model[3].state_from_partition(ui[:, np.newaxis], vi).toarray().squeeze()
-        q_holo[:, i] = qi
-    q = np.concatenate((q_0, q_1, q_2, q_holo, q_4), axis=1)
-    visu = bioviz.Viz(model_path)
-    visu.load_movement(q)
-    visu.exec()
+    # Figure q
+    fig, axs = plt.subplots(2, math.ceil(q.shape[0]/2))
+    num_col = 0
+    num_line = 0
+    y_min = np.min(q)
+    y_max = np.max(q)
+    for nb_seg in range(q.shape[0]):
+        axs[num_line, num_col].plot(time, q[nb_seg])
+        for xline in range(len(time_end_phase)):
+            axs[num_line, num_col].axvline(time_end_phase[xline], color="k", linestyle="--")
+        axs[num_line, num_col].set_title(dof_names[nb_seg])
+        axs[num_line, num_col].set_ylim(y_min, y_max)
+        num_col = num_col + 1
+        if nb_seg == math.ceil(q.shape[0]/2) - 1:
+            num_col = 0
+            num_line = 1
+    for ax in axs.flat:
+        ax.set(xlabel='Time [s]', ylabel='Positions [m]')
+    for ax in axs.flat:
+        ax.label_outer()
+    #fig.suptitle("Evolution des Q")
 
+    # Figure qdot
+    fig, axs = plt.subplots(2, math.ceil(qdot.shape[0] / 2))
+    num_col = 0
+    num_line = 0
+    y_min = np.min(qdot)
+    y_max = np.max(qdot)
+    for nb_seg in range(qdot.shape[0]):
+        axs[num_line, num_col].plot(time, qdot[nb_seg])
+        for xline in range(len(time_end_phase)):
+            axs[num_line, num_col].axvline(time_end_phase[xline], color="k", linestyle="--")
+        axs[num_line, num_col].set_title(dof_names[nb_seg])
+        axs[num_line, num_col].set_ylim(y_min, y_max)
+        num_col = num_col + 1
+        if nb_seg == math.ceil(qdot.shape[0] / 2) - 1:
+            num_col = 0
+            num_line = 1
+    for ax in axs.flat:
+        ax.set(xlabel='Time [s]', ylabel='Velocities [m/s]')
+    for ax in axs.flat:
+        ax.label_outer()
+    #fig.suptitle("Evolution des Qdot")
 
-def visualisation_closed_loop_6phases(bio_model, sol, model_path):
-    """
-    Code to visualize a simulation composed of 6 phases
-    (preparation propulsion, propulsion, flight, tucked phase, preparation landing, landing)
-    and with a holonomic constraints body-body
-    Parameters
-    ----------
-    bio_model:
-        Model of the simulation
-    sol:
-        The solution to the ocp at the current pool
-    model_path:
-        Path of the model used
+    # Figure tau
+    fig, axs = plt.subplots(2, math.ceil(tau.shape[0]/2))
+    num_col = 0
+    num_line = 0
+    y_min = np.min(tau)
+    y_max = np.max(tau)
+    for nb_seg in range(tau.shape[0]):
+        axs[num_line, num_col].plot(tau[nb_seg])
+        value_xline = 0
+        for xline in range(len(time_end_phase)):
+            value_xline = value_xline + data["n_shooting"][xline]
+            axs[num_line, num_col].axvline(value_xline, color="k", linestyle="--")
+        axs[num_line, num_col].set_title(dof_names[nb_seg + 3])
+        axs[num_line, num_col].set_ylim(y_min, y_max)
+        num_col = num_col + 1
+        if nb_seg == math.ceil(tau.shape[0]/2) - 1:
+            num_col = 0
+            num_line = 1
+    for ax in axs.flat:
+        ax.set(xlabel='Time [s]', ylabel='Tau')
+    for ax in axs.flat:
+        ax.label_outer()
+    #fig.suptitle("Evolution des Tau")
 
-    Returns
-    -------
-
-    """
-    q_0 = sol.states[0]["q"]
-    q_1 = sol.states[1]["q"]
-    q_2 = sol.states[2]["q"]
-    q_holo = np.zeros((bio_model[0].nb_q, sol.states[3]["q_u"].shape[1]))
-    q_4 = sol.states[4]["q"]
-    q_5 = sol.states[5]["q"]
-    for i, ui in enumerate(sol.states[3]["q_u"].T):
-        # vi = bio_model.compute_v_from_u_numeric(ui, v_init=DM(np.zeros(2))).toarray()
-        vi = bio_model[3].compute_v_from_u_explicit_numeric(ui).toarray()
-        qi = bio_model[3].state_from_partition(ui[:, np.newaxis], vi).toarray().squeeze()
-        q_holo[:, i] = qi
-    q = np.concatenate((q_0, q_1, q_2, q_holo, q_4, q_5), axis=1)
-    visu = bioviz.Viz(model_path)
-    visu.load_movement(q)
-    visu.exec()
-
-
-def visualisation_closed_loop(name_file_movement: str, name_file_model: str):
-    """
-    Code to visualize a simulation with a holonomic constraints body-body
-    Parameters
-    ----------
-    name_file_movement:
-        Path of the movement simulated
-    name_file_model:
-        Path of the model used
-
-    Returns
-    -------
-
-    """
-    bio_model = BiorbdModelCustomHolonomic(name_file_model)
-
-    holonomic_constraints = HolonomicConstraintsList()
-    holonomic_constraints.add(
-        "holonomic_constraints",
-        HolonomicConstraintsFcn.superimpose_markers,
-        biorbd_model=bio_model,
-        marker_1="BELOW_KNEE",
-        marker_2="CENTER_HAND",
-        index=slice(1, 3),
-        local_frame_index=11,
-    )
-    bio_model.set_holonomic_configuration(
-        constraints_list=holonomic_constraints, independent_joint_index=[0, 1, 2, 5, 6, 7],
-        dependent_joint_index=[3, 4],
-    )
-    data = get_created_data_from_pickle(name_file_movement)
-    nb_q = bio_model.nb_q
-    for index, arr in enumerate(data["q"]):
-        if arr.shape[0] != 8:
-            index_holo = index
-    q = data["q"]
-    q[index_holo] = np.zeros(shape=(nb_q, q[index_holo].shape[1]))
-    for i, ui in enumerate(data["q"][index_holo].T):
-        vi = bio_model.compute_v_from_u_explicit_numeric(ui).toarray()
-        qi = bio_model.state_from_partition(ui[:, np.newaxis], vi).toarray().squeeze()
-        q[index_holo][:, i] = qi
-    Q = np.concatenate(q, axis=1)
-    visu = bioviz.Viz(name_file_model, show_floor=True, show_meshes=True)
-    visu.load_movement(Q)
-    visu.exec()
+    # Figure lambdas
+    #name_ylabel=["Effort normal au tibia [N]", "Effort de cisaillement au tibia [N]"]
+    #fig, axs = plt.subplots(2, math.ceil(lambdas.shape[0]/2))
+    #num_col = 0
+    #num_line = 0
+    #for nb_seg in range(lambdas.shape[0]):
+    #    axs[num_col].plot(lambdas[nb_seg])
+    #    axs[num_col].set_ylabel(name_ylabel[num_col])
+    #    if num_line == 1:
+    #        axs[num_line, num_col].set_xlabel('Time [s]')
+    #    num_col = num_col + 1
+    #fig.suptitle("Evolution des Lambdas")
+    fig = plt.figure()
+    plt.plot(lambdas[0], color='r', label=["Normal force"])
+    plt.plot(lambdas[1], color='g', label=["Shear force"])
+    plt.ylabel("Force on the tibia [N]")
+    plt.xlabel("Shooting point")
+    plt.legend()
+    plt.show()
 
 
-def visualisation_closed_loop_4phases_propulsion(bio_model, sol, model_path):
-    """
-    Code to visualize a simulation composed of 5 phases
-    (preparation propulsion, propulsion, flight, tucked phase)
-    and with a holonomic constraints body-body
-    Parameters
-    ----------
-    bio_model:
-        Model of the simulation
-    sol:
-        The solution to the ocp at the current pool
-    model_path:
-        Path of the model used
-
-    Returns
-    -------
-
-    """
-    q_0 = sol.states[0]["q"]
-    q_1 = sol.states[1]["q"]
-    q_2 = sol.states[2]["q"]
-    q_holo = np.zeros((bio_model[0].nb_q, sol.states[3]["q_u"].shape[1]))
-    for i, ui in enumerate(sol.states[3]["q_u"].T):
-        # vi = bio_model.compute_v_from_u_numeric(ui, v_init=DM(np.zeros(2))).toarray()
-        vi = bio_model[3].compute_v_from_u_explicit_numeric(ui).toarray()
-        qi = bio_model[3].state_from_partition(ui[:, np.newaxis], vi).toarray().squeeze()
-        q_holo[:, i] = qi
-    q = np.concatenate((q_0, q_1, q_2, q_holo), axis=1)
-    visu = bioviz.Viz(model_path)
-    visu.load_movement(q)
-    visu.exec()
-
-
-def visualisation_closed_loop_4phases_reception(bio_model, sol, model_path):
-    """
-    Code to visualize a simulation composed of 4 phases
-    (flight, tucked phase, preparation landing, landing)
-    and with a holonomic constraints body-body
-    Parameters
-    ----------
-    bio_model:
-        Model of the simulation
-    sol:
-        The solution to the ocp at the current pool
-    model_path:
-        Path of the model used
-
-    Returns
-    -------
-
-    """
-    q_0 = sol.states[0]["q"]
-    q_holo = np.zeros((bio_model[0].nb_q, sol.states[1]["q_u"].shape[1]))
-    q_2 = sol.states[2]["q"]
-    q_3 = sol.states[3]["q"]
-    for i, ui in enumerate(sol.states[1]["q_u"].T):
-
-        vi = bio_model[1].compute_v_from_u_explicit_numeric(ui).toarray()
-        qi = bio_model[1].state_from_partition(ui[:, np.newaxis], vi).toarray().squeeze()
-        q_holo[:, i] = qi
-    q = np.concatenate((q_0,q_holo, q_2, q_3), axis=1)
-    visu = bioviz.Viz(model_path)
-    visu.load_movement(q)
-    visu.exec()
-
-
-def visualisation_closed_loop_5phases_reception(bio_model, sol, model_path):
-    """
-    Code to visualize a simulation composed of 5 phases
-    (propulsion, flight, tucked phase, preparation landing, landing)
-    and with a holonomic constraints body-body
-    Parameters
-    ----------
-    bio_model:
-        Model of the simulation
-    sol:
-        The solution to the ocp at the current pool
-    model_path:
-        Path of the model used
-
-    Returns
-    -------
-
-    """
-    q_0 = sol.states[0]["q"]
-    q_1 = sol.states[1]["q"]
-    q_holo = np.zeros((bio_model[0].nb_q, sol.states[2]["q_u"].shape[1]))
-    q_3 = sol.states[3]["q"]
-    q_4 = sol.states[4]["q"]
-    for i, ui in enumerate(sol.states[2]["q_u"].T):
+def graph_q(bio_model, sol):
+    data = get_created_data_from_pickle(sol)
+    q_0 = data["q"][0]
+    q_1 = data["q"][1]
+    q_holo = np.zeros((bio_model[0].nb_q, data["q"][2].shape[1]))
+    q_3 = data["q"][3]
+    q_4 = data["q"][4]
+    for i, ui in enumerate(data["q"][2].T):
         vi = bio_model[2].compute_v_from_u_explicit_numeric(ui).toarray()
         qi = bio_model[2].state_from_partition(ui[:, np.newaxis], vi).toarray().squeeze()
         q_holo[:, i] = qi
     q = np.concatenate((q_0, q_1, q_holo, q_3, q_4), axis=1)
-    visu = bioviz.Viz(model_path)
-    visu.load_movement(q)
-    visu.exec()
+    n_shooting = [q_0.shape[1], q_1.shape[1], q_holo.shape[1], q_3.shape[1], q_4.shape[1]]
 
-
-def visualisation_closed_loop_3phases(bio_model, sol, model_path):
-    """
-    Code to visualize a simulation composed of 3 phases (flight, tucked phase, preparation landing)
-    and with a holonomic constraints body-body
-    Parameters
-    ----------
-    bio_model:
-        Model of the simulation
-    sol:
-        The solution to the ocp at the current pool
-    model_path:
-        Path of the model used
-
-    Returns
-    -------
-
-    """
-    q_0 = sol.states[0]["q"]
-    q_holo = np.zeros((bio_model[0].nb_q, sol.states[1]["q_u"].shape[1]))
-    q_2 = sol.states[2]["q"]
-    for i, ui in enumerate(sol.states[1]["q_u"].T):
-        vi = bio_model[1].compute_v_from_u_explicit_numeric(ui).toarray()
-        qi = bio_model[1].state_from_partition(ui[:, np.newaxis], vi).toarray().squeeze()
-        q_holo[:, i] = qi
-    q = np.concatenate((q_0, q_holo, q_2), axis=1)
-    visu = bioviz.Viz(model_path)
-    visu.load_movement(q)
-    visu.exec()
-
-
-def visualisation_closed_loop_1phase(bio_model, sol, model_path):
-    """
-    Code to visualize a simulation composed of 1 phase (tucked phase)
-    and with a holonomic constraints body-body
-    Parameters
-    ----------
-    bio_model:
-        Model of the simulation
-    sol:
-        The solution to the ocp at the current pool
-    model_path:
-        Path of the model used
-
-    Returns
-    -------
-
-    """
-    q = np.zeros((bio_model.nb_tau, sol.states["q_u"].shape[0]))
-    for i, ui in enumerate(sol.states["q_u"]):
-        vi = bio_model.compute_v_from_u_explicit_numeric(ui).toarray()
-        qi = bio_model.state_from_partition(ui[:, np.newaxis], vi).toarray().squeeze()
-        q[:, i] = qi
-
-    viz = bioviz.Viz(model_path)
-    viz.load_movement(q)
-    viz.exec()
-
-
-def visualisation_closed_loop_2phases(bio_model, sol, model_path):
-    """
-    Code to visualize a simulation composed of 2 phases (flight and tucked phase)
-    and with a holonomic constraints body-body
-    Parameters
-    ----------
-    bio_model:
-        Model of the simulation
-    sol:
-        The solution to the ocp at the current pool
-    model_path:
-        Path of the model used
-
-    Returns
-    -------
-
-    """
-    q_0 = sol.states[0]["q"]
-    q_holo = np.zeros((bio_model[0].nb_q, sol.states[1]["q_u"].shape[1]))
-    for i, ui in enumerate(sol.states[1]["q_u"].T):
-        vi = bio_model[1].compute_v_from_u_explicit_numeric(ui).toarray()
-        qi = bio_model[1].state_from_partition(ui[:, np.newaxis], vi).toarray().squeeze()
-        q_holo[:, i] = qi
-    q = np.concatenate((q_0, q_holo), axis=1)
-    visu = bioviz.Viz(model_path)
-    visu.load_movement(q)
-    visu.exec()
-
-
-def visualisation_closed_loop_2phases_post(bio_model, sol, model_path):
-    """
-    Code to visualize a simulation composed of 2 phases (tucked phase and preparation landing)
-    and with a holonomic constraints body-body
-    Parameters
-    ----------
-    bio_model:
-        Model of the simulation
-    sol:
-        The solution to the ocp at the current pool
-    model_path:
-        Path of the model used
-
-    Returns
-    -------
-
-    """
-    q_0 = sol.states[1]["q"]
-    q_holo = np.zeros((bio_model[1].nb_q, sol.states[0]["q_u"].shape[1]))
-    for i, ui in enumerate(sol.states[0]["q_u"].T):
-        vi = bio_model[0].compute_v_from_u_explicit_numeric(ui).toarray()
-        qi = bio_model[0].state_from_partition(ui[:, np.newaxis], vi).toarray().squeeze()
-        q_holo[:, i] = qi
-    q = np.concatenate((q_holo, q_0), axis=1)
-    visu = bioviz.Viz(model_path)
-    visu.load_movement(q)
-    visu.exec()
+    for nb_seg in range(q.shape[0]):
+        plt.figure()
+        plt.plot(q[nb_seg])
+        xline = 0
+        for line in range(len(n_shooting)):
+            xline = xline + n_shooting[line]
+            plt.axvline(xline)
+        plt.show()

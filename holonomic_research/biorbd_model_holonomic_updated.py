@@ -10,7 +10,7 @@ from biorbd_casadi import (
 )
 from biorbd import marker_index, segment_index
 from casadi import MX, DM, vertcat, horzcat, Function, solve, inv_minor, inv, fmod, pi, transpose
-from bioptim import HolonomicBiorbdModel, ConfigureProblem, DynamicsFunctions
+from bioptim import HolonomicBiorbdModel, ConfigureProblem, DynamicsFunctions, SolutionMerge
 import numpy as np
 
 
@@ -187,7 +187,67 @@ class BiorbdModelCustomHolonomic(HolonomicBiorbdModel):
         ConfigureProblem.configure_new_variable(name, names_udot, ocp, nlp, True, False, False, axes_idx=axes_idx)
 
         ConfigureProblem.configure_tau(ocp, nlp, as_states=False, as_controls=True)
-        ConfigureProblem.configure_dynamics_function(ocp, nlp, DynamicsFunctions.holonomic_torque_driven, expand=False)
+        ConfigureProblem.configure_dynamics_function(ocp, nlp, DynamicsFunctions.holonomic_torque_driven) #, expand=False
+
+    @staticmethod
+    def holonomic_torque_driven_new(ocp, nlp, mapping, numerical_data_timeseries: dict[str, np.ndarray] = None):
+        """
+        Tell the program which variables are states and controls.
+
+        Parameters
+        ----------
+        ocp: OptimalControlProgram
+            A reference to the ocp
+        nlp: NonLinearProgram
+            A reference to the phase
+        """
+
+        name = "q_u"
+        names_u = [nlp.model.name_dof[i] for i in mapping["q"].to_first.map_idx]
+        axes_idx = ConfigureProblem._apply_phase_mapping(ocp, nlp, name)
+        #names_u = [nlp.model.name_dof[i] for i in nlp.model.independent_joint_index]
+        ConfigureProblem.configure_new_variable(
+            name,
+            names_u,
+            ocp,
+            nlp,
+            True,
+            False,
+            False,
+            axes_idx=axes_idx,
+            # NOTE: not ready for phase mapping yet as it is based on dofnames of the class BioModel
+            # see _set_kinematic_phase_mapping method
+            # axes_idx=ConfigureProblem._apply_phase_mapping(ocp, nlp, name),
+        )
+
+        name = "qdot_u"
+        names_qdot = ConfigureProblem._get_kinematics_based_names(nlp, "qdot")
+        names_udot = [names_qdot[i] for i in mapping["qdot"].to_first.map_idx]
+        axes_idx = ConfigureProblem._apply_phase_mapping(ocp, nlp, name)
+        #names_udot = [names_qdot[i] for i in nlp.model.independent_joint_index]
+        ConfigureProblem.configure_new_variable(
+            name,
+            names_udot,
+            ocp,
+            nlp,
+            True,
+            False,
+            False,
+            axes_idx=axes_idx,
+            # NOTE: not ready for phase mapping yet as it is based on dofnames of the class BioModel
+            # see _set_kinematic_phase_mapping method
+            # axes_idx=ConfigureProblem._apply_phase_mapping(ocp, nlp, name),
+        )
+
+        ConfigureProblem.configure_tau(ocp, nlp, as_states=False, as_controls=True)
+
+        # extra plots
+        ConfigureProblem.configure_qv(ocp, nlp, nlp.model.compute_q_v)
+        ConfigureProblem.configure_qdotv(ocp, nlp, nlp.model._compute_qdot_v)
+        ConfigureProblem.configure_lagrange_multipliers_function(ocp, nlp, nlp.model.compute_the_lagrangian_multipliers)
+
+        ConfigureProblem.configure_dynamics_function(ocp, nlp, DynamicsFunctions.holonomic_torque_driven)
+
 
     def partitioned_forward_dynamics(
         self, q_u, qdot_u, tau, external_forces=None, f_contacts=None, q_v_init=None
@@ -255,8 +315,80 @@ class BiorbdModelCustomHolonomic(HolonomicBiorbdModel):
 
         Returns
         -------
-        q: states of the dependent and independent joint
 
+        q: states of the dependent and independent joint
         """
+
         q_v = self.compute_v_from_u_explicit_symbolic(q_u)
         return self.state_from_partition(q_u, q_v)
+
+    def compute_all_states(self, sol, index_holonomic_model):
+        """
+        Compute all the states from the solution of the optimal control program
+
+        Parameters
+        ----------
+        bio_model: HolonomicBiorbdModel
+            The biorbd model
+        sol:
+            The solution of the optimal control program
+
+        Returns
+        -------
+
+        """
+
+        states = sol.decision_states(to_merge=SolutionMerge.NODES)
+        controls = sol.decision_controls(to_merge=SolutionMerge.NODES)
+
+        n = states[index_holonomic_model]["q_u"].shape[1]
+        q = np.zeros((self.nb_q, n))
+        qdot = np.zeros((self.nb_q, n))
+        qddot = np.zeros((self.nb_q, n))
+        lambdas = np.zeros((self.nb_dependent_joints, n))
+        tau = np.zeros((self.nb_tau - self.nb_root, n))
+        tau_dependent_joint_index = [x - self.nb_root for x in self.dependent_joint_index]
+        tau_independent_joint_index = [x - self.nb_root for x in self.independent_joint_index]
+        tau_independent_joint_index = [x for x in tau_independent_joint_index if x >= 0]
+
+        for i, independent_joint_index in enumerate(tau_independent_joint_index):
+            tau[independent_joint_index, :-1] = controls[index_holonomic_model]["tau"][i, :]
+        for i, dependent_joint_index in enumerate(tau_dependent_joint_index):
+            tau[dependent_joint_index, :-1] = controls[index_holonomic_model]["tau"][i, :]
+        tau_root = np.zeros((self.nb_root, tau.shape[1]))
+        tau = np.vstack((tau_root, tau))
+
+        # Partitioned forward dynamics
+        q_u_sym = MX.sym("q_u_sym", self.nb_independent_joints, 1)
+        qdot_u_sym = MX.sym("qdot_u_sym", self.nb_independent_joints, 1)
+        tau_sym = MX.sym("tau_sym", self.nb_tau, 1)
+        partitioned_forward_dynamics_func = Function(
+            "partitioned_forward_dynamics",
+            [q_u_sym, qdot_u_sym, tau_sym],
+            [self.partitioned_forward_dynamics(q_u_sym, qdot_u_sym, tau_sym)],
+        )
+        # Lagrangian multipliers
+        q_sym = MX.sym("q_sym", self.nb_q, 1)
+        qdot_sym = MX.sym("qdot_sym", self.nb_q, 1)
+        qddot_sym = MX.sym("qddot_sym", self.nb_q, 1)
+        compute_lambdas_func = Function(
+            "compute_the_lagrangian_multipliers",
+            [q_sym, qdot_sym, qddot_sym, tau_sym],
+            [self._compute_the_lagrangian_multipliers(q_sym, qdot_sym, qddot_sym, tau_sym)],
+        )
+
+        for i in range(n):
+            q_v_i = self.compute_v_from_u_explicit_numeric(states[index_holonomic_model]["q_u"][:, i]).toarray()
+            q[:, i] = self.state_from_partition(states[index_holonomic_model]["q_u"][:, i][:, np.newaxis],
+                                                q_v_i).toarray().squeeze()
+            qdot[:, i] = self.compute_qdot(q[:, i], states[index_holonomic_model]["qdot_u"][:, i]).toarray().squeeze()
+            qddot_u_i = (
+                partitioned_forward_dynamics_func(states[index_holonomic_model]["q_u"][:, i],
+                                                  states[index_holonomic_model]["qdot_u"][:, i], tau[:, i])
+                .toarray()
+                .squeeze()
+            )
+            qddot[:, i] = self.compute_qddot(q[:, i], qdot[:, i], qddot_u_i).toarray().squeeze()
+            lambdas[:, i] = compute_lambdas_func(q[:, i], qdot[:, i], qddot[:, i], tau[:, i]).toarray().squeeze()
+
+        return q, qdot, qddot, lambdas

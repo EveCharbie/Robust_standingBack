@@ -3,7 +3,7 @@ version 4
 gravity 0 0 -9.81
 
 segment	Pelvis
-	RT -0.1 0 0	xyz 0 0 0.8
+	RT -0.1 0 0	xyz 0 0 0
     translations yz
 	rotations	 x
 	mass	11.58
@@ -236,9 +236,21 @@ marker	 FOOT
 	position 0.0 -0.05 -0.12
 	technical 1
 endmarker
+
 marker	 ANKLE
 	parent	Foot
 	position 0 0 0
 	technical 1
 endmarker
+
+marker	Foot_Heel_marker
+	parent	Foot
+	position	0.00000000000   -0.0300000000    0.05000000000
+endmarker
+
+marker	Foot_Toe_marker
+	parent	Foot
+	position	0.00000000000   -0.03   -0.15
+endmarker
+
 
