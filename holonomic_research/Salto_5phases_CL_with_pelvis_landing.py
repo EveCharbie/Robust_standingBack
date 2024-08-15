@@ -326,7 +326,7 @@ def custom_contraint_lambdas_cisaillement_2(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 69
+version = 70
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -573,7 +573,11 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[0]["q"].min[:, 0] = np.array(pose_propulsion_start) - 0.3
     x_bounds[0]["q"].max[:, 0] = np.array(pose_propulsion_start) + 0.3
     x_bounds[0]["q"].max[2, 0] = 0.5
+    x_bounds[0]["q"].max[5, 0] = 2
+    x_bounds[0]["q"].min[6, 0] = -2
+    x_bounds[0]["q"].max[6, 0] = -0.7
     x_bounds[0]["qdot"][:, 0] = [0] * n_qdot
+    x_bounds[0]["qdot"].max[5, :] = 0
     x_bounds[0]["q"].min[2, 1:] = -np.pi
     x_bounds[0]["q"].max[2, 1:] = np.pi
     x_bounds[0]["q"].min[0, :] = -1
