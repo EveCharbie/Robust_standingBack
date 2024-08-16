@@ -153,7 +153,7 @@ def CoM_over_toes(controller: PenaltyController) -> cas.MX:
 
 # --- Parameters --- #
 movement = "Jump"
-version = 1
+version = 2
 nb_phase = 4
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -335,11 +335,11 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Contraint position
     #pose_at_first_node = [-0.19, -0.43, -1.01, 0.0045, 2.5999, -2.2999, 0.6999]
     #pose_landing = [0.0, 0.14, 0.0, 3.1, 0.0, 0.0, 0.0]
-    pose_propulsion_start = [0, 0.6286, -0.4535, -0.6596, 0.4259, 1.1334, -1.3841, 0.68]  # model bras en arriere
-    pose_takeout_start = [0, 0.8399, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119]
-    pose_takeout_end = [0, 3, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119]
-    pose_landing_start = [0, 2.5551, 0.1930, 0.52, 0.95, 1.72, -0.81, 0.0]
-    pose_landing_end = [0, 0.94, 0.1930, 3.1, 0.03, 0.0, 0.0, 0.0]
+    pose_propulsion_start = [0, 0, -0.4535, -0.6596, 0.4259, 1.1334, -1.3841, 0.68]  # model bras en arriere
+    pose_takeout_start = [0, 0, 0, 2.5896, 0.51, 0.5354, -0.8367, 0.1119]
+    pose_takeout_end = [0, 0.5, 0, 2.5896, 0.51, 0.5354, -0.8367, 0.1119]
+    pose_landing_start = [0, 0, 0.1930, 0.52, 0.95, 1.72, -0.81, 0.0]
+    pose_landing_end = [0, 0, 0.1930, 3.1, 0.03, 0.0, 0.0, 0.0]
 
     # Initialize x_bounds
     x_bounds = BoundsList()
@@ -349,50 +349,50 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds.add("qdot", bounds=bio_model[0].bounds_from_ranges("qdot"), phase=0)
     x_bounds[0]["q"].min[:, 0] = np.array(pose_propulsion_start) - 0.3
     x_bounds[0]["q"].max[:, 0] = np.array(pose_propulsion_start) + 0.3
-    x_bounds[0]["q"].max[2, 0] = 0.5
-    x_bounds[0]["q"].max[5, 0] = 2
-    x_bounds[0]["q"].min[6, 0] = -2
-    x_bounds[0]["q"].max[6, 0] = -0.7
+    #x_bounds[0]["q"].max[2, 0] = 0.5
+    #x_bounds[0]["q"].max[5, 0] = 2
+    #x_bounds[0]["q"].min[6, 0] = -2
+    #x_bounds[0]["q"].max[6, 0] = -0.7
     x_bounds[0]["qdot"][:, 0] = [0] * n_qdot
-    x_bounds[0]["qdot"].max[5, :] = 0
-    x_bounds[0]["q"].min[2, 1:] = -np.pi
-    x_bounds[0]["q"].max[2, 1:] = np.pi
+    #x_bounds[0]["qdot"].max[5, :] = 0
+    #x_bounds[0]["q"].min[2, 1:] = -np.pi
+    #x_bounds[0]["q"].max[2, 1:] = np.pi
     x_bounds[0]["q"].min[0, :] = -1
     x_bounds[0]["q"].max[0, :] = 1
     x_bounds[0]["qdot"].min[3, :] = 0  # A commenter si marche pas
-    x_bounds[0]["q"].min[3, 2] = np.pi / 2
+    #x_bounds[0]["q"].min[3, 2] = np.pi / 2
 
     # Phase 1: Flight
     x_bounds.add("q", bounds=bio_model[1].bounds_from_ranges("q"), phase=1)
     x_bounds.add("qdot", bounds=bio_model[1].bounds_from_ranges("qdot"), phase=1)
     x_bounds[1]["q"].min[0, :] = -1
     x_bounds[1]["q"].max[0, :] = 1
-    x_bounds[1]["q"].min[1, :] = 0
-    x_bounds[1]["q"].max[1, :] = 3
+    #x_bounds[1]["q"].min[1, :] = 0
+    #x_bounds[1]["q"].max[1, :] = 3
 
     # Phase 2: Second Flight
     x_bounds.add("q", bounds=bio_model[2].bounds_from_ranges("q"), phase=2)
     x_bounds.add("qdot", bounds=bio_model[2].bounds_from_ranges("qdot"), phase=2)
     x_bounds[2]["q"].min[0, :] = -1
     x_bounds[2]["q"].max[0, :] = 1
-    x_bounds[2]["q"].min[1, :] = 0
-    x_bounds[2]["q"].max[1, :] = 3
+    #x_bounds[2]["q"].min[1, :] = 0
+    #x_bounds[2]["q"].max[1, :] = 3
 
     # Phase 2: Landing
     x_bounds.add("q", bounds=bio_model[3].bounds_from_ranges("q"), phase=3)
     x_bounds.add("qdot", bounds=bio_model[3].bounds_from_ranges("qdot"), phase=3)
     x_bounds[3]["q"].max[:, -1] = np.array(pose_landing_end) + 0.2  # 0.5
     x_bounds[3]["q"].min[:, -1] = np.array(pose_landing_end) - 0.2
-    x_bounds[3]["q"].min[5, 0] = pose_landing_start[5] - 1 #0.06
-    x_bounds[3]["q"].max[5, 0] = pose_landing_start[5] + 0.5
-    x_bounds[3]["q"].min[6, 0] = pose_landing_start[6] - 1
-    x_bounds[3]["q"].max[6, 0] = pose_landing_start[6] + 0.1
+    #x_bounds[3]["q"].min[5, 0] = pose_landing_start[5] - 1 #0.06
+    #x_bounds[3]["q"].max[5, 0] = pose_landing_start[5] + 0.5
+    #x_bounds[3]["q"].min[6, 0] = pose_landing_start[6] - 1
+    #x_bounds[3]["q"].max[6, 0] = pose_landing_start[6] + 0.1
     x_bounds[3]["q"].min[0, :] = -1
     x_bounds[3]["q"].max[0, :] = 1
-    x_bounds[3]["q"].min[1, 0] = 0
-    x_bounds[3]["q"].max[1, 0] = 3
-    x_bounds[3]["q"].min[1, 1:] = -1
-    x_bounds[3]["q"].max[1, 1:] = 2.5
+    #x_bounds[3]["q"].min[1, 0] = 0
+    #x_bounds[3]["q"].max[1, 0] = 3
+    #x_bounds[3]["q"].min[1, 1:] = -1
+    #x_bounds[3]["q"].max[1, 1:] = 2.5
     #x_bounds[2]["qdot"][:, -1] = [0] * n_qdot
 
     # Initial guess
