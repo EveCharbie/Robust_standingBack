@@ -153,7 +153,7 @@ def CoM_over_toes(controller: PenaltyController) -> cas.MX:
 
 # --- Parameters --- #
 movement = "Jump"
-version = 4
+version = 5
 nb_phase = 4
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -239,25 +239,25 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         phase=0,
     )
 
-    #constraints.add(
-    #    ConstraintFcn.TRACK_MARKERS,
-    #    marker_index="Shoulder_marker",
-    #    axes=[Axis.X, Axis.Y, Axis.Z],
-    #    max_bound=[0 + 0.10, 0.019 + 0.10, 2.025 + 0.10],
-    #    min_bound=[0 - 0.10, 0.019 - 0.10, 2.025 - 0.10],
-    #    node=Node.START,
-    #    phase=0,
-    #)
+    constraints.add(
+        ConstraintFcn.TRACK_MARKERS,
+        marker_index="Shoulder_marker",
+        axes=[Axis.X, Axis.Y, Axis.Z],
+        max_bound=[0 + 0.10, 0.019 + 0.10, 1.149 + 0.10],
+        min_bound=[0 - 0.10, 0.019 - 0.10, 1.149 - 0.10],
+        node=Node.START,
+        phase=0,
+    )
 
-    #constraints.add(
-    #    ConstraintFcn.TRACK_MARKERS,
-    #    marker_index="KNEE_marker",
-    #    axes=[Axis.X, Axis.Y, Axis.Z],
-    #    max_bound=[0 + 0.10, 0.356 + 0.10, 1.26 + 0.10],
-    #    min_bound=[0 - 0.10, 0.356 - 0.10, 1.26 - 0.10],
-    #    node=Node.START,
-    #    phase=0,
-    #)
+    constraints.add(
+        ConstraintFcn.TRACK_MARKERS,
+        marker_index="KNEE_marker",
+        axes=[Axis.X, Axis.Y, Axis.Z],
+        max_bound=[0 + 0.10, 0.254 + 0.10, 0.413 + 0.10],
+        min_bound=[0 - 0.10, 0.254 - 0.10, 0.413 - 0.10],
+        node=Node.START,
+        phase=0,
+    )
 
     constraints.add(
         CoM_over_toes,
@@ -267,7 +267,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
     constraints.add(
         ConstraintFcn.NON_SLIPPING,
-        node=Node.ALL_SHOOTING,
+        node=Node.END,
         normal_component_idx=1,
         tangential_component_idx=0,
         static_friction_coefficient=0.5,
@@ -322,7 +322,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
     constraints.add(
         ConstraintFcn.NON_SLIPPING,
-        node=Node.ALL_SHOOTING,
+        node=Node.START,
         normal_component_idx=1,
         tangential_component_idx=0,
         static_friction_coefficient=0.5,
