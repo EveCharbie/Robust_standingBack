@@ -326,7 +326,7 @@ def custom_contraint_lambdas_cisaillement_2(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 70
+version = 71
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -426,6 +426,26 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         axes=Axis.Y,
         max_bound=0.1,
         min_bound=-0.1,
+        node=Node.START,
+        phase=0,
+    )
+
+    constraints.add(
+        ConstraintFcn.TRACK_MARKERS,
+        marker_index="Shoulder_marker",
+        axes=[Axis.X, Axis.Y, Axis.Z],
+        max_bound=[0 + 0.10, 0.019 + 0.10, 2.025 + 0.10],
+        min_bound=[0 - 0.10, 0.019 - 0.10, 2.025 - 0.10],
+        node=Node.START,
+        phase=0,
+    )
+
+    constraints.add(
+        ConstraintFcn.TRACK_MARKERS,
+        marker_index="KNEE_marker",
+        axes=[Axis.X, Axis.Y, Axis.Z],
+        max_bound=[0 + 0.10, 0.356 + 0.10, 1.26 + 0.10],
+        min_bound=[0 - 0.10, 0.356 - 0.10, 1.26 - 0.10],
         node=Node.START,
         phase=0,
     )
@@ -716,9 +736,9 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
 # --- Load model --- #
 def main():
-    model_path = str(name_folder_model) + "/" + "Model2D_7Dof_0C_5M_CL_V2.bioMod"
-    model_path_2contact = str(name_folder_model) + "/" + "Model2D_7Dof_3C_5M_CL_V2.bioMod"
-    model_path_1contact = str(name_folder_model) + "/" + "Model2D_7Dof_2C_5M_CL_V2.bioMod"
+    model_path = str(name_folder_model) + "/" + "Model2D_7Dof_0C_5M_CL_V3.bioMod"
+    #model_path_2contact = str(name_folder_model) + "/" + "Model2D_7Dof_3C_5M_CL_V3.bioMod"
+    model_path_1contact = str(name_folder_model) + "/" + "Model2D_7Dof_2C_5M_CL_V3.bioMod"
 
     ocp, bio_model = prepare_ocp(
         biorbd_model_path=(model_path_1contact,
