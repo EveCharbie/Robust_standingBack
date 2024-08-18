@@ -153,7 +153,7 @@ def CoM_over_toes(controller: PenaltyController) -> cas.MX:
 
 # --- Parameters --- #
 movement = "Jump"
-version = 5
+version = 6
 nb_phase = 4
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -239,25 +239,25 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         phase=0,
     )
 
-    constraints.add(
-        ConstraintFcn.TRACK_MARKERS,
-        marker_index="Shoulder_marker",
-        axes=[Axis.X, Axis.Y, Axis.Z],
-        max_bound=[0 + 0.10, 0.019 + 0.10, 1.149 + 0.10],
-        min_bound=[0 - 0.10, 0.019 - 0.10, 1.149 - 0.10],
-        node=Node.START,
-        phase=0,
-    )
+    #constraints.add(
+    #    ConstraintFcn.TRACK_MARKERS,
+    #    marker_index="Shoulder_marker",
+    #    axes=[Axis.X, Axis.Y, Axis.Z],
+    #    max_bound=[0 + 0.10, 0.019 + 0.10, 1.149 + 0.10],
+    #    min_bound=[0 - 0.10, 0.019 - 0.10, 1.149 - 0.10],
+    #    node=Node.START,
+    #    phase=0,
+    #)
 
-    constraints.add(
-        ConstraintFcn.TRACK_MARKERS,
-        marker_index="KNEE_marker",
-        axes=[Axis.X, Axis.Y, Axis.Z],
-        max_bound=[0 + 0.10, 0.254 + 0.10, 0.413 + 0.10],
-        min_bound=[0 - 0.10, 0.254 - 0.10, 0.413 - 0.10],
-        node=Node.START,
-        phase=0,
-    )
+    #constraints.add(
+    #    ConstraintFcn.TRACK_MARKERS,
+    #    marker_index="KNEE_marker",
+    #    axes=[Axis.X, Axis.Y, Axis.Z],
+    #    max_bound=[0 + 0.10, 0.254 + 0.10, 0.413 + 0.10],
+    #    min_bound=[0 - 0.10, 0.254 - 0.10, 0.413 - 0.10],
+    #    node=Node.START,
+    #    phase=0,
+    #)
 
     constraints.add(
         CoM_over_toes,
@@ -335,9 +335,11 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Contraint position
     #pose_at_first_node = [-0.19, -0.43, -1.01, 0.0045, 2.5999, -2.2999, 0.6999]
     #pose_landing = [0.0, 0.14, 0.0, 3.1, 0.0, 0.0, 0.0]
-    pose_propulsion_start = [0, 0, -0.4535, -0.6596, 0.4259, 1.1334, -1.3841, 0.68]  # model bras en arriere
+    pose_propulsion_start = [0.0, -0.17, -0.9124, 0.0, 0.1936, 2.0082, -1.7997, 0.6472] # Plus de squat
+    #pose_propulsion_start = [0, 0, -0.4535, -0.6596, 0.4259, 1.1334, -1.3841, 0.68]  # model bras en arriere
     pose_takeout_start = [0, 0, 0, 2.5896, 0.51, 0.5354, -0.8367, 0.1119]
-    pose_takeout_end = [0, 1, 0, 2.5896, 0.51, 0, 0, 0.1119]
+    pose_tuck = [0, 1, 0.17, 0.3411, 1.3528, 2.1667, -1.9179, 0.0393] #pose groupé
+    #pose_takeout_end = [0, 1, 0, 2.5896, 0.51, 0, 0, 0.1119]
     pose_landing_start = [0, 0, 0.1930, 0.52, 0.95, 1.72, -0.81, 0.0]
     pose_landing_end = [0, 0, 0.1930, 3.1, 0.03, 0.0, 0.0, 0.0]
 
@@ -400,10 +402,10 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_init.add("q", np.array([pose_propulsion_start, pose_takeout_start]).T, interpolation=InterpolationType.LINEAR,
                phase=0)
     x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=0)
-    x_init.add("q", np.array([pose_takeout_start, pose_takeout_end]).T, interpolation=InterpolationType.LINEAR,
+    x_init.add("q", np.array([pose_takeout_start, pose_tuck]).T, interpolation=InterpolationType.LINEAR,
                phase=1)
     x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=1)
-    x_init.add("q", np.array([pose_takeout_end, pose_landing_start]).T, interpolation=InterpolationType.LINEAR,
+    x_init.add("q", np.array([pose_tuck, pose_landing_start]).T, interpolation=InterpolationType.LINEAR,
                phase=2)
     x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=2)
     x_init.add("q", np.array([pose_landing_start, pose_landing_end]).T, interpolation=InterpolationType.LINEAR, phase=3)
