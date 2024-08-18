@@ -153,7 +153,7 @@ def CoM_over_toes(controller: PenaltyController) -> cas.MX:
 
 # --- Parameters --- #
 movement = "Jump"
-version = 6
+version = 7
 nb_phase = 4
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -371,6 +371,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     x_bounds[1]["q"].max[0, :] = 1
     x_bounds[1]["q"].min[1, -1] = 0.5
     x_bounds[1]["q"].max[1, -1] = 3
+    x_bounds[1]["q"].min[2:, -1] = np.array(pose_tuck[2:]) - 0.2
+
 
     # Phase 2: Second Flight
     x_bounds.add("q", bounds=bio_model[2].bounds_from_ranges("q"), phase=2)
