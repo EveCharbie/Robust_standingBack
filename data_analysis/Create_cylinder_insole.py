@@ -1,5 +1,5 @@
 import casadi as cas
-from matplotlib.patches import Ellipse
+from matplotlib.patches import Ellipse, Circle
 from scipy.optimize import fsolve
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -949,7 +949,175 @@ def points_to_ellipse(markers_insole_xy, fig_name, markers_name, FLAG_PLOT: Fals
     return ellipse
 
 
-def minimize_distance(
+def points_to_circle(markers_insole_xy, fig_name, markers_name, FLAG_PLOT: False) -> list:
+    """
+    Find the circle that best fit the experiemental markers
+    Parameters
+    ----------
+    markers_insole_xy:
+        Data of the markers
+    fig_name:
+        Name of the figure
+    markers_name:
+        Name of the markers
+    FLAG_PLOT:
+        Flag to plot the ellipse
+
+    Returns
+    -------
+    ellipse_parameters:
+        Parameters of the ellipse
+
+    ellipse equation:
+        x**2 + y**2 = r**2
+
+    """
+
+    markers_insole_xy = np.array(markers_insole_xy.T)
+    norm = []
+    position = ["up", "down", "mid"]
+    up_down_paired_markers_index = ["2", "3", "4", "5", "6"]
+    index_marker_parameter = {}
+    for i in range(len(position)):
+        index_marker_parameter["marker_" + str(position[i])] = find_index_by_name(markers_name, position[i])
+    for i in range(len(up_down_paired_markers_index)):
+        index_marker_parameter["marker_" + str(up_down_paired_markers_index[i])] = find_index_by_name(markers_name, up_down_paired_markers_index[i])
+        norm.append(
+            norm_2D(
+                markers_insole_xy[index_marker_parameter["marker_" + str(up_down_paired_markers_index[i])][0], :],
+                markers_insole_xy[index_marker_parameter["marker_" + str(up_down_paired_markers_index[i])][1], :],
+            )
+        )
+    print(f"The horizontal distance between the up-down marker pairs are : {np.array(norm) * 100} cm")
+    print("Please note that the markers were not perfectly aligned one on top of the other, so this measure is not indicative of the tilt of the tibia.")
+
+    # State the optimization problem with the following variables
+    # radius of the circle (r)
+    # x center of the circle (xc)
+    # y center of the circle (yc)
+    circle_param = cas.MX.sym("parameters", 3)
+
+    circles_markers_index = [
+        [index_marker_parameter["marker_up"] + index_marker_parameter["marker_mid"], "up"],
+        [index_marker_parameter["marker_down"] + index_marker_parameter["marker_mid"], "down"],
+        [index_marker_parameter["marker_up"] + index_marker_parameter["marker_down"] + index_marker_parameter["marker_mid"], "up_down"],
+    ]
+
+    circle = []
+
+    for i in range(len(circles_markers_index)):
+        markers_for_this_circle = markers_insole_xy[circles_markers_index[i][0], :]
+        mean_marker_position = np.mean(markers_for_this_circle, axis=0)
+
+        # Generate a good intial guess for the circle parameters
+        radius_guess = np.mean(np.linalg.norm(markers_for_this_circle - mean_marker_position, axis=0))
+        x0 = np.array([radius_guess, mean_marker_position[0], mean_marker_position[1]])
+
+        radius = circle_param[0]
+        xc = circle_param[1]
+        yc = circle_param[2]
+
+        f = -100*radius**2
+        g = []
+        lbg = []
+        ubg = []
+        for indices_this_time in range(markers_for_this_circle.shape[0]):
+            unit_vector = (markers_for_this_circle[indices_this_time, :] - cas.vertcat(xc, yc)) / cas.norm_fro(markers_for_this_circle[indices_this_time, :] - cas.vertcat(xc, yc))
+            f += cas.sum1(((cas.vertcat(xc, yc) + unit_vector) * radius - (markers_for_this_circle[indices_this_time, :] - cas.vertcat(xc, yc))) ** 2)
+            # f += cas.if_else(cas.norm_fro((cas.vertcat(xc, yc) + unit_vector) * radius) > cas.norm_fro(markers_for_this_circle[indices_this_time, :] - cas.vertcat(xc, yc)),
+            #                  cas.norm_fro((cas.vertcat(xc, yc) + unit_vector) * radius) - cas.norm_fro(markers_for_this_circle[indices_this_time, :] - cas.vertcat(xc, yc)), 0)
+            g += [cas.norm_fro((cas.vertcat(xc, yc) + unit_vector) * radius) - cas.norm_fro(markers_for_this_circle[indices_this_time, :] - cas.vertcat(xc, yc))]
+            lbg += [-cas.inf]
+            ubg += [0]
+
+        nlp = {"x": circle_param, "f": f, "g": cas.vertcat(*g)}
+        opts = {"ipopt.print_level": 5}
+        solver = cas.nlpsol("solver", "ipopt", nlp, opts)
+        sol = solver(x0=x0, lbx=[0, mean_marker_position[0]-0.1, mean_marker_position[1]-0.1], ubx=[1, mean_marker_position[0]+0.1, mean_marker_position[0]+0.1], lbg=lbg, ubg=ubg)
+
+        radius_opt = float(sol["x"][0])
+        center_x_opt = float(sol["x"][1])
+        center_y_opt = float(sol["x"][2])
+
+        if not solver.stats()["success"]:
+            raise RuntimeError("Circle did not converge, trying again !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+
+        parameters_circle = {
+            "radius": radius_opt,
+            "center_x": center_x_opt,
+            "center_y": center_y_opt,
+            "index_markers": circles_markers_index[i][0],
+            "type_markers": circles_markers_index[i][1],
+        }
+        print("Circle optimal parameters: \t" + fig_name)
+        print("Radius: " + str(radius_opt))
+        print("Center x: " + str(center_x_opt))
+        print("Center y: " + str(center_y_opt))
+        circle.append(parameters_circle)
+
+    # Plotting the circle
+    if FLAG_PLOT:
+        fig, ax = plt.subplots()
+        fig.suptitle("Representation insole and markers")
+
+        circle_up = Circle(
+            xy=(circle[0]["center_x"], circle[0]["center_y"]),
+            radius=circle[0]["radius"],
+            facecolor="red",
+            alpha=0.5,
+        )
+        circle_down = Circle(
+            xy=(circle[1]["center_x"], circle[1]["center_y"]),
+            radius=circle[1]["radius"],
+            facecolor="blue",
+            alpha=0.5,
+        )
+        circle_all = Circle(
+            xy=(circle[2]["center_x"], circle[2]["center_y"]),
+            radius=circle[2]["radius"],
+            facecolor="green",
+            alpha=0.5,
+        )
+
+        # Integration markers
+        up_markers = ax.plot(
+            markers_insole_xy[index_marker_parameter["marker_up"], 0],
+            markers_insole_xy[index_marker_parameter["marker_up"], 1],
+            "ro",
+            label="markers up",
+        )
+        down_markers = ax.plot(
+            markers_insole_xy[index_marker_parameter["marker_down"], 0],
+            markers_insole_xy[index_marker_parameter["marker_down"], 1],
+            "bo",
+            label="markers down",
+        )
+        mid_markers = ax.plot(
+            markers_insole_xy[index_marker_parameter["marker_mid"], 0],
+            markers_insole_xy[index_marker_parameter["marker_mid"], 1],
+            "go",
+            label="markers mid",
+        )
+
+        # Add ellipse to axes
+        ax.add_patch(circle_up)
+        ax.add_patch(circle_down)
+        ax.add_patch(circle_all)
+        ax.set_aspect("equal")
+
+        # Defining axis parameters
+        ax.set_xlabel(" Position in x")
+        ax.set_ylabel(" Position in y")
+        plt.legend(handles=[up_markers[0], down_markers[0], mid_markers[0]])
+
+        # Displaying and saving the figure
+        plt.savefig("Figures/" + fig_name + ".png")
+        plt.close()
+
+    return circle
+
+
+def minimize_distance_ellispe(
     position_markers,
     markers_insole_name,
     insole_activations,
@@ -1161,7 +1329,202 @@ def minimize_distance(
 
     return x_opt, y_opt, x_columns_opt, y_columns_opt, sensor_columns
 
-def get_force_orientation(x_columns_opt, y_columns_opt, ellipse_center_x, ellipse_center_y, FLAG_PLOT):
+
+
+
+def minimize_distance_circle(
+    position_markers,
+    markers_insole_name,
+    insole_activations,
+    circle_radius,
+    circle_center_x,
+    circle_center_y,
+    fig_name,
+    type,
+    FLAG_PLOT=True,
+):
+    """
+    Roll the insoles around the tibia ellipse.
+    The position of the MoCap markers should be as close as possible to the insoles activation position as they were actually superimposed.
+    Parameters
+    ----------
+    TODO: doc
+    FLAG_PLOT:
+        Flag to plot the results
+
+    Returns
+    -------
+
+    """
+    # Sensor to marker correspondence
+    sensor_columns = np.sort(np.array(list(set(list(insole_activations["all_sensors_positions"])))))  # Get single values of column position (x coordinate) in meters
+    # names_in_order = ["mid_1", "up_2", "down_2", "up_3", "down_3", "up_4", "down_4", "up_5", "down_5", "up_6", "down_6", "mid_7"]
+    if type == 'down':
+        names_in_order = ["mid_1", "down_2", "down_3", "down_4", "down_5", "down_6", "mid_7"]
+    elif type == 'up':
+        names_in_order = ["mid_1", "up_2", "up_3", "up_4", "up_5", "up_6", "mid_7"]
+    else:
+        raise RuntimeError("Bad Circle type, choose between up or down")
+
+    sensors_and_markers_index = {}
+    nb_sensors = 0
+    for name in names_in_order:
+        sensor_idx = None
+        for i, sensor in enumerate(insole_activations["name_activation"]):
+            if name in sensor:
+                sensor_idx = i
+                nb_sensors += 1
+        marker_idx = None
+        for i, marker in enumerate(markers_insole_name):
+            if name in marker:
+                marker_idx = i
+        if sensor_idx is not None:
+            sensors_and_markers_index[name] = [sensor_idx, marker_idx]
+
+    # Optimization variables
+    x_sensors = cas.MX.sym("x_sensors", nb_sensors)
+    y_sensors = cas.MX.sym("y_sensors", nb_sensors)
+    x_columns = cas.MX.sym("x_columns", len(sensor_columns))
+    y_columns = cas.MX.sym("y_columns", len(sensor_columns))
+
+    f = 0
+    g = []
+    lbg = []
+    ubg = []
+    x0 = np.zeros((nb_sensors * 2 + len(sensor_columns) * 2, ))
+
+    # Objective (minimize distance between two points)
+    for i_name, name in enumerate(sensors_and_markers_index.keys()):
+
+        i_sensor = sensors_and_markers_index[name][0]
+        if i_sensor is None:
+            continue
+
+        # Minimize distance between markers and insoles activations
+        if sensors_and_markers_index[name][1] is not None:
+            i_marker = sensors_and_markers_index[name][1]
+            unit_vector_direction_to_the_center = (position_markers[:, i_marker] - np.array([circle_center_x, circle_center_y])) / np.linalg.norm(position_markers[:, i_marker] - np.array([circle_center_x, circle_center_y]))
+            position_markers_this_time = position_markers[:, i_marker]  # - unit_vector_direction_to_the_center * 0.0045  # Remove marker radius
+            f += (x_sensors[i_name] - position_markers_this_time[0]) ** 2 + (y_sensors[i_name] - position_markers_this_time[1]) ** 2
+            x0[i_name] = position_markers_this_time[0]
+            x0[i_name + nb_sensors] = position_markers_this_time[1]
+
+        # Impose that the distance between the sensors and the columns are the same as those on the insoles
+        if np.round(insole_activations["position_activation"][1, i_sensor], 7) in np.round(sensor_columns, 7):
+            i_column_equal = np.where(np.round(insole_activations["position_activation"][1, i_sensor], 7) == np.round(sensor_columns, 7))[0][0]
+            g += [x_sensors[i_name] - x_columns[i_column_equal], y_sensors[i_name] - y_columns[i_column_equal]]
+            lbg += [0, 0]
+            ubg += [0, 0]
+        else:
+            i_sensor_before = np.where(insole_activations["position_activation"][1, i_sensor] > sensor_columns)[0][-1]
+            distance_sensors_before = (x_sensors[i_name] - x_columns[i_sensor_before])**2 + (y_sensors[i_name] - y_columns[i_sensor_before])**2
+            distance_on_insoles_before = (insole_activations["position_activation"][1, i_sensor] - sensor_columns[i_sensor_before])**2
+            g += [distance_sensors_before - distance_on_insoles_before]
+            lbg += [0]
+            ubg += [0]
+
+            # The sensors must be on the circle
+            g += [(x_sensors[i_name] - circle_center_x) ** 2 + (y_sensors[i_name] - circle_center_y) ** 2]
+            lbg += [(circle_radius - 0.0045) ** 2]
+            ubg += [(circle_radius - 0.0045) ** 2]
+
+    g += [cas.sqrt((x_columns[1:] - x_columns[:-1])**2 + (y_columns[1:] - y_columns[:-1])**2)]
+    lbg += [sensor_columns[1:] - sensor_columns[:-1]]
+    ubg += [sensor_columns[1:] - sensor_columns[:-1]]
+
+    for i_column in range(len(sensor_columns)):
+        # The sensors must be on the ellipse
+        g += [(x_columns[i_column] - circle_center_x) ** 2 + (y_columns[i_column] - circle_center_y) ** 2]
+        lbg += [(circle_radius - 0.0045) ** 2]
+        ubg += [(circle_radius - 0.0045) ** 2]
+
+        # Initial guess for the position of the column
+        if fig_name[-1] == 'L':
+            x0[2*nb_sensors + i_column] = position_markers[0, 0] - i_column * 0.01504
+            x0[2*nb_sensors + len(sensor_columns) + i_column] = position_markers[1, 0] + i_column * 0.01504
+        elif fig_name[-1] == 'R':
+            x0[2*nb_sensors + i_column] = position_markers[0, 0] + i_column * 0.01504
+            x0[2*nb_sensors + len(sensor_columns) + i_column] = position_markers[1, 0] + i_column * 0.01504
+        else:
+            raise RuntimeError("Please contact the lazy dev aka EveCharbie :p")
+
+    nlp = {"x": cas.vertcat(x_sensors, y_sensors, x_columns, y_columns), "f": f, "g": cas.vertcat(*g)}
+    opts = {"ipopt.print_level": 5}
+    solver = cas.nlpsol("solver", "ipopt", nlp, opts)
+
+    sol = solver(x0=x0, lbx=[-np.inf] * (nb_sensors * 2 + len(sensor_columns) * 2), ubx=[np.inf] * (nb_sensors * 2 + len(sensor_columns) * 2), lbg=cas.vertcat(*lbg), ubg=cas.vertcat(*ubg))
+
+    if not solver.stats()["success"]:
+        raise RuntimeError(
+            "Insole wrapping did not converge, trying again !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+
+    x_opt = sol["x"][:nb_sensors]
+    y_opt = sol["x"][nb_sensors:2*nb_sensors]
+    x_columns_opt = sol["x"][2*nb_sensors: 2*nb_sensors + len(sensor_columns)]
+    y_columns_opt = sol["x"][2*nb_sensors + len(sensor_columns): ]
+
+    distance = []
+    for i_name, name in enumerate(sensors_and_markers_index.keys()):
+        i_sensor = sensors_and_markers_index[name][0]
+        if i_sensor is None:
+            continue
+        if sensors_and_markers_index[name][1] is not None:
+            i_marker = sensors_and_markers_index[name][1]
+            unit_vector_direction_to_the_center = (position_markers[:, i_marker] - np.array([circle_center_x, circle_center_y])) / np.linalg.norm(position_markers[:, i_marker] - np.array([circle_center_x, circle_center_y]))
+            position_markers_this_time = position_markers[:, i_marker] - unit_vector_direction_to_the_center * 0.0045  # Remove marker radius
+            distance += [np.abs(np.sqrt((x_opt[i_name] - position_markers_this_time[0]) ** 2 + (
+                        y_opt[i_name] - position_markers_this_time[1]) ** 2))]
+    print("Mean distance between markers and sensors : ", np.mean(np.array(distance)) * 100, " cm")
+
+    if FLAG_PLOT:
+        fig, ax = plt.subplots()
+        fig.suptitle("Representation optimization insole")
+
+        # Ellipse
+        ellipse = Circle(
+            xy=(circle_center_x, circle_center_y),
+            radius=circle_radius - 0.0045,
+            facecolor="red",
+            alpha=0.5,
+        )
+        ax.add_patch(ellipse)
+        ax.set_aspect("equal")
+        ax.set_xlabel(" Position in x")
+        ax.set_ylabel(" Position in y")
+
+        # Position markers
+        label = True
+        for i_name, name in enumerate(sensors_and_markers_index.keys()):
+            if sensors_and_markers_index[name][1] is not None:
+                i_marker = sensors_and_markers_index[name][1]
+                if label:
+                    ax.plot(position_markers[0, i_marker], position_markers[1, i_marker], ".b", label="Markers from MoCap")
+                    label = False
+                else:
+                    ax.plot(position_markers[0, i_marker], position_markers[1, i_marker], ".b")
+
+        # Position columns
+        ax.plot(x_columns_opt, y_columns_opt, "-g", label="columns of sensors")
+        for i_column in range(len(sensor_columns)):
+            ax.text(float(x_columns_opt[i_column]), float(y_columns_opt[i_column]), str(i_column), color="g")
+
+        # Position activation
+        ax.plot(x_opt, y_opt, "og", label="activation from marker pushes")
+        for i_name, name in enumerate(sensors_and_markers_index.keys()):
+            i_sensor = sensors_and_markers_index[name][0]
+            if i_sensor is None:
+                continue
+            ax.text(float(x_opt[i_name]), float(y_opt[i_name]), name)
+
+        # Visualisation
+        plt.legend()
+        plt.savefig(f"Figures/{fig_name}.png")
+        plt.close(fig)
+
+    return x_opt, y_opt, x_columns_opt, y_columns_opt, sensor_columns
+
+
+def get_force_orientation(x_columns_opt, y_columns_opt, center_x, center_y, FLAG_PLOT):
     """
     Find the unit vector that goes from the sensor columns to the center of the ellipse.
     Since the ellipse is close to a circle, this approximation should be OK.
@@ -1169,8 +1532,8 @@ def get_force_orientation(x_columns_opt, y_columns_opt, ellipse_center_x, ellips
     ----------
     x_columns_opt
     y_columns_opt
-    ellipse_center_x
-    ellipse_center_y
+    center_x
+    center_y
 
     TODO: doc
     Returns
@@ -1179,17 +1542,18 @@ def get_force_orientation(x_columns_opt, y_columns_opt, ellipse_center_x, ellips
     """
     force_orientation = np.zeros((x_columns_opt.shape[0], 2))
     for i_column in range(x_columns_opt.shape[0]):
-        vector = np.array([x_columns_opt[i_column] - ellipse_center_x, y_columns_opt[i_column] - ellipse_center_y]).reshape(-1, )
+        vector = np.array([x_columns_opt[i_column] - center_x, y_columns_opt[i_column] - center_y]).reshape(-1, )
         norm = np.linalg.norm(vector)
         force_orientation[i_column, :] = vector / norm
 
     if FLAG_PLOT:
-        fig = plt.figure()
+        fig, ax = plt.subplots(1, 1)
         for i_column in range(x_columns_opt.shape[0]):
-            plt.plot(np.array([float(x_columns_opt[i_column]), float(x_columns_opt[i_column]) + force_orientation[i_column, 0]]),
+            ax.plot(np.array([float(x_columns_opt[i_column]), float(x_columns_opt[i_column]) + force_orientation[i_column, 0]]),
                      np.array([float(y_columns_opt[i_column]), float(y_columns_opt[i_column]) + force_orientation[i_column, 1]]),
                      '-m')
-        plt.plot(ellipse_center_x, ellipse_center_y, 'or')
+        ax.plot(center_x, center_y, 'or')
+        ax.set_aspect("equal")
         plt.savefig("Figures/force_orientation.png")
         plt.close(fig)
 

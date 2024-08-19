@@ -8,12 +8,11 @@ import pandas as pd
 import numpy as np
 import biorbd
 import pickle
-from matplotlib.patches import Ellipse
 from Create_cylinder_insole import (
     position_insole,
-    points_to_ellipse,
+    points_to_circle,
     position_activation,
-    minimize_distance,
+    minimize_distance_circle,
     cartography_insole,
     get_force_orientation,
     get_force_from_insoles,
@@ -92,12 +91,12 @@ cartography_insole(
     file_insole=insole_calibration_data_R, file_info_insole=insole_coordinates, FLAG_PLOT=True
 )
 
-# Find ellipse
-parameters_ellipse_L = points_to_ellipse(
-    markers_insole_xy=markers_insole_L_xy, fig_name="Ellipse_insole_L", markers_name=markers_insole_L_name, FLAG_PLOT=True
+# Find circle
+parameters_circle_L = points_to_circle(
+    markers_insole_xy=markers_insole_L_xy, fig_name="Circle_insole_L", markers_name=markers_insole_L_name, FLAG_PLOT=True
 )
-parameters_ellipse_R = points_to_ellipse(
-    markers_insole_xy=markers_insole_R_xy, fig_name="Ellipse_insole_R", markers_name=markers_insole_R_name, FLAG_PLOT=True
+parameters_circle_R = points_to_circle(
+    markers_insole_xy=markers_insole_R_xy, fig_name="Circle_insole_R", markers_name=markers_insole_R_name, FLAG_PLOT=True
 )
 
 # Position of activations in x and y
@@ -109,39 +108,37 @@ position_activation_R, position_activation_L = position_activation(
 )
 
 # Wrap the insoles optimally on the tibia cylinder
-x_opt_L, y_opt_L, x_columns_opt_L, y_columns_opt_L, sensor_columns_L = minimize_distance(
+x_opt_L, y_opt_L, x_columns_opt_L, y_columns_opt_L, sensor_columns_L = minimize_distance_circle(
     position_markers=markers_insole_L_xy,
     markers_insole_name=markers_insole_L_name,
     insole_activations=position_activation_L,
-    ellipse_theta=parameters_ellipse_L[1]["angle"],  # Choosing the down ellipse
-    ellipse_width=parameters_ellipse_L[1]["a"],
-    ellipse_height=parameters_ellipse_L[1]["b"],
-    ellipse_center_x=parameters_ellipse_L[1]["center_x_ellipse"],
-    ellipse_center_y=parameters_ellipse_L[1]["center_y_ellipse"],
-    fig_name="fit_activations_on_ellispe_L"
+    circle_radius=parameters_circle_L[1]["radius"],
+    circle_center_x=parameters_circle_L[1]["center_x"],
+    circle_center_y=parameters_circle_L[1]["center_y"],
+    type='down',
+    fig_name="fit_activations_on_circle_L"
 )
-x_opt_R, y_opt_R, x_columns_opt_R, y_columns_opt_R, sensor_columns_R = minimize_distance(
+x_opt_R, y_opt_R, x_columns_opt_R, y_columns_opt_R, sensor_columns_R = minimize_distance_circle(
     position_markers=markers_insole_R_xy,
     markers_insole_name=markers_insole_R_name,
     insole_activations=position_activation_R,
-    ellipse_theta=parameters_ellipse_R[2]["angle"],  # Choosing the mid ellipse
-    ellipse_width=parameters_ellipse_R[2]["a"],
-    ellipse_height=parameters_ellipse_R[2]["b"],
-    ellipse_center_x=parameters_ellipse_R[2]["center_x_ellipse"],
-    ellipse_center_y=parameters_ellipse_R[2]["center_y_ellipse"],
-    fig_name="fit_activations_on_ellispe_R"
+    circle_radius=parameters_circle_R[0]["radius"],
+    circle_center_x=parameters_circle_R[0]["center_x"],
+    circle_center_y=parameters_circle_R[0]["center_y"],
+    type='up',
+    fig_name="fit_activations_on_circle_R"
 )
 
 # Get the orientation of the force for each insole sensor column
 force_orientation_L = get_force_orientation(x_columns_opt=x_columns_opt_L,
                                           y_columns_opt=y_columns_opt_L,
-                                          ellipse_center_x=parameters_ellipse_L[1]["center_x_ellipse"],
-                                          ellipse_center_y=parameters_ellipse_L[1]["center_y_ellipse"],
+                                          center_x=parameters_circle_L[1]["center_x"],
+                                          center_y=parameters_circle_L[1]["center_y"],
                                           FLAG_PLOT=True)
 force_orientation_R = get_force_orientation(x_columns_opt=x_columns_opt_R,
                                           y_columns_opt=y_columns_opt_R,
-                                          ellipse_center_x=parameters_ellipse_R[1]["center_x_ellipse"],
-                                          ellipse_center_y=parameters_ellipse_R[1]["center_y_ellipse"],
+                                          center_x=parameters_circle_R[0]["center_x"],
+                                          center_y=parameters_circle_R[0]["center_y"],
                                           FLAG_PLOT=True)
 
 # Find the knee markers
