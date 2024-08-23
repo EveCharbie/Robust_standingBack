@@ -149,7 +149,7 @@ def CoM_over_toes(controller: PenaltyController) -> cas.MX:
 
 # --- Parameters --- #
 movement = "Salto"
-version = 6
+version = 7
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -252,7 +252,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         node=Node.ALL_SHOOTING,
         normal_component_idx=1,
         tangential_component_idx=0,
-        static_friction_coefficient=5,
+        static_friction_coefficient=0.5,
         phase=0,
     )
 
@@ -306,7 +306,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         node=Node.ALL_SHOOTING,
         normal_component_idx=1,
         tangential_component_idx=0,
-        static_friction_coefficient=5,
+        static_friction_coefficient=0.5,
         phase=4,
     )
 
