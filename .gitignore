@@ -139,3 +139,5 @@ dmypy.json
 holonomic_research/models/Wu_Shoulder_Model_kinova_scaled_adjusted_2.bioMod
 
 *.png
+
+*.pkl
