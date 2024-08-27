@@ -149,7 +149,7 @@ def CoM_over_toes(controller: PenaltyController) -> cas.MX:
 
 # --- Parameters --- #
 movement = "Salto"
-version = 8
+version = 9
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -181,13 +181,14 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=1000, min_bound=0.1, max_bound=0.4, phase=0)
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=0.0001, phase=0)
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=0.0001, phase=0)
-    #objective_functions.add(
-    #    ObjectiveFcn.Mayer.MINIMIZE_CONTACT_FORCES_END_OF_INTERVAL,
-    #    node=Node.PENULTIMATE,
-    #    contact_index=1,
-    #    quadratic=True,
-    #    phase=0,
-    #)
+    objective_functions.add(
+        ObjectiveFcn.Mayer.MINIMIZE_CONTACT_FORCES_END_OF_INTERVAL,
+        node=Node.PENULTIMATE,
+        weight = 0.01,
+        contact_index=1,
+        quadratic=True,
+        phase=0,
+    )
 
     # Phase 1 (Flight):
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=10, min_bound=0.1, max_bound=0.3, phase=1)
@@ -272,13 +273,13 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         phase=0,
     )
 
-    constraints.add(
-        ConstraintFcn.TRACK_CONTACT_FORCES_END_OF_INTERVAL,
-        node=Node.PENULTIMATE,
-        contact_index=1,
-        quadratic=True,
-        phase=0,
-    )
+    #constraints.add(
+    #    ConstraintFcn.TRACK_CONTACT_FORCES_END_OF_INTERVAL,
+    #    node=Node.PENULTIMATE,
+    #    contact_index=1,
+    #    quadratic=True,
+    #    phase=0,
+    #)
 
     # Phase 4 (Landing):
     constraints.add(
