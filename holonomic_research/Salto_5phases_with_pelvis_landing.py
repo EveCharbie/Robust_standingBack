@@ -149,7 +149,7 @@ def CoM_over_toes(controller: PenaltyController) -> cas.MX:
 
 # --- Parameters --- #
 movement = "Salto"
-version = 7
+version = 8
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 
@@ -181,6 +181,13 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=1000, min_bound=0.1, max_bound=0.4, phase=0)
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=0.0001, phase=0)
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=0.0001, phase=0)
+    #objective_functions.add(
+    #    ObjectiveFcn.Mayer.MINIMIZE_CONTACT_FORCES_END_OF_INTERVAL,
+    #    node=Node.PENULTIMATE,
+    #    contact_index=1,
+    #    quadratic=True,
+    #    phase=0,
+    #)
 
     # Phase 1 (Flight):
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=10, min_bound=0.1, max_bound=0.3, phase=1)
@@ -262,6 +269,14 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         max_bound=np.inf,
         node=Node.ALL_SHOOTING,
         contact_index=1,
+        phase=0,
+    )
+
+    constraints.add(
+        ConstraintFcn.TRACK_CONTACT_FORCES_END_OF_INTERVAL,
+        node=Node.PENULTIMATE,
+        contact_index=1,
+        quadratic=True,
         phase=0,
     )
 
@@ -492,7 +507,7 @@ def main():
     )
 
     # --- Solve the program --- #
-    solver = Solver.IPOPT(show_online_optim=True, show_options=dict(show_bounds=True), _linear_solver="MA57")
+    solver = Solver.IPOPT(show_options=dict(show_bounds=True), _linear_solver="MA57")#show_online_optim=True,
     solver.set_maximum_iterations(10000)
     solver.set_bound_frac(1e-8)
     solver.set_bound_push(1e-8)
