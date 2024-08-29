@@ -149,7 +149,7 @@ def CoM_over_toes(controller: PenaltyController) -> cas.MX:
 
 # --- Parameters --- #
 movement = "Salto"
-version = 11
+version = 12
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Jump_4phases_V15.pkl"
@@ -188,6 +188,14 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         node=Node.PENULTIMATE,
         weight = 0.01,
         contact_index=1,
+        quadratic=True,
+        phase=0,
+    )
+    objective_functions.add(
+        ObjectiveFcn.Mayer.MINIMIZE_CONTACT_FORCES_END_OF_INTERVAL,
+        node=Node.PENULTIMATE,
+        weight = 0.01,
+        contact_index=0,
         quadratic=True,
         phase=0,
     )
