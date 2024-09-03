@@ -154,7 +154,7 @@ def CoM_over_toes(controller: PenaltyController) -> cas.MX:
 
 # --- Parameters --- #
 movement = "Jump"
-version = 18
+version = 19
 nb_phase = 4
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 #pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Jump_4phases_V15.pkl"
@@ -278,10 +278,10 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
     constraints.add(
         ConstraintFcn.NON_SLIPPING,
-        node=Node.ALL_SHOOTING,
+        node=Node.END,
         normal_component_idx=1,
         tangential_component_idx=0,
-        static_friction_coefficient=5,
+        static_friction_coefficient=0.5,
         phase=0,
     )
 
@@ -341,10 +341,10 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
     constraints.add(
         ConstraintFcn.NON_SLIPPING,
-        node=Node.ALL_SHOOTING,
+        node=Node.START,
         normal_component_idx=1,
         tangential_component_idx=0,
-        static_friction_coefficient=5,
+        static_friction_coefficient=0.5,
         phase=3,
     )
     # Path constraint
