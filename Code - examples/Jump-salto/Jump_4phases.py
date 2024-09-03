@@ -154,11 +154,11 @@ def CoM_over_toes(controller: PenaltyController) -> cas.MX:
 
 # --- Parameters --- #
 movement = "Jump"
-version = 17
+version = 18
 nb_phase = 4
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
-pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Jump_4phases_V15.pkl"
-sol_jump = get_created_data_from_pickle(pickle_sol_init)
+#pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Jump_4phases_V15.pkl"
+#sol_jump = get_created_data_from_pickle(pickle_sol_init)
 
 # --- Prepare ocp --- #
 def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound):
@@ -281,7 +281,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         node=Node.ALL_SHOOTING,
         normal_component_idx=1,
         tangential_component_idx=0,
-        static_friction_coefficient=0.5,
+        static_friction_coefficient=5,
         phase=0,
     )
 
@@ -294,13 +294,13 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         phase=0,
     )
 
-    constraints.add(
-        ConstraintFcn.TRACK_CONTACT_FORCES_END_OF_INTERVAL,
-        node=Node.PENULTIMATE,
-        contact_index=1,
-        quadratic=True,
-        phase=0,
-    )
+    #constraints.add(
+    #    ConstraintFcn.TRACK_CONTACT_FORCES_END_OF_INTERVAL,
+    #    node=Node.PENULTIMATE,
+    #    contact_index=1,
+    #    quadratic=True,
+    #    phase=0,
+    #)
 
     # Phase 3 (Landing):
 
@@ -344,7 +344,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         node=Node.ALL_SHOOTING,
         normal_component_idx=1,
         tangential_component_idx=0,
-        static_friction_coefficient=0.5,
+        static_friction_coefficient=5,
         phase=3,
     )
     # Path constraint
@@ -420,26 +420,26 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
     # Initial guess
     x_init = InitialGuessList()
-    #x_init.add("q", np.array([pose_propulsion_start, pose_takeout_start]).T, interpolation=InterpolationType.LINEAR,
-    #           phase=0)
-    #x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=0)
-    #x_init.add("q", np.array([pose_takeout_start, pose_tuck]).T, interpolation=InterpolationType.LINEAR,
-    #           phase=1)
-    #x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=1)
-    #x_init.add("q", np.array([pose_tuck, pose_landing_start]).T, interpolation=InterpolationType.LINEAR,
-    #           phase=2)
-    #x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=2)
-    #x_init.add("q", np.array([pose_landing_start, pose_landing_end]).T, interpolation=InterpolationType.LINEAR, phase=3)
-    #x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=3)
+    x_init.add("q", np.array([pose_propulsion_start, pose_takeout_start]).T, interpolation=InterpolationType.LINEAR,
+               phase=0)
+    x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=0)
+    x_init.add("q", np.array([pose_takeout_start, pose_tuck]).T, interpolation=InterpolationType.LINEAR,
+               phase=1)
+    x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=1)
+    x_init.add("q", np.array([pose_tuck, pose_landing_start]).T, interpolation=InterpolationType.LINEAR,
+               phase=2)
+    x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=2)
+    x_init.add("q", np.array([pose_landing_start, pose_landing_end]).T, interpolation=InterpolationType.LINEAR, phase=3)
+    x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=3)
 
-    x_init.add("q", sol_jump["q"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
-    x_init.add("qdot", sol_jump["qdot"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
-    x_init.add("q", sol_jump["q"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    x_init.add("qdot", sol_jump["qdot"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    x_init.add("q", sol_jump["q"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
-    x_init.add("qdot", sol_jump["qdot"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
-    x_init.add("q", sol_jump["q"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
-    x_init.add("qdot", sol_jump["qdot"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
+    #x_init.add("q", sol_jump["q"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
+    #x_init.add("qdot", sol_jump["qdot"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
+    #x_init.add("q", sol_jump["q"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
+    #x_init.add("qdot", sol_jump["qdot"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
+    #x_init.add("q", sol_jump["q"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
+    #x_init.add("qdot", sol_jump["qdot"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
+    #x_init.add("q", sol_jump["q"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
+    #x_init.add("qdot", sol_jump["qdot"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
 
     # Define control path constraint
     u_bounds = BoundsList()
@@ -454,15 +454,15 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 
 
     u_init = InitialGuessList()
-    #u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=0)
-    #u_init.add("tau", [tau_init] * (bio_model[1].nb_tau - 3), phase=1)
-    #u_init.add("tau", [tau_init] * (bio_model[2].nb_tau - 3), phase=2)
-    #u_init.add("tau", [tau_init] * (bio_model[3].nb_tau - 3), phase=3)
+    u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=0)
+    u_init.add("tau", [tau_init] * (bio_model[1].nb_tau - 3), phase=1)
+    u_init.add("tau", [tau_init] * (bio_model[2].nb_tau - 3), phase=2)
+    u_init.add("tau", [tau_init] * (bio_model[3].nb_tau - 3), phase=3)
 
-    u_init.add("tau", sol_jump["tau"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
-    u_init.add("tau", sol_jump["tau"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    u_init.add("tau", sol_jump["tau"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
-    u_init.add("tau", sol_jump["tau"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
+    #u_init.add("tau", sol_jump["tau"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
+    #u_init.add("tau", sol_jump["tau"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
+    #u_init.add("tau", sol_jump["tau"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
+    #u_init.add("tau", sol_jump["tau"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
 
     return OptimalControlProgram(
         bio_model=bio_model,
@@ -492,8 +492,8 @@ def main():
                            model_path,
                            model_path,
                            model_path_1contact),
-        phase_time=(0.1, 0.2, 0.2, 0.3),
-        n_shooting=(10, 20, 20, 30),
+        phase_time=(0.2, 0.2, 0.2, 0.3),
+        n_shooting=(20, 20, 20, 30),
         min_bound=0.01,
         max_bound=np.inf,
     )
