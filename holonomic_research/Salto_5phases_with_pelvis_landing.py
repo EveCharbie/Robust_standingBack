@@ -149,10 +149,10 @@ def CoM_over_toes(controller: PenaltyController) -> cas.MX:
 
 # --- Parameters --- #
 movement = "Salto"
-version = 12
+version = 13
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
-pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Jump_4phases_V15.pkl"
+pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Jump_4phases_V22.pkl"
 sol_salto = get_created_data_from_pickle(pickle_sol_init)
 
 
@@ -528,8 +528,8 @@ def main():
                            model_path,
                            model_path,
                            model_path_1contact),
-        phase_time=(0.1, 0.2, 0.3, 0.3, 0.3),
-        n_shooting=(10, 20, 30, 30, 30),
+        phase_time=(0.2, 0.2, 0.3, 0.3, 0.3),
+        n_shooting=(20, 20, 30, 30, 30),
         min_bound=0.01,
         max_bound=np.inf,
     )
