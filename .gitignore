@@ -147,3 +147,13 @@ data_analysis/Figures/
 Code - examples/Jump-salto/Figures/
 
 *.svg
+
+*.xz
+
+*.c3d
+
+*.zip
+
+*.CSV
+
+USB_Anais/
