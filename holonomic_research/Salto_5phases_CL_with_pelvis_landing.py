@@ -326,11 +326,11 @@ def custom_contraint_lambdas_cisaillement_2(
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 80
+version = 81
 nb_phase = 5
 name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
 #pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_close_loop_landing_5phases_V76.pkl"
-pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_5phases_V11.pkl"
+pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_5phases_V13.pkl"
 sol_salto = get_created_data_from_pickle(pickle_sol_init)
 
 # --- Prepare ocp --- #
@@ -361,10 +361,10 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     objective_functions = ObjectiveList()
 
     # Phase 0 (Propulsion):
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_COM_VELOCITY, node=Node.END, weight=-1, axes=Axis.Z, phase=0)
+    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_COM_VELOCITY, node=Node.END, quadratic=False, weight=-1, axes=Axis.Z, phase=0)
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=1000, min_bound=0.1, max_bound=0.4, phase=0)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=0.0001, phase=0)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=0.0001, phase=0)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", quadratic=True, derivative=True, weight=0.0001, phase=0)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", quadratic=True,weight=0.0001, phase=0)
     objective_functions.add(
         ObjectiveFcn.Mayer.MINIMIZE_CONTACT_FORCES_END_OF_INTERVAL,
         node=Node.PENULTIMATE,
@@ -373,25 +373,33 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         quadratic=True,
         phase=0,
     )
+    objective_functions.add(
+        ObjectiveFcn.Mayer.MINIMIZE_CONTACT_FORCES_END_OF_INTERVAL,
+        node=Node.PENULTIMATE,
+        weight = 0.01,
+        contact_index=0,
+        quadratic=True,
+        phase=0,
+    )
     # Phase 1 (Flight):
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=10, min_bound=0.1, max_bound=0.3, phase=1)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=0.1, phase=1)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=0.1, phase=1)
+    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, quadratic=False, weight=10, min_bound=0.1, max_bound=0.3, phase=1)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", quadratic=True, weight=0.1, phase=1)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", quadratic=True, derivative=True, weight=0.1, phase=1)
 
     # Phase 2 (Tucked phase):
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=10, min_bound=0.1, max_bound=0.4, phase=2)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=0.1, phase=2)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=0.1, phase=2)
+    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, quadratic=False, weight=10, min_bound=0.1, max_bound=0.4, phase=2)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", quadratic=True, weight=0.1, phase=2)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", quadratic=True, derivative=True, weight=0.1, phase=2)
 
     # Phase 3 (Preparation landing):
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=10, min_bound=0.1, max_bound=0.3, phase=3)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=0.1, phase=3)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=0.1, phase=3)
+    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, quadratic=False, weight=10, min_bound=0.1, max_bound=0.3, phase=3)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", quadratic=True, weight=0.1, phase=3)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", quadratic=True, derivative=True, weight=0.1, phase=3)
 
     # Phase 4 (Landing):
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_COM_VELOCITY, node=Node.END, weight=100, phase=4)
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=100, min_bound=0.2, max_bound=1, phase=4)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=0.1, phase=4)
+    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_STATE, key="qdot", quadratic=True, node=Node.END, weight=100, phase=4)
+    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, quadratic=False, weight=100, min_bound=0.2, max_bound=1, phase=4)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, quadratic=True, key="tau", weight=0.1, phase=4)
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_COM_POSITION, node=Node.END, weight=100, axes=Axis.Y,
                             phase=4)
 
@@ -770,8 +778,8 @@ def main():
                            model_path,
                            model_path,
                            model_path_1contact),
-        phase_time=(0.1, 0.2, 0.3, 0.3, 0.3),
-        n_shooting=(10, 20, 30, 30, 30),
+        phase_time=(0.2, 0.2, 0.3, 0.3, 0.3),
+        n_shooting=(20, 20, 30, 30, 30),
         min_bound=0.01,
         max_bound=np.inf,
     )
