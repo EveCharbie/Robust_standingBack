@@ -132,24 +132,18 @@ dmypy.json
 
 .idea/
 
-*.xz
+*.ogv
 
-*.CSV
+*.vtp
 
-USB_Anais
-
-data_analysis/c3d/
-
-data_analysis/reconstructions/
-
-*.svg
+holonomic_research/models/Wu_Shoulder_Model_kinova_scaled_adjusted_2.bioMod
 
 *.png
 
 *.pkl
 
-*.ogv
-*.vtp
+data_analysis/Figures/
 
-holonomic_research/models/Wu_Shoulder_Model_kinova_scaled_adjusted_2.bioMod
+Code - examples/Jump-salto/Figures/
 
+*.svg

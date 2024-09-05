@@ -243,6 +243,105 @@ def graph_all(sol):
     plt.show()
 
 
+def graph_all_comparaison(sol, sol2):
+
+    # Sol 1
+    data = get_created_data_from_pickle(sol)
+    lambdas = data["lambda"]
+    q = data["q_all"]
+    qdot = data["qdot_all"]
+    qddot = data["qddot_all"]
+    tau = data["tau_all"]
+    dof_names = data["dof_names"]
+    time_total = data["time_total"]
+    time_end_phase = data["time_end_phase"]
+    time = data["time_all"]
+
+    # Sol 2
+    data2 = get_created_data_from_pickle(sol2)
+    q2 = data2["q_all"]
+    qdot2 = data2["qdot_all"]
+    tau2 = data2["tau_all"]
+    dof_names2 = data2["dof_names"]
+    time_total2 = data2["time_total"]
+    time_end_phase2 = data2["time_end_phase"]
+    time2 = data2["time_all"]
+
+    # Figure q
+    fig, axs = plt.subplots(2, math.ceil(q.shape[0]/2))
+    num_col = 0
+    num_line = 0
+    y_min = np.min(q)
+    y_max = np.max(q)
+    for nb_seg in range(q.shape[0]):
+        axs[num_line, num_col].plot(time, q[nb_seg])
+        for xline in range(len(time_end_phase)):
+            axs[num_line, num_col].axvline(time_end_phase[xline], color="k", linestyle="--")
+        axs[num_line, num_col].set_title(dof_names[nb_seg])
+        axs[num_line, num_col].set_ylim(y_min, y_max)
+        num_col = num_col + 1
+        if nb_seg == math.ceil(q.shape[0]/2) - 1:
+            num_col = 0
+            num_line = 1
+    for ax in axs.flat:
+        ax.set(xlabel='Time [s]', ylabel='Positions [m]')
+    for ax in axs.flat:
+        ax.label_outer()
+
+    # Figure qdot
+    fig, axs = plt.subplots(2, math.ceil(qdot.shape[0] / 2))
+    num_col = 0
+    num_line = 0
+    y_min = np.min(qdot)
+    y_max = np.max(qdot)
+    for nb_seg in range(qdot.shape[0]):
+        axs[num_line, num_col].plot(time, qdot[nb_seg])
+        for xline in range(len(time_end_phase)):
+            axs[num_line, num_col].axvline(time_end_phase[xline], color="k", linestyle="--")
+        axs[num_line, num_col].set_title(dof_names[nb_seg])
+        axs[num_line, num_col].set_ylim(y_min, y_max)
+        num_col = num_col + 1
+        if nb_seg == math.ceil(qdot.shape[0] / 2) - 1:
+            num_col = 0
+            num_line = 1
+    for ax in axs.flat:
+        ax.set(xlabel='Time [s]', ylabel='Velocities [m/s]')
+    for ax in axs.flat:
+        ax.label_outer()
+
+    # Figure tau
+    fig, axs = plt.subplots(2, math.ceil(tau.shape[0]/2))
+    num_col = 0
+    num_line = 0
+    y_min = np.min(tau)
+    y_max = np.max(tau)
+    for nb_seg in range(tau.shape[0]):
+        axs[num_line, num_col].plot(tau[nb_seg])
+        value_xline = 0
+        for xline in range(len(time_end_phase)):
+            value_xline = value_xline + data["n_shooting"][xline]
+            axs[num_line, num_col].axvline(value_xline, color="k", linestyle="--")
+        axs[num_line, num_col].set_title(dof_names[nb_seg + 3])
+        axs[num_line, num_col].set_ylim(y_min, y_max)
+        num_col = num_col + 1
+        if nb_seg == math.ceil(tau.shape[0]/2) - 1:
+            num_col = 0
+            num_line = 1
+    for ax in axs.flat:
+        ax.set(xlabel='Time [s]', ylabel='Tau')
+    for ax in axs.flat:
+        ax.label_outer()
+
+    # Figure lambdas
+    fig = plt.figure()
+    plt.plot(lambdas[0], color='r', label=["Normal force"])
+    plt.plot(lambdas[1], color='g', label=["Shear force"])
+    plt.ylabel("Force on the tibia [N]")
+    plt.xlabel("Shooting point")
+    plt.legend()
+    plt.show()
+
+
 def graph_q(bio_model, sol):
     data = get_created_data_from_pickle(sol)
     q_0 = data["q"][0]
