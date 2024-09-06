@@ -62,7 +62,8 @@ from casadi import MX, vertcat
 from holonomic_research.biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
 #from visualisation import visualisation_closed_loop_5phases_reception, visualisation_movement, graph_all
 from Save import get_created_data_from_pickle
-
+from Salto_5phases_with_pelvis_landing import CoM_over_toes, add_objectives, actuator_function
+from plot_actuators import Joint
 
 # --- Save results --- #
 def save_results_holonomic(sol, c3d_file_path, biomodel, index_holo):
@@ -174,27 +175,11 @@ def save_results_holonomic(sol, c3d_file_path, biomodel, index_holo):
         pickle.dump(data, file)
 
 
-def CoM_over_toes(controller: PenaltyController) -> cas.MX:
-    #q_roots = controller.states["q_roots"].cx_start
-    #q_joints = controller.states["q_joints"].cx_start
-    #q = cas.vertcat(q_roots, q_joints)
-    q = controller.states["q"].cx_start
-    CoM_pos = controller.model.center_of_mass(q)
-    CoM_pos_y = CoM_pos[1]
-    marker_index = controller.model.marker_index("Foot_Toe_marker")
-    marker_pos = controller.model.markers(q)[marker_index]
-    marker_pos_y = marker_pos[1]
-    return marker_pos_y - CoM_pos_y
-
-
 def custom_phase_transition_pre(
         controllers: list[PenaltyController, PenaltyController]) -> MX:
     """
     The constraint of the transition. The values from the end of the phase to the next are multiplied by coef to
-    determine the transition. If coef=1, then this function mimics the PhaseTransitionFcn.CONTINUOUS
-
-    coef is a user defined extra variables and can be anything. It is to show how to pass variables from the
-    PhaseTransitionList to that function
+    determine the transition.
 
     Parameters
     ----------
@@ -230,10 +215,7 @@ def custom_phase_transition_post(
         controllers: list[PenaltyController, PenaltyController]) -> MX:
     """
     The constraint of the transition. The values from the end of the phase to the next are multiplied by coef to
-    determine the transition. If coef=1, then this function mimics the PhaseTransitionFcn.CONTINUOUS
-
-    coef is a user defined extra variables and can be anything. It is to show how to pass variables from the
-    PhaseTransitionList to that function
+    determine the transition.
 
     Parameters
     ----------
@@ -323,14 +305,32 @@ def custom_contraint_lambdas_cisaillement_2(
 
     return lagrange_1 - 0.01 * lagrange_0
 
+def minimize_actuator_torques_CL(controller: PenaltyController, actuators) -> cas.MX:
+
+    nb_independent = controller.model.nb_independent_joints
+    u = controller.states.cx[:nb_independent]
+    v = controller.model.compute_v_from_u_explicit_symbolic(u)
+    q = controller.model.state_from_partition(u, v)
+
+    tau = controller.controls["tau"].cx_start
+    out = 0
+    for i, key in enumerate(actuators.keys()):
+        current_max_tau = cas.if_else(
+            tau[i] > 0,
+            actuator_function(actuators[key].tau_max_plus, actuators[key].theta_opt_plus, actuators[key].r_plus, q[i+3])**2,
+            actuator_function(actuators[key].tau_max_minus, actuators[key].theta_opt_minus, actuators[key].r_minus, q[i+3])**2)
+        out += (tau[i] / current_max_tau)**2
+    return cas.sum1(out)
+
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = 81
+version = "Eve1"
 nb_phase = 5
-name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model"
-#pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_close_loop_landing_5phases_V76.pkl"
-pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_5phases_V13.pkl"
+name_folder_model = "../Model"
+# pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_close_loop_landing_5phases_V76.pkl"
+# pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_5phases_V13.pkl"
+pickle_sol_init = "init/Salto_5phases_V13.pkl"
 sol_salto = get_created_data_from_pickle(pickle_sol_init)
 
 # --- Prepare ocp --- #
@@ -341,6 +341,50 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
                  BiorbdModel(biorbd_model_path[3]),
                  BiorbdModel(biorbd_model_path[4]),
                  )
+    # Actuators parameters
+
+    actuators = {"Shoulders": Joint(tau_max_plus=112.8107 * 2,
+                                    theta_opt_plus=-41.0307 * np.pi / 180,
+                                    r_plus=109.6679 * np.pi / 180,
+                                    tau_max_minus=162.7655 * 2,
+                                    theta_opt_minus=-101.6627 * np.pi / 180,
+                                    r_minus=103.9095 * np.pi / 180,
+                                    min_q=-0.7,
+                                    max_q=3.1),
+                 "Elbows": Joint(tau_max_plus=100 * 2,
+                                 theta_opt_plus=np.pi / 2 - 0.1,
+                                 r_plus=40 * np.pi / 180,
+                                 tau_max_minus=50 * 2,
+                                 theta_opt_minus=np.pi / 2 - 0.1,
+                                 r_minus=70 * np.pi / 180,
+                                 min_q=0,
+                                 max_q=2.09),
+                 # this one was not measured, I just tried to fit https://www.researchgate.net/figure/Maximal-isometric-torque-angle-relationship-for-elbow-extensors-fitted-by-polynomial_fig3_286214602
+                 "Hips": Joint(tau_max_plus=220.3831 * 2,
+                               theta_opt_plus=25.6939 * np.pi / 180,
+                               r_plus=56.4021 * np.pi / 180,
+                               tau_max_minus=490.5938 * 2,
+                               theta_opt_minus=72.5836 * np.pi / 180,
+                               r_minus=48.6999 * np.pi / 180,
+                               min_q=-0.4,
+                               max_q=2.6),
+                 "Knees": Joint(tau_max_plus=367.6643 * 2,
+                                theta_opt_plus=-61.7303 * np.pi / 180,
+                                r_plus=31.7218 * np.pi / 180,
+                                tau_max_minus=177.9694 * 2,
+                                theta_opt_minus=-33.2908 * np.pi / 180,
+                                r_minus=57.0370 * np.pi / 180,
+                                min_q=-2.3,
+                                max_q=0.02),
+                 "Ankles": Joint(tau_max_plus=153.8230 * 2,
+                                 theta_opt_plus=0.7442 * np.pi / 180,
+                                 r_plus=58.9832 * np.pi / 180,
+                                 tau_max_minus=171.9903 * 2,
+                                 theta_opt_minus=12.6824 * np.pi / 180,
+                                 r_minus=21.8717 * np.pi / 180,
+                                 min_q=-0.7,
+                                 max_q=0.7)
+                 }
 
 
     tau_min_total = [0, 0, 0, -325.531, -138, -981.1876, -735.3286, -343.9806]
@@ -359,49 +403,15 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # --- Objectives functions ---#
     # Add objective functions
     objective_functions = ObjectiveList()
-
-    # Phase 0 (Propulsion):
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_COM_VELOCITY, node=Node.END, quadratic=False, weight=-1, axes=Axis.Z, phase=0)
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=1000, min_bound=0.1, max_bound=0.4, phase=0)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", quadratic=True, derivative=True, weight=0.0001, phase=0)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", quadratic=True,weight=0.0001, phase=0)
+    objective_functions = add_objectives(objective_functions, actuators)
     objective_functions.add(
-        ObjectiveFcn.Mayer.MINIMIZE_CONTACT_FORCES_END_OF_INTERVAL,
-        node=Node.PENULTIMATE,
-        weight = 0.01,
-        contact_index=1,
-        quadratic=True,
-        phase=0,
+        minimize_actuator_torques_CL,
+        custom_type=ObjectiveFcn.Lagrange,
+        actuators=actuators,
+        quadratic=False,
+        weight=0.1,
+        phase=2,
     )
-    objective_functions.add(
-        ObjectiveFcn.Mayer.MINIMIZE_CONTACT_FORCES_END_OF_INTERVAL,
-        node=Node.PENULTIMATE,
-        weight = 0.01,
-        contact_index=0,
-        quadratic=True,
-        phase=0,
-    )
-    # Phase 1 (Flight):
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, quadratic=False, weight=10, min_bound=0.1, max_bound=0.3, phase=1)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", quadratic=True, weight=0.1, phase=1)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", quadratic=True, derivative=True, weight=0.1, phase=1)
-
-    # Phase 2 (Tucked phase):
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, quadratic=False, weight=10, min_bound=0.1, max_bound=0.4, phase=2)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", quadratic=True, weight=0.1, phase=2)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", quadratic=True, derivative=True, weight=0.1, phase=2)
-
-    # Phase 3 (Preparation landing):
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, quadratic=False, weight=10, min_bound=0.1, max_bound=0.3, phase=3)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", quadratic=True, weight=0.1, phase=3)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", quadratic=True, derivative=True, weight=0.1, phase=3)
-
-    # Phase 4 (Landing):
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_STATE, key="qdot", quadratic=True, node=Node.END, weight=100, phase=4)
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, quadratic=False, weight=100, min_bound=0.2, max_bound=1, phase=4)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, quadratic=True, key="tau", weight=0.1, phase=4)
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_COM_POSITION, node=Node.END, weight=100, axes=Axis.Y,
-                            phase=4)
 
     # --- Dynamics ---#
     dynamics = DynamicsList()
@@ -795,9 +805,9 @@ def main():
 
 
 # --- Save results --- #
-    save_results_holonomic(sol, str(movement) + "_" + str(nb_phase) + "phases_V" + str(version) + ".pkl", bio_model, 2)
+    save_results_holonomic(sol, str(movement) + "_" + str(nb_phase) + "phases_V" + version + ".pkl", bio_model, 2)
     sol.graphs(show_bounds=True, save_name=str(movement) + "_" + str(nb_phase) + "phases_V" + str(version))
-
+    sol.animate()
 
 if __name__ == "__main__":
     main()
