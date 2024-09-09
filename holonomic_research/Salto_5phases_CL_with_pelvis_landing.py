@@ -317,15 +317,15 @@ def minimize_actuator_torques_CL(controller: PenaltyController, actuators) -> ca
     for i, key in enumerate(actuators.keys()):
         current_max_tau = cas.if_else(
             tau[i] > 0,
-            actuator_function(actuators[key].tau_max_plus, actuators[key].theta_opt_plus, actuators[key].r_plus, q[i+3])**2,
-            actuator_function(actuators[key].tau_max_minus, actuators[key].theta_opt_minus, actuators[key].r_minus, q[i+3])**2)
+            actuator_function(actuators[key].tau_max_plus, actuators[key].theta_opt_plus, actuators[key].r_plus, q[i+3]),
+            actuator_function(actuators[key].tau_max_minus, actuators[key].theta_opt_minus, actuators[key].r_minus, q[i+3]))
         out += (tau[i] / current_max_tau)**2
     return cas.sum1(out)
 
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = "Eve1"
+version = "Eve2"
 nb_phase = 5
 name_folder_model = "../Model"
 # pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_close_loop_landing_5phases_V76.pkl"
