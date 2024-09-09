@@ -2,6 +2,9 @@ import numpy as np
 import pickle
 import pandas as pd
 import matplotlib.pyplot as plt
+import sys
+sys.path.append("../holonomic_research/")
+from plot_actuators import actuator_function, Joint
 
 # --- Save --- #
 def get_created_data_from_pickle(file: str):
@@ -39,7 +42,8 @@ def graph_all_comparaison(sol_holo, sol2):
     lambdas = data["lambda"]
     q_rad = data["q_all"]
     q_rad[6, :] = q_rad[6, :] * -1
-    q_deg = np.vstack([q_rad[0:2, :], q_rad[2:, :] * 180 / np.pi])
+    q_rad_without_last_node = np.hstack((q_rad[:, :20], q_rad[:, 21:21+20], q_rad[:, 21+21:21+21+30], q_rad[:, 21+21+31:21+21+31+30], q_rad[:, 21+21+31+31:21+21+31+31+30]))
+    q_deg = np.vstack([q_rad[0:2,:], q_rad[2:, :] *180/np.pi]) 
     qdot_rad = data["qdot_all"]
     qdot_rad[6, :] = qdot_rad[6, :] * -1
     qdot_deg = np.vstack([qdot_rad[0:2, :], qdot_rad[2:, :] * 180 / np.pi])
@@ -73,7 +77,8 @@ def graph_all_comparaison(sol_holo, sol2):
     data2 = get_created_data_from_pickle(sol2)
     q2_rad = data2["q_all"]
     q2_rad[6, :] = q2_rad[6, :] * -1
-    q2_deg = np.vstack([q2_rad[0:2, :], q2_rad[2:, :] * 180 / np.pi])
+    q2_rad_without_last_node = np.hstack((q2_rad[:, :20], q2_rad[:, 21:21+20], q2_rad[:, 21+21:21+21+30], q2_rad[:, 21+21+31:21+21+31+30], q2_rad[:, 21+21+31+31:21+21+31+31+30]))
+    q2_deg = np.vstack([q2_rad[0:2,:], q2_rad[2:, :] *180/np.pi])
     qdot2_rad = data2["qdot_all"]
     qdot2_rad[6, :] = qdot2_rad[6, :] * -1
     # qdot2_deg = qdot2_rad
@@ -172,10 +177,10 @@ def graph_all_comparaison(sol_holo, sol2):
         axs[0, 2].axis('off')
     plt.tight_layout()
     plt.subplots_adjust(wspace=0.5, hspace=1)
-    fig.savefig("q.svg", format="svg")
+    fig.savefig("q.png", format="png")
 
     # Figure qdot
-    fig, axs = plt.subplots(3, 3)
+    fig, axs = plt.subplots(3, 3, figsize=(10, 5))
     num_col = 0
     num_line = 0
     y_max_1 = np.max([abs(qdot_deg[0:2, :]), abs(qdot_deg[0:2, :])])
@@ -234,12 +239,65 @@ def graph_all_comparaison(sol_holo, sol2):
         axs[0, 2].axis('off')
     plt.tight_layout()
     plt.subplots_adjust(wspace=0.4, hspace=0.8)
-    fig.savefig("qdot.svg", format="svg")
+    fig.savefig("qdot.png", format="png")
+
+
+    # Theoretical min and max bound on tau based on actuators
+    actuators = {"Shoulders": Joint(tau_max_plus=112.8107*2,
+                                    theta_opt_plus=-41.0307*np.pi/180,
+                                    r_plus=109.6679*np.pi/180,
+                                    tau_max_minus=162.7655*2,
+                                    theta_opt_minus=-101.6627*np.pi/180,
+                                    r_minus=103.9095*np.pi/180,
+                                    min_q=-0.7,
+                                    max_q=3.1),
+                "Elbows": Joint(tau_max_plus=80*2,
+                                theta_opt_plus=np.pi/2-0.1,
+                                r_plus=40*np.pi/180,
+                                tau_max_minus=50*2,
+                                theta_opt_minus=np.pi/2-0.1,
+                                r_minus=70*np.pi/180,
+                                min_q=0,
+                                max_q=2.09),  # this one was not measured, I just tried to fit https://www.researchgate.net/figure/Maximal-isometric-torque-angle-relationship-for-elbow-extensors-fitted-by-polynomial_fig3_286214602
+                "Hips": Joint(tau_max_plus=220.3831*2,
+                            theta_opt_plus=25.6939*np.pi/180,
+                            r_plus=56.4021*np.pi/180,
+                            tau_max_minus=490.5938*2,
+                            theta_opt_minus=72.5836*np.pi/180,
+                            r_minus=48.6999*np.pi/180,
+                            min_q=-0.4,
+                            max_q=2.6),
+                "Knees": Joint(tau_max_plus=367.6643*2,
+                            theta_opt_plus=-61.7303*np.pi/180,
+                            r_plus=31.7218*np.pi/180,
+                            tau_max_minus=177.9694*2,
+                            theta_opt_minus=-33.2908*np.pi/180,
+                            r_minus=57.0370*np.pi/180,
+                            min_q=-2.3,
+                            max_q=0.02),
+                "Ankles": Joint(tau_max_plus=153.8230*2,
+                            theta_opt_plus=0.7442*np.pi/180,
+                            r_plus=58.9832*np.pi/180,
+                            tau_max_minus=171.9903*2,
+                            theta_opt_minus=12.6824*np.pi/180,
+                            r_minus=21.8717*np.pi/180,
+                            min_q=-0.7,
+                            max_q=0.7)
+            }
+
+    tau_min_bound = np.zeros((5, tau_deg.shape[1]))
+    tau_max_bound = np.zeros((5, tau_deg.shape[1]))
+    tau2_min_bound = np.zeros((5, tau2_deg.shape[1]))
+    tau2_max_bound = np.zeros((5, tau2_deg.shape[1]))
+    for nb_seg, key in enumerate(actuators.keys()):
+        tau_min_bound[nb_seg, :] = -actuator_function(actuators[key].tau_max_minus, actuators[key].theta_opt_minus, actuators[key].r_minus, q_rad_without_last_node[nb_seg+3])
+        tau_max_bound[nb_seg, :] = actuator_function(actuators[key].tau_max_plus, actuators[key].theta_opt_plus, actuators[key].r_plus, q_rad_without_last_node[nb_seg+3])
+        tau2_min_bound[nb_seg, :] = -actuator_function(actuators[key].tau_max_minus, actuators[key].theta_opt_minus, actuators[key].r_minus, q2_rad_without_last_node[nb_seg+3])
+        tau2_max_bound[nb_seg, :] = actuator_function(actuators[key].tau_max_plus, actuators[key].theta_opt_plus, actuators[key].r_plus, q2_rad_without_last_node[nb_seg+3])
 
     # Figure tau
-
-    fig, axs = plt.subplots(2, 3)
-    num_col = 1
+    fig, axs = plt.subplots(2, 3, figsize=(10, 5))
+    num_col = 1 
     num_line = 0
 
     y_max_1 = np.max([abs(tau2_deg[0:2, :]), abs(tau_deg[0:2, :])])
@@ -251,10 +309,13 @@ def graph_all_comparaison(sol_holo, sol2):
     axs[0, 0].axis('off')
 
     for nb_seg in range(tau_deg.shape[0]):
-        axs[num_line, num_col].step(range(len(tau2_deg[nb_seg])), tau2_deg[nb_seg], color="tab:blue", alpha=0.75,
-                                    linewidth=1, label="without \nconstraints", where='mid')
-        axs[num_line, num_col].step(range(len(tau_deg[nb_seg])), tau_deg[nb_seg], color="tab:orange", alpha=0.75,
-                                    linewidth=1, label="with holonomics \nconstraints", where='mid')
+        axs[num_line, num_col].step(range(len(tau2_deg[nb_seg])), tau2_max_bound[nb_seg], color="tab:blue", alpha=0.5, linewidth=0.5)
+        axs[num_line, num_col].step(range(len(tau2_deg[nb_seg])), tau2_min_bound[nb_seg], color="tab:blue", alpha=0.5, linewidth=0.5)
+        axs[num_line, num_col].step(range(len(tau_deg[nb_seg])), tau_max_bound[nb_seg], color="tab:orange", alpha=0.5, linewidth=0.5)
+        axs[num_line, num_col].step(range(len(tau_deg[nb_seg])), tau_min_bound[nb_seg], color="tab:orange", alpha=0.5, linewidth=0.5)
+        axs[num_line, num_col].step(range(len(tau2_deg[nb_seg])), tau2_deg[nb_seg], color="tab:blue", alpha=0.75, linewidth=1, label="without \nconstraints", where='mid')
+        axs[num_line, num_col].step(range(len(tau_deg[nb_seg])), tau_deg[nb_seg], color="tab:orange", alpha=0.75, linewidth=1, label="with holonomics \nconstraints", where='mid')
+
         for xline in range(len(time_end_phase)):
             axs[num_line, num_col].axvline(time_end_phase_pourcentage[xline], color="tab:orange", linestyle="--",
                                            linewidth=0.7)
@@ -285,7 +346,7 @@ def graph_all_comparaison(sol_holo, sol2):
     axs[1, 2].set_yticklabels([])
     plt.tight_layout()
     plt.subplots_adjust(wspace=0.3, hspace=0.4)
-    fig.savefig("tau.svg", format="svg")
+    fig.savefig("tau.png", format="png")
 
     # Figure lambdas
     time_tuck = data["time"][2] - data["time"][2][0]
@@ -296,4 +357,4 @@ def graph_all_comparaison(sol_holo, sol2):
     plt.xlabel("Time [s]")
     plt.legend()
     plt.show()
-    fig.savefig("lambdas.svg", format="svg")
+    fig.savefig("lambdas.png", format="png")

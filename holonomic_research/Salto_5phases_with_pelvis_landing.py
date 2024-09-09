@@ -242,9 +242,132 @@ def add_objectives(objective_functions, actuators):
     return objective_functions
 
 
+def add_constraints(constraints):
+
+    # Phase 0 (Propulsion):
+    constraints.add(
+        ConstraintFcn.TRACK_MARKERS,
+        marker_index="Foot_Toe_marker",
+        axes=Axis.Z,
+        max_bound=0,
+        min_bound=0,
+        node=Node.START,
+        phase=0,
+    )
+
+    constraints.add(
+        ConstraintFcn.TRACK_MARKERS,
+        marker_index="Foot_Toe_marker",
+        axes=Axis.Y,
+        max_bound=0.1,
+        min_bound=-0.1,
+        node=Node.START,
+        phase=0,
+    )
+
+
+    #constraints.add(
+    #    ConstraintFcn.TRACK_MARKERS,
+    #    marker_index="Shoulder_marker",
+    #    axes=[Axis.X, Axis.Y, Axis.Z],
+    #    max_bound=[0 + 0.10, 0.019 + 0.10, 1.149 + 0.10],
+    #    min_bound=[0 - 0.10, 0.019 - 0.10, 1.149 - 0.10],
+    #    node=Node.START,
+    #    phase=0,
+    #)
+
+    #constraints.add(
+    #    ConstraintFcn.TRACK_MARKERS,
+    #    marker_index="KNEE_marker",
+    #    axes=[Axis.X, Axis.Y, Axis.Z],
+    #    max_bound=[0 + 0.10, 0.254 + 0.10, 0.413 + 0.10],
+    #    min_bound=[0 - 0.10, 0.254 - 0.10, 0.413 - 0.10],
+    #    node=Node.START,
+    #    phase=0,
+    #)
+
+    constraints.add(
+        CoM_over_toes,
+        node=Node.START,
+        phase=0,
+    )
+
+    constraints.add(
+        ConstraintFcn.NON_SLIPPING,
+        node=Node.ALL_SHOOTING,
+        normal_component_idx=1,
+        tangential_component_idx=0,
+        static_friction_coefficient=0.5,
+        phase=0,
+    )
+
+    constraints.add(
+        ConstraintFcn.TRACK_CONTACT_FORCES,
+        min_bound=0.01,
+        max_bound=np.inf,
+        node=Node.ALL_SHOOTING,
+        contact_index=1,
+        phase=0,
+    )
+
+    constraints.add(
+       ConstraintFcn.TRACK_CONTACT_FORCES_END_OF_INTERVAL,
+       node=Node.PENULTIMATE,
+       contact_index=1,
+       quadratic=True,
+       phase=0,
+    )
+
+    # Phase 4 (Landing):
+    constraints.add(
+        ConstraintFcn.TRACK_CONTACT_FORCES,
+        min_bound=0.01,
+        max_bound=np.inf,
+        node=Node.ALL_SHOOTING,
+        contact_index=1,
+        phase=4,
+    )
+
+    constraints.add(
+        ConstraintFcn.TRACK_MARKERS,
+        marker_index="Foot_Toe_marker",
+        axes=Axis.Z,
+        max_bound=0,
+        min_bound=0,
+        node=Node.END,
+        phase=4,
+    )
+
+    constraints.add(
+        ConstraintFcn.TRACK_MARKERS,
+        marker_index="Foot_Toe_marker",
+        axes=Axis.Y,
+        max_bound=0.1,
+        min_bound=-0.1,
+        node=Node.END,
+        phase=4,
+    )
+
+    constraints.add(
+        CoM_over_toes,
+        node=Node.END,
+        phase=4,
+    )
+
+    constraints.add(
+        ConstraintFcn.NON_SLIPPING,
+        node=Node.ALL_SHOOTING,
+        normal_component_idx=1,
+        tangential_component_idx=0,
+        static_friction_coefficient=0.5,
+        phase=4,
+    )
+    return constraints
+
+
 # --- Parameters --- #
 movement = "Salto"
-version = "Eve1"
+version = "Eve2"
 nb_phase = 5
 name_folder_model = "../Model"
 # pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Jump_4phases_V22.pkl"
@@ -269,7 +392,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
                                     r_minus=103.9095 * np.pi / 180,
                                     min_q=-0.7,
                                     max_q=3.1),
-                 "Elbows": Joint(tau_max_plus=100 * 2,
+                 "Elbows": Joint(tau_max_plus=80 * 2,
                                  theta_opt_plus=np.pi / 2 - 0.1,
                                  r_plus=40 * np.pi / 180,
                                  tau_max_minus=50 * 2,
@@ -340,104 +463,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # --- Constraints ---#
     # Constraints
     constraints = ConstraintList()
+    constraints = add_constraints(constraints)
 
-    # Phase 0 (Propulsion):
-    constraints.add(
-        ConstraintFcn.TRACK_MARKERS,
-        marker_index="Foot_Toe_marker",
-        axes=Axis.Z,
-        max_bound=0,
-        min_bound=0,
-        node=Node.START,
-        phase=0,
-    )
-
-    constraints.add(
-        ConstraintFcn.TRACK_MARKERS,
-        marker_index="Foot_Toe_marker",
-        axes=Axis.Y,
-        max_bound=0.1,
-        min_bound=-0.1,
-        node=Node.START,
-        phase=0,
-    )
-
-    constraints.add(
-        CoM_over_toes,
-        node=Node.START,
-        phase=0,
-    )
-
-    constraints.add(
-        ConstraintFcn.NON_SLIPPING,
-        node=Node.ALL_SHOOTING,
-        normal_component_idx=1,
-        tangential_component_idx=0,
-        static_friction_coefficient=0.5,
-        phase=0,
-    )
-
-    constraints.add(
-        ConstraintFcn.TRACK_CONTACT_FORCES,
-        min_bound=0.01,
-        max_bound=np.inf,
-        node=Node.ALL_SHOOTING,
-        contact_index=1,
-        phase=0,
-    )
-
-    #constraints.add(
-    #    ConstraintFcn.TRACK_CONTACT_FORCES_END_OF_INTERVAL,
-    #    node=Node.PENULTIMATE,
-    #    contact_index=1,
-    #    quadratic=True,
-    #    phase=0,
-    #)
-
-    # Phase 4 (Landing):
-    constraints.add(
-        ConstraintFcn.TRACK_CONTACT_FORCES,
-        min_bound=0.01,
-        max_bound=np.inf,
-        node=Node.ALL_SHOOTING,
-        contact_index=1,
-        phase=4,
-    )
-
-    constraints.add(
-        ConstraintFcn.TRACK_MARKERS,
-        marker_index="Foot_Toe_marker",
-        axes=Axis.Z,
-        max_bound=0,
-        min_bound=0,
-        node=Node.END,
-        phase=4,
-    )
-
-    constraints.add(
-        ConstraintFcn.TRACK_MARKERS,
-        marker_index="Foot_Toe_marker",
-        axes=Axis.Y,
-        max_bound=0.1,
-        min_bound=-0.1,
-        node=Node.END,
-        phase=4,
-    )
-
-    constraints.add(
-        CoM_over_toes,
-        node=Node.END,
-        phase=4,
-    )
-
-    constraints.add(
-        ConstraintFcn.NON_SLIPPING,
-        node=Node.ALL_SHOOTING,
-        normal_component_idx=1,
-        tangential_component_idx=0,
-        static_friction_coefficient=0.5,
-        phase=4,
-    )
 
     # Path constraint
     #pose_propulsion_start = [0.0, -0.17, -0.9124, 0.0, 0.1936, 2.0082, -1.7997, 0.6472]

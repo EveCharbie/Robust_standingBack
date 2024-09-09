@@ -92,18 +92,19 @@ for i in range(data["q_all"].shape[1]):
     inertie_sol2[i, :] = np.diagonal(model.bodyInertia(data2["q_all"][:, i]).to_array()).T
 
 if PLOT_INERTIA_FLAG:
-    plt.figure(figsize=(7, 5))
-    plt.plot(inertie_sol2[0, :], color="tab:blue", label="without \nconstraints", alpha=0.75, linewidth=1)#time_pourcentage2.flatten(),
-    plt.plot(inertie_sol_holo[0, :], color="tab:orange", label="with holonomics \nconstraints", alpha=0.75, linewidth=1)#time_pourcentage,
+    fig, ax = plt.subplots(1, 1, figsize=(10, 5))
+    ax.plot(inertie_sol2[0, :], color="tab:blue", label="without \nconstraints", alpha=0.75, linewidth=1)#time_pourcentage2.flatten(),
+    ax.plot(inertie_sol_holo[0, :], color="tab:orange", label="with holonomics \nconstraints", alpha=0.75, linewidth=1)#time_pourcentage,
     for xline in range(len(time_end_phase)):
-        plt.axvline(time_end_phase2_pourcentage[xline], color="tab:blue", linestyle="--", linewidth=0.7)
-        plt.axvline(time_end_phase_pourcentage[xline], color="tab:orange", linestyle="--", linewidth=0.7)
-    plt.title("Inertia X-axis", fontsize=8)
-    plt.xlim(0, 100)
-    plt.grid(True, linewidth=0.4)
-    plt.ylabel("Inertia")
-    plt.xlabel("Time [s]")
-    plt.legend(bbox_to_anchor=(1.05, 0.5))
+        ax.axvline(time_end_phase2_pourcentage[xline], color="tab:blue", linestyle="--", linewidth=0.7)
+        ax.axvline(time_end_phase_pourcentage[xline], color="tab:orange", linestyle="--", linewidth=0.7)
+    ax.set_title("Inertia X-axis", fontsize=8)
+    ax.set_xlim(0, 100)
+    ax.grid(True, linewidth=0.4)
+    ax.set_ylabel("Inertia")
+    ax.set_xlabel("Time [s]")
+    ax.legend(bbox_to_anchor=(1.05, 0.5))
+    plt.subplots_adjust(right=0.8)
     plt.savefig("Inertia.png")
     plt.show()
 

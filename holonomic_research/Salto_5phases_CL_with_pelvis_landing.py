@@ -62,7 +62,7 @@ from casadi import MX, vertcat
 from holonomic_research.biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
 #from visualisation import visualisation_closed_loop_5phases_reception, visualisation_movement, graph_all
 from Save import get_created_data_from_pickle
-from Salto_5phases_with_pelvis_landing import CoM_over_toes, add_objectives, actuator_function
+from Salto_5phases_with_pelvis_landing import CoM_over_toes, add_objectives, add_constraints, actuator_function
 from plot_actuators import Joint
 
 # --- Save results --- #
@@ -103,11 +103,16 @@ def save_results_holonomic(sol, c3d_file_path, biomodel, index_holo):
             if i == index_holo:
                 q_holo, qdot_holo, qddot_holo, lambdas = BiorbdModelCustomHolonomic.compute_all_states(
                     biomodel[index_holo], sol, index_holo)
+
+                q_u = states["q_u"]
+                qdot_u = states["qdot_u"]
+                tau = controls["tau"]
+                lambdas = biomodel.compute_the_lagrangian_multipliers(q_u, qdot_u, tau)
+
                 q.append(q_holo)
                 qdot.append(qdot_holo)
                 qddot.append(qddot_holo)
                 tau.append(controls[i]["tau"])
-                data["lambda"] = lambdas
                 time.append(list_time[i])
                 min_bounds_q.append(sol.ocp.nlp[i].x_bounds['q_u'].min)
                 max_bounds_q.append(sol.ocp.nlp[i].x_bounds['q_u'].max)
@@ -165,6 +170,11 @@ def save_results_holonomic(sol, c3d_file_path, biomodel, index_holo):
     data["time_all"] = np.vstack(time_all)
     data["time_total"] = time_total
     data["time_end_phase"] = time_end_phase
+
+    # Only for the tucked phase
+    data["q_u"] = q_u
+    data["qdot_u"] = qdot_u
+    data["lambda"] = lambdas
 
     if sol.status == 1:
         data["status"] = "Optimal Control Solution Found"
@@ -264,8 +274,11 @@ def custom_contraint_lambdas_normal(
     return lagrange_0
 
 
-def custom_contraint_lambdas_cisaillement_1(
+def custom_contraint_lambdas_cisaillement_max_bound(
         controller: PenaltyController, bio_model: BiorbdModelCustomHolonomic) -> MX:
+    """
+    lagrange_1 < lagrange_0
+    """
     # Recuperer les q
     q_u = controller.states["q_u"].cx
     qdot_u = controller.states["qdot_u"].cx
@@ -285,8 +298,11 @@ def custom_contraint_lambdas_cisaillement_1(
     return lagrange_1 - lagrange_0
 
 
-def custom_contraint_lambdas_cisaillement_2(
+def custom_contraint_lambdas_cisaillement_min_bound(
         controller: PenaltyController, bio_model: BiorbdModelCustomHolonomic) -> MX:
+    """
+    0.01*lagrange_0 < lagrange_1
+    """
     # Recuperer les q
     q_u = controller.states["q_u"].cx
     qdot_u = controller.states["qdot_u"].cx
@@ -351,7 +367,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
                                     r_minus=103.9095 * np.pi / 180,
                                     min_q=-0.7,
                                     max_q=3.1),
-                 "Elbows": Joint(tau_max_plus=100 * 2,
+                 "Elbows": Joint(tau_max_plus=80 * 2,
                                  theta_opt_plus=np.pi / 2 - 0.1,
                                  r_plus=40 * np.pi / 180,
                                  tau_max_minus=50 * 2,
@@ -434,72 +450,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # --- Constraints ---#
     # Constraints
     constraints = ConstraintList()
+    constraints = add_constraints(constraints)
     holonomic_constraints = HolonomicConstraintsList()
-
-    # Phase 0 (Propulsion):
-    constraints.add(
-        ConstraintFcn.TRACK_MARKERS,
-        marker_index="Foot_Toe_marker",
-        axes=Axis.Z,
-        max_bound=0,
-        min_bound=0,
-        node=Node.START,
-        phase=0,
-    )
-
-    constraints.add(
-        ConstraintFcn.TRACK_MARKERS,
-        marker_index="Foot_Toe_marker",
-        axes=Axis.Y,
-        max_bound=0.1,
-        min_bound=-0.1,
-        node=Node.START,
-        phase=0,
-    )
-
-    #constraints.add(
-    #    ConstraintFcn.TRACK_MARKERS,
-    #    marker_index="Shoulder_marker",
-    #    axes=[Axis.X, Axis.Y, Axis.Z],
-    #    max_bound=[0 + 0.10, 0.019 + 0.10, 1.149 + 0.10],
-    #    min_bound=[0 - 0.10, 0.019 - 0.10, 1.149 - 0.10],
-    #    node=Node.START,
-    #    phase=0,
-    #)
-
-    #constraints.add(
-    #    ConstraintFcn.TRACK_MARKERS,
-    #    marker_index="KNEE_marker",
-    #    axes=[Axis.X, Axis.Y, Axis.Z],
-    #    max_bound=[0 + 0.10, 0.254 + 0.10, 0.413 + 0.10],
-    #    min_bound=[0 - 0.10, 0.254 - 0.10, 0.413 - 0.10],
-    #    node=Node.START,
-    #    phase=0,
-    #)
-
-    constraints.add(
-        CoM_over_toes,
-        node=Node.START,
-        phase=0,
-    )
-
-    constraints.add(
-        ConstraintFcn.NON_SLIPPING,
-        node=Node.ALL_SHOOTING,
-        normal_component_idx=1,
-        tangential_component_idx=0,
-        static_friction_coefficient=0.5,
-        phase=0,
-    )
-
-    constraints.add(
-        ConstraintFcn.TRACK_CONTACT_FORCES,
-        min_bound=0.01,
-        max_bound=np.inf,
-        node=Node.ALL_SHOOTING,
-        contact_index=1,
-        phase=0,
-    )
 
     # Phase 2 (Tucked phase):
     holonomic_constraints.add(
@@ -519,17 +471,17 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         dependent_joint_index=[3, 4],
     )
 
+    # "relaxed friction cone": 0.01*lagrange_0 < lagrange_1 < lagrange_0
     constraints.add(
-        custom_contraint_lambdas_cisaillement_1,
+        custom_contraint_lambdas_cisaillement_max_bound,
         node=Node.ALL_SHOOTING,
         bio_model=bio_model[2],
         max_bound=0,
         min_bound=-np.inf,
         phase=2,
     )
-
     constraints.add(
-        custom_contraint_lambdas_cisaillement_2,
+        custom_contraint_lambdas_cisaillement_min_bound,
         node=Node.ALL_SHOOTING,
         bio_model=bio_model[2],
         max_bound=np.inf,
@@ -537,6 +489,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         phase=2,
     )
 
+    # The model can only pull on the legs, not push
     constraints.add(
         custom_contraint_lambdas_normal,
         node=Node.ALL_SHOOTING,
@@ -544,52 +497,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         max_bound=np.inf,
         min_bound=1,
         phase=2,
-    )
-
-    # Phase 4 (Landing):
-
-    constraints.add(
-        ConstraintFcn.TRACK_CONTACT_FORCES,
-        min_bound=0.01,
-        max_bound=np.inf,
-        node=Node.ALL_SHOOTING,
-        contact_index=1,
-        phase=4,
-    )
-
-    constraints.add(
-        ConstraintFcn.TRACK_MARKERS,
-        marker_index="Foot_Toe_marker",
-        axes=Axis.Z,
-        max_bound=0,
-        min_bound=0,
-        node=Node.END,
-        phase=4,
-    )
-
-    constraints.add(
-        ConstraintFcn.TRACK_MARKERS,
-        marker_index="Foot_Toe_marker",
-        axes=Axis.Y,
-        max_bound=0.1,
-        min_bound=-0.1,
-        node=Node.END,
-        phase=4,
-    )
-
-    constraints.add(
-        CoM_over_toes,
-        node=Node.END,
-        phase=4,
-    )
-
-    constraints.add(
-        ConstraintFcn.NON_SLIPPING,
-        node=Node.ALL_SHOOTING,
-        normal_component_idx=1,
-        tangential_component_idx=0,
-        static_friction_coefficient=0.5,
-        phase=4,
     )
 
     # Path constraint
