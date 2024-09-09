@@ -85,7 +85,7 @@ def graph_all_comparaison(sol_holo, sol2):
     time_pourcentage2 = time_to_percentage(time2)
 
     # Figure q
-    fig, axs = plt.subplots(3, 3)
+    fig, axs = plt.subplots(3, 3, figsize=(10, 5))
     num_col = 0
     num_line = 0
     y_max_1 = np.max([abs(q_deg[0:2,:]), abs(q2_deg[0:2,:])])

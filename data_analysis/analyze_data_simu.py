@@ -11,11 +11,16 @@ import matplotlib.pyplot as plt
 from graph_simu import graph_all_comparaison, get_created_data_from_pickle, time_to_percentage
 
 # Solution with and without holonomic constraints
-path_sol = "/home/mickaelbegon/Documents/Anais/Results_simu"
-sol_holo = path_sol + "/" + "Salto_close_loop_landing_5phases_V80.pkl"
-sol2 = path_sol + "/" + "Salto_5phases_V11.pkl"
-path_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Model/Model2D_7Dof_2C_5M_CL_V3.bioMod"
+# path_sol = "/home/mickaelbegon/Documents/Anais/Results_simu"
+path_sol = "../holonomic_research/"
+sol_holo = path_sol + "/" + "Salto_close_loop_landing_5phases_VEve2.pkl"
+sol2 = path_sol + "/" + "Salto_5phases_VEve2.pkl"
+path_model = "../Model/Model2D_7Dof_2C_5M_CL_V3.bioMod"
 model = biorbd.Model(path_model)
+
+PLOT_TAU_FLAG = True
+PLOT_INERTIA_FLAG = True
+PLOT_ENERY_FLAG = True
 
 data = pd.read_pickle(sol_holo)
 data = get_created_data_from_pickle(sol_holo)
@@ -76,7 +81,8 @@ tau_mean_hip_sol2 = np.mean(data2["tau"][2][2])
 tau_std_hip_sol2 = np.std(data2["tau"][2][2])
 
 # Graphique
-#graph_all_comparaison(sol_holo, sol2)
+if PLOT_TAU_FLAG:
+    graph_all_comparaison(sol_holo, sol2)
 
 # Inertie
 inertie_sol_holo = np.zeros((3,data["q_all"].shape[1]))
@@ -85,23 +91,21 @@ for i in range(data["q_all"].shape[1]):
     inertie_sol_holo[:,i] = model.bodyInertia(data["q_all"][:,i]).to_array()[0]
     inertie_sol2[:,i] = model.bodyInertia(data2["q_all"][:,i]).to_array()[0]
 
-axs_names = ["x", "y", "z"]
-fig, axs = plt.subplots(1, 3)
-for nb_ax in range(inertie_sol_holo.shape[0]):
-    axs[1, nb_ax].plot(inertie_sol2[nb_ax, :], color="tab:blue", label="without \nconstraints", alpha=0.75, linewidth=1)#time_pourcentage2.flatten(),
-    #axs[1, nb_ax].plot(inertie_sol_holo[nb_ax, :], color="tab:orange", label="with holonomics \nconstraints", alpha=0.75, linewidth=1)#time_pourcentage,
+if PLOT_INERTIA_FLAG:
+    plt.figure(figsize=(7, 5))
+    plt.plot(inertie_sol2[0, :], color="tab:blue", label="without \nconstraints", alpha=0.75, linewidth=1)#time_pourcentage2.flatten(),
+    plt.plot(inertie_sol_holo[0, :], color="tab:orange", label="with holonomics \nconstraints", alpha=0.75, linewidth=1)#time_pourcentage,
     for xline in range(len(time_end_phase)):
-        axs[1, nb_ax].axvline(time_end_phase2_pourcentage[xline], color="tab:blue", linestyle="--", linewidth=0.7)
-        axs[1, nb_ax].axvline(time_end_phase_pourcentage[xline], color="tab:orange", linestyle="--", linewidth=0.7)
-    axs[1, nb_ax].set_title(axs_names[nb_ax], fontsize=8)
-    axs[1, nb_ax].set_xlim(0, 100)
-    axs[1, nb_ax].grid(True, linewidth=0.4)
-plt.plot(data["time"], inertie_sol_holo, color='r', label=["Holo"])
-plt.plot(data2["time"],inertie_sol2, color='g', label=["Sol 2"])
-plt.ylabel("Inertie")
-plt.xlabel("Time [s]")
-plt.legend()
-plt.show()
+        plt.axvline(time_end_phase2_pourcentage[xline], color="tab:blue", linestyle="--", linewidth=0.7)
+        plt.axvline(time_end_phase_pourcentage[xline], color="tab:orange", linestyle="--", linewidth=0.7)
+    plt.title("Inertia X-axis", fontsize=8)
+    plt.xlim(0, 100)
+    plt.grid(True, linewidth=0.4)
+    plt.ylabel("Inertia")
+    plt.xlabel("Time [s]")
+    plt.legend(bbox_to_anchor=(1.05, 0.5))
+    plt.savefig("Inertia.png")
+    plt.show()
 
 # Energy expenditure (intégrale de la somme de la valeur absolue de tau multiplier par la vitesse angulaire le tout multiplier par dt)
     # Sol Holo
@@ -113,7 +117,7 @@ intervalle_temps = intervalle_temps[intervalle_temps!=0]
 tau = np.hstack(data["tau"])
 qdot = np.hstack([array[:,:-1] for array in data["qdot"]])
 
-energy_holo = np.trapz(np.abs(tau*qdot[3:, :]), time)
+energy_holo = np.trapz(np.abs(tau*qdot[3:, :]), time.T)
 energy_holo_all = np.abs(tau[:, :]*qdot[3:, :])
 
     # Sol 2
@@ -122,67 +126,69 @@ time2_integral = time2.flatten()
 tau2 = np.hstack(data2["tau"])
 qdot2 = np.hstack([array[:,:-1] for array in data2["qdot"]])
 
-energy_sol2 = np.trapz(np.abs(tau2*qdot2[3:, :]), time2)
+energy_sol2 = np.trapz(np.abs(tau2*qdot2[3:, :]), time2.T)
 energy_sol2_all = np.abs(tau2[:, :]*qdot2[3:, :])
 
     #Diff energy
 energy_diff = energy_holo - energy_sol2
 
 # Figure tau
-fig, axs = plt.subplots(2, 3)
-num_col = 1
-num_line = 0
+if PLOT_ENERY_FLAG:
+    fig, axs = plt.subplots(2, 3)
+    num_col = 1
+    num_line = 0
 
-y_max_1 = np.max([abs(energy_sol2_all[0:2]), abs(energy_holo_all[0:2])])
-y_max_2 = np.max([abs(energy_sol2_all[2:]), abs(energy_holo_all[2:])])
+    y_max_1 = np.max([abs(energy_sol2_all[0:2]), abs(energy_holo_all[0:2])])
+    y_max_2 = np.max([abs(energy_sol2_all[2:]), abs(energy_holo_all[2:])])
 
-axs[0, 0].plot([], [], color="tab:orange", label="with holonomics \nconstraints")
-axs[0, 0].plot([], [], color="tab:blue", label="without \nconstraints")
-axs[0, 0].legend(loc='center right', bbox_to_anchor=(0.6, 0.5), fontsize=8)
-axs[0, 0].axis('off')
+    axs[0, 0].plot([], [], color="tab:orange", label="with holonomics \nconstraints")
+    axs[0, 0].plot([], [], color="tab:blue", label="without \nconstraints")
+    axs[0, 0].legend(loc='center right', bbox_to_anchor=(0.6, 0.5), fontsize=8)
+    axs[0, 0].axis('off')
 
-for nb_seg in range(energy_holo_all.shape[0]):
-    axs[num_line, num_col].step(range(len(energy_sol2_all[nb_seg])), energy_sol2_all[nb_seg], color="tab:blue", alpha=0.75,
-                                linewidth=1, label="without \nconstraints", where='mid')
-    axs[num_line, num_col].step(range(len(energy_holo_all[nb_seg])), energy_holo_all[nb_seg], color="tab:orange", alpha=0.75,
-                                linewidth=1, label="with holonomics \nconstraints", where='mid')
-    for xline in range(len(time_end_phase)):
-        axs[num_line, num_col].axvline(time_end_phase_pourcentage[xline], color="tab:orange", linestyle="--",
-                                       linewidth=0.7)
-        axs[num_line, num_col].axvline(time_end_phase2_pourcentage[xline], color="tab:blue", linestyle="--",
-                                       linewidth=0.7)
-    axs[num_line, num_col].set_title(dof_names_tau[nb_seg], fontsize=8)
-    axs[num_line, num_col].set_xlim(0, 100)
-    axs[num_line, num_col].grid(True, linewidth=0.4)
+    for nb_seg in range(energy_holo_all.shape[0]):
+        axs[num_line, num_col].step(range(len(energy_sol2_all[nb_seg])), energy_sol2_all[nb_seg], color="tab:blue", alpha=0.75,
+                                    linewidth=1, label="without \nconstraints", where='mid')
+        axs[num_line, num_col].step(range(len(energy_holo_all[nb_seg])), energy_holo_all[nb_seg], color="tab:orange", alpha=0.75,
+                                    linewidth=1, label="with holonomics \nconstraints", where='mid')
+        for xline in range(len(time_end_phase)):
+            axs[num_line, num_col].axvline(time_end_phase_pourcentage[xline], color="tab:orange", linestyle="--",
+                                           linewidth=0.7)
+            axs[num_line, num_col].axvline(time_end_phase2_pourcentage[xline], color="tab:blue", linestyle="--",
+                                           linewidth=0.7)
+        axs[num_line, num_col].set_title(dof_names_tau[nb_seg], fontsize=8)
+        axs[num_line, num_col].set_xlim(0, 100)
+        axs[num_line, num_col].grid(True, linewidth=0.4)
 
-    # Réduire la taille des labels des xticks et yticks
-    axs[num_line, num_col].tick_params(axis='both', which='major', labelsize=6)
-    if num_line == 0:
-        axs[num_line, num_col].set_ylim(-y_max_1 + (-y_max_1 * 0.1), y_max_1 + (y_max_1 * 0.1))
-    else:
-        axs[num_line, num_col].set_ylim(-y_max_2 + (-y_max_2 * 0.1), y_max_2 + (y_max_2 * 0.1))
+        # Réduire la taille des labels des xticks et yticks
+        axs[num_line, num_col].tick_params(axis='both', which='major', labelsize=6)
+        if num_line == 0:
+            axs[num_line, num_col].set_ylim(-y_max_1 + (-y_max_1 * 0.1), y_max_1 + (y_max_1 * 0.1))
+        else:
+            axs[num_line, num_col].set_ylim(-y_max_2 + (-y_max_2 * 0.1), y_max_2 + (y_max_2 * 0.1))
 
-    num_col += 1
-    if num_col == 3:
-        num_col = 0
-        num_line += 1
-    if num_line == 1:
-        axs[num_line, num_col].set_xlabel('Time [%]', fontsize=7)
+        num_col += 1
+        if num_col == 3:
+            num_col = 0
+            num_line += 1
+        if num_line == 1:
+            axs[num_line, num_col].set_xlabel('Time [%]', fontsize=7)
 
-# Y_label
-axs[0, 1].set_ylabel("Energy expenditure [...]", fontsize=7)  # Arm Rotation
-axs[1, 0].set_ylabel("Energy expenditure [...]", fontsize=7)  # Leg Rotation
-axs[0, 2].set_yticklabels([])
-axs[1, 1].set_yticklabels([])
-axs[1, 2].set_yticklabels([])
-plt.tight_layout()
-plt.subplots_adjust(wspace=0.3, hspace=0.4)
-fig.savefig("Energy_expenditure.svg", format="svg")
+    # Y_label
+    axs[0, 1].set_ylabel("Energy expenditure [...]", fontsize=7)  # Arm Rotation
+    axs[1, 0].set_ylabel("Energy expenditure [...]", fontsize=7)  # Leg Rotation
+    axs[0, 2].set_yticklabels([])
+    axs[1, 1].set_yticklabels([])
+    axs[1, 2].set_yticklabels([])
+    plt.tight_layout()
+    plt.subplots_adjust(wspace=0.3, hspace=0.4)
+    fig.savefig("Energy_expenditure.png", format="png")
 
-fig = plt.figure()
-plt.plot(time, tau[0,:]*qdot[4, :], color='r', label=["Holo"])
-plt.plot(time2,tau2[0,:]*qdot2[4, :], color='g', label=["Sol 2"])
-plt.ylabel("Energy expenditure")
-plt.xlabel("Time [s]")
-plt.legend()
-plt.show()
+    fig = plt.figure()
+    plt.plot(time, tau[0,:]*qdot[4, :], color='r', label=["Holo"])
+    plt.plot(time2,tau2[0,:]*qdot2[4, :], color='g', label=["Sol 2"])
+    plt.ylabel("Energy expenditure")
+    plt.xlabel("Time [s]")
+    plt.legend()
+    plt.savefig("Energy.png", format="png")
+    plt.show()
