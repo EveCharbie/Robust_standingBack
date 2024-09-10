@@ -58,9 +58,6 @@ from bioptim import (
     HolonomicConstraintsList,
     HolonomicConstraintsFcn,
 )
-from casadi import MX, vertcat
-from holonomic_research.biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
-#from visualisation import visualisation_closed_loop_5phases_reception, visualisation_movement, graph_all
 from Save import get_created_data_from_pickle
 from plot_actuators import Joint, actuator_function
 
@@ -364,10 +361,18 @@ def add_constraints(constraints):
     )
     return constraints
 
+def initialize_tau():
+    tau_min_total = [0, 0, 0, -325.531, -138, -981.1876, -735.3286, -343.9806]
+    tau_max_total = [0, 0, 0, 325.531, 138, 981.1876, 735.3286, 343.9806]
+    tau_min = [i * 0.7 for i in tau_min_total]
+    tau_max = [i * 0.7 for i in tau_max_total]
+    tau_init = 0
+    return tau_min, tau_max, tau_init
+
 
 # --- Parameters --- #
 movement = "Salto"
-version = "Eve2"
+version = "Eve3"
 nb_phase = 5
 name_folder_model = "../Model"
 # pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Jump_4phases_V22.pkl"
@@ -376,7 +381,7 @@ sol_salto = get_created_data_from_pickle(pickle_sol_init)
 
 
 # --- Prepare ocp --- #
-def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound):
+def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
     bio_model = (BiorbdModel(biorbd_model_path[0]),
                  BiorbdModel(biorbd_model_path[1]),
                  BiorbdModel(biorbd_model_path[2]),
@@ -427,11 +432,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
                                  max_q=0.7)
                  }
 
-    tau_min_total = [0, 0, 0, -325.531, -138, -981.1876, -735.3286, -343.9806]
-    tau_max_total = [0, 0, 0, 325.531, 138, 981.1876, 735.3286, 343.9806]
-    tau_min = [i * 0.7 for i in tau_min_total]
-    tau_max = [i * 0.7 for i in tau_max_total]
-    tau_init = 0
+    tau_min, tau_max, tau_init = initialize_tau()
     dof_mapping = BiMappingList()
     dof_mapping.add("tau", to_second=[None, None, None, 0, 1, 2, 3, 4], to_first=[3, 4, 5, 6, 7])
 
@@ -660,8 +661,6 @@ def main():
                            model_path_1contact),
         phase_time=(0.2, 0.2, 0.3, 0.3, 0.3),
         n_shooting=(20, 20, 30, 30, 30),
-        min_bound=0.01,
-        max_bound=np.inf,
     )
 
     # --- Solve the program --- #

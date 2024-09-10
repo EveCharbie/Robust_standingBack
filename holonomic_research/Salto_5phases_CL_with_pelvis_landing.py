@@ -60,9 +60,8 @@ from bioptim import (
 )
 from casadi import MX, vertcat
 from holonomic_research.biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
-#from visualisation import visualisation_closed_loop_5phases_reception, visualisation_movement, graph_all
 from Save import get_created_data_from_pickle
-from Salto_5phases_with_pelvis_landing import CoM_over_toes, add_objectives, add_constraints, actuator_function
+from Salto_5phases_with_pelvis_landing import add_objectives, add_constraints, actuator_function, initialize_tau
 from plot_actuators import Joint
 
 # --- Save results --- #
@@ -76,6 +75,27 @@ def save_results_holonomic(sol, c3d_file_path, biomodel, index_holo):
     c3d_file_path: str
         The path to the c3d file of the task
     """
+    Q_sym = cas.MX.sym("Q_u", 6)
+    Qdot_sym = cas.MX.sym("Qdot_u", 6)
+    Tau_sym = cas.MX.sym("Tau", 8)
+    lagrangian_multipliers_func = cas.Function(
+        "Compute_lagrangian_multipliers",
+        [Q_sym, Qdot_sym, Tau_sym],
+        [biomodel[index_holo].compute_the_lagrangian_multipliers(Q_sym, Qdot_sym, Tau_sym)],
+    )
+    q_holo_func = cas.Function(
+        "Compute_q_holo",
+        [Q_sym],
+        [biomodel[index_holo].state_from_partition(Q_sym, biomodel[index_holo].compute_v_from_u_explicit_symbolic(Q_sym))],
+    )
+    Bvu = biomodel[index_holo].coupling_matrix(q_holo_func(Q_sym))
+    vdot = Bvu @ Qdot_sym
+    qdot = biomodel[index_holo].state_from_partition(Qdot_sym, vdot)
+    qdot_holo_func = cas.Function(
+        "Compute_qdot_holo",
+        [Q_sym, Qdot_sym],
+        [qdot],
+    )
 
     data = {}
     states = sol.decision_states(to_merge=SolutionMerge.NODES)
@@ -101,17 +121,23 @@ def save_results_holonomic(sol, c3d_file_path, biomodel, index_holo):
     else:
         for i in range(len(states)):
             if i == index_holo:
-                q_holo, qdot_holo, qddot_holo, lambdas = BiorbdModelCustomHolonomic.compute_all_states(
-                    biomodel[index_holo], sol, index_holo)
+                q_u = states[index_holo]["q_u"]
+                qdot_u = states[index_holo]["qdot_u"]
+                tau_this_time = controls[index_holo]["tau"]
+                tau_this_time = np.vstack((np.zeros((3, tau_this_time.shape[1])), tau_this_time))
 
-                q_u = states["q_u"]
-                qdot_u = states["qdot_u"]
-                tau = controls["tau"]
-                lambdas = biomodel.compute_the_lagrangian_multipliers(q_u, qdot_u, tau)
+                q_holo = np.zeros((8, q_u.shape[1]))
+                qdot_holo = np.zeros((8, qdot_u.shape[1]))
+                for i_node in range(q_u.shape[1]):
+                    q_holo[:, i_node] = np.reshape(q_holo_func(q_u[:, i_node]), (8,))
+                    qdot_holo[:, i_node] = np.reshape(qdot_holo_func(q_u[:, i_node], qdot_u[:, i_node]), (8,))
+
+                lambdas = np.zeros((2, tau_this_time.shape[1]))
+                for i_node in range(tau_this_time.shape[1]):
+                    lambdas[:, i_node] = np.reshape(lagrangian_multipliers_func(q_u[:, i_node], qdot_u[:, i_node], tau_this_time[:, i_node]), (2,))
 
                 q.append(q_holo)
                 qdot.append(qdot_holo)
-                qddot.append(qddot_holo)
                 tau.append(controls[i]["tau"])
                 time.append(list_time[i])
                 min_bounds_q.append(sol.ocp.nlp[i].x_bounds['q_u'].min)
@@ -158,7 +184,6 @@ def save_results_holonomic(sol, c3d_file_path, biomodel, index_holo):
     data["dof_names"] = sol.ocp.nlp[0].dof_names
     data["q_all"] = np.hstack(data["q"])
     data["qdot_all"] = np.hstack(data["qdot"])
-    data["qddot_all"] = np.hstack(data["qddot"])
     data["tau_all"] = np.hstack(data["tau"])
     time_end_phase = []
     time_total = 0
@@ -341,7 +366,7 @@ def minimize_actuator_torques_CL(controller: PenaltyController, actuators) -> ca
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = "Eve2"
+version = "Eve3"
 nb_phase = 5
 name_folder_model = "../Model"
 # pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_close_loop_landing_5phases_V76.pkl"
@@ -350,7 +375,7 @@ pickle_sol_init = "init/Salto_5phases_V13.pkl"
 sol_salto = get_created_data_from_pickle(pickle_sol_init)
 
 # --- Prepare ocp --- #
-def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound):
+def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
     bio_model = (BiorbdModel(biorbd_model_path[0]),
                  BiorbdModel(biorbd_model_path[1]),
                  BiorbdModelCustomHolonomic(biorbd_model_path[2]),
@@ -358,7 +383,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
                  BiorbdModel(biorbd_model_path[4]),
                  )
     # Actuators parameters
-
     actuators = {"Shoulders": Joint(tau_max_plus=112.8107 * 2,
                                     theta_opt_plus=-41.0307 * np.pi / 180,
                                     r_plus=109.6679 * np.pi / 180,
@@ -402,14 +426,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
                                  max_q=0.7)
                  }
 
-
-    tau_min_total = [0, 0, 0, -325.531, -138, -981.1876, -735.3286, -343.9806]
-    tau_max_total = [0, 0, 0, 325.531, 138, 981.1876, 735.3286, 343.9806]
-    #tau_min_total = [0, 0, 0, -162.7655, -69, -490.5938, -367.6643, -171.9903]
-    #tau_max_total = [0, 0, 0, 162.7655, 69, 490.5938, 367.6643, 171.9903]
-    tau_min = [i * 0.7 for i in tau_min_total]
-    tau_max = [i * 0.7 for i in tau_max_total]
-    tau_init = 0
+    tau_min, tau_max, tau_init = initialize_tau()
     variable_bimapping = BiMappingList()
     dof_mapping = BiMappingList()
     variable_bimapping.add("q", to_second=[0, 1, 2, None, None, 3, 4, 5], to_first=[0, 1, 2, 5, 6, 7])
@@ -437,7 +454,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         DynamicsFcn.HOLONOMIC_TORQUE_DRIVEN,
         phase=2
     )
-
     dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, phase=3)
     dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, with_contact=True, phase=4)
 
@@ -697,8 +713,6 @@ def main():
                            model_path_1contact),
         phase_time=(0.2, 0.2, 0.3, 0.3, 0.3),
         n_shooting=(20, 20, 30, 30, 30),
-        min_bound=0.01,
-        max_bound=np.inf,
     )
 
     # --- Solve the program --- #

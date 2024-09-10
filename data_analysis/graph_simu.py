@@ -9,7 +9,7 @@ from plot_actuators import actuator_function, Joint
 # --- Save --- #
 def get_created_data_from_pickle(file: str):
     """
-    This code is used to open a pickle document and exploit its data.
+    This code is used to open a pickle document and exploit its data_CL.
 
     Parameters
     ----------
@@ -17,7 +17,7 @@ def get_created_data_from_pickle(file: str):
 
     Returns
     -------
-    data: All the data of the pickle document
+    data_CL: All the data_CL of the pickle document
     """
     with open(file, "rb") as f:
         while True:
@@ -29,113 +29,119 @@ def get_created_data_from_pickle(file: str):
     return data_tmp
 
 def time_to_percentage(time):
-    time_pourcentage = np.zeros(time.shape)
+    time_pourcentage_CL = np.zeros(time.shape)
     for i in range(0, time.shape[0]):
-       time_pourcentage[i] = time[i] * 100 / time[time.shape[0]-1]      
-    return time_pourcentage
+       time_pourcentage_CL[i] = time[i] * 100 / time[time.shape[0]-1]      
+    return time_pourcentage_CL
 
 # --- Graph --- #
-def graph_all_comparaison(sol_holo, sol2):
+def graph_all_comparaison(sol_holo, sol_without):
     # Sol 1
-    # data = get_created_data_from_pickle(sol_holo)
-    data = pd.read_pickle(sol_holo)
-    lambdas = data["lambda"]
-    q_rad = data["q_all"]
-    q_rad[6, :] = q_rad[6, :] * -1
-    q_rad_without_last_node = np.hstack((q_rad[:, :20], q_rad[:, 21:21+20], q_rad[:, 21+21:21+21+30], q_rad[:, 21+21+31:21+21+31+30], q_rad[:, 21+21+31+31:21+21+31+31+30]))
-    q_deg = np.vstack([q_rad[0:2,:], q_rad[2:, :] *180/np.pi]) 
-    qdot_rad = data["qdot_all"]
-    qdot_rad[6, :] = qdot_rad[6, :] * -1
-    qdot_deg = np.vstack([qdot_rad[0:2, :], qdot_rad[2:, :] * 180 / np.pi])
-    # qdot_deg = qdot_rad
-    # qdot_deg = qdot_rad*180/np.pi
-    qddot = data["qddot_all"]
-    tau_deg = data["tau_all"]
+    # data_CL = get_created_data_from_pickle(sol_holo)
+    data_CL = pd.read_pickle(sol_holo)
+    lambdas = data_CL["lambda"]
+    q_CL_rad = data_CL["q_all"][:, :]
+    q_CL_rad_without_last_node = np.hstack((data_CL["q_all"][:, :20], data_CL["q_all"][:, 21:21 + 20],
+                                            data_CL["q_all"][:, 21 + 21:21 + 21 + 30],
+                                            data_CL["q_all"][:, 21 + 21 + 31:21 + 21 + 31 + 30],
+                                            data_CL["q_all"][:, 21 + 21 + 31 + 31:21 + 21 + 31 + 31 + 30]))
+    q_CL_rad[6, :] = q_CL_rad[6, :] * -1
+    q_CL_deg = np.vstack([q_CL_rad[0:2,:], q_CL_rad[2:, :] *180/np.pi])
+    qdot_CL_rad = data_CL["qdot_all"]
+    qdot_CL_rad[6, :] = qdot_CL_rad[6, :] * -1
+    qdot_CL_deg = np.vstack([qdot_CL_rad[0:2, :], qdot_CL_rad[2:, :] * 180 / np.pi])
+    # qdot_CL_deg = qdot_CL_rad
+    # qdot_CL_deg = qdot_CL_rad*180/np.pi
+    tau_CL = data_CL["tau_all"]
     dof_names = ["Pelvis \n(Translation Y)", "Pelvis \n(Translation Z)",
                  "Pelvis", "Shoulder", "Elbow",
                  "Hip", "Knee", "Ankle"]
     dof_names_tau = ["Shoulder", "Elbow",
                      "Hip", "Knee", "Ankle"]
-    time_total = data["time"][-1][-1]
+    time_total_CL = data_CL["time"][-1][-1]
 
-    time_end_phase = []
-    time_end_phase_tau = []
-    for i in range(len(data["time"])):
-        time_end_phase.append(data["time"][i][-1])
-        time_end_phase_tau.append(data["time"][i][-2])
-    time_end_phase_pourcentage = time_to_percentage(np.vstack(time_end_phase))
-    time_end_phase_tau_pourcentage = time_to_percentage(np.vstack(time_end_phase_tau))
+    time_end_phase_CL = []
+    time_end_phase_tau_CL = []
+    for i in range(len(data_CL["time"])):
+        time_end_phase_CL.append(data_CL["time"][i][-1])
+        time_end_phase_tau_CL.append(data_CL["time"][i][-2])
+    time_end_phase_pourcentage_CL = time_to_percentage(np.vstack(time_end_phase_CL))
+    time_end_phase_tau_pourcentage_CL = time_to_percentage(np.vstack(time_end_phase_tau_CL))
 
-    time = np.vstack(data["time"])
-    time_pourcentage = time_to_percentage(time)
-    timetau = np.vstack([arr[:-1, :] for arr in data["time"]])
-    time_tau_pourcentage = time_to_percentage(timetau)
-    # min_bounds_q = data["min_bounds"]
-    # max_bounds_q = data["max_bounds"]
+    time_CL = np.vstack(data_CL["time"])
+    time_pourcentage_CL = time_to_percentage(time_CL)
+    time_tau_CL = np.vstack([arr[:-1, :] for arr in data_CL["time"]])
+    time_tau_pourcentage_CL = time_to_percentage(time_tau_CL)
+    # min_bounds_q = data_CL["min_bounds"]
+    # max_bounds_q = data_CL["max_bounds"]
 
     # Sol 2
-    data2 = get_created_data_from_pickle(sol2)
-    q2_rad = data2["q_all"]
-    q2_rad[6, :] = q2_rad[6, :] * -1
-    q2_rad_without_last_node = np.hstack((q2_rad[:, :20], q2_rad[:, 21:21+20], q2_rad[:, 21+21:21+21+30], q2_rad[:, 21+21+31:21+21+31+30], q2_rad[:, 21+21+31+31:21+21+31+31+30]))
-    q2_deg = np.vstack([q2_rad[0:2,:], q2_rad[2:, :] *180/np.pi])
-    qdot2_rad = data2["qdot_all"]
-    qdot2_rad[6, :] = qdot2_rad[6, :] * -1
-    # qdot2_deg = qdot2_rad
-    qdot2_deg = np.vstack([qdot2_rad[0:2, :], qdot2_rad[2:, :] * 180 / np.pi])
-    tau2_deg = data2["tau_all"]
-    time_total2 = data2["time"][-1][-1]
+    data_without = get_created_data_from_pickle(sol_without)
+    q_without_rad = data_without["q_all"][:, :]
+    q_without_rad_without_last_node = np.hstack((data_without["q_all"][:, :20], data_without["q_all"][:, 21:21 + 20],
+                                                 data_without["q_all"][:, 21 + 21:21 + 21 + 30],
+                                                 data_without["q_all"][:, 21 + 21 + 31:21 + 21 + 31 + 30],
+                                                 data_without["q_all"][:, 21 + 21 + 31 + 31:21 + 21 + 31 + 31 + 30]))
+    q_without_rad[6, :] = q_without_rad[6, :] * -1
+    q_without_deg = np.vstack([q_without_rad[0:2,:], q_without_rad[2:, :] *180/np.pi])
+    qdot_without_rad = data_without["qdot_all"]
+    qdot_without_rad[6, :] = qdot_without_rad[6, :] * -1
+    # qdot_without_deg = qdot_without_rad
+    qdot_without_deg = np.vstack([qdot_without_rad[0:2, :], qdot_without_rad[2:, :] * 180 / np.pi])
+    tau_without = data_without["tau_all"]
+    time_total_without = data_without["time"][-1][-1]
 
-    time_end_phase2 = []
-    time_end_phase_tau2 = []
-    for i in range(len(data2["time"])):
-        time_end_phase2.append(data2["time"][i][-1])
-        time_end_phase_tau2.append(data2["time"][i][-2])
-    time_end_phase2_pourcentage = time_to_percentage(np.vstack(time_end_phase2))
-    time_end_phase_tau2_pourcentage = time_to_percentage(np.vstack(time_end_phase_tau2))
+    time_end_phase_without = []
+    time_end_phase_tau_without = []
+    for i in range(len(data_without["time"])):
+        time_end_phase_without.append(data_without["time"][i][-1])
+        time_end_phase_tau_without.append(data_without["time"][i][-2])
+    time_end_phase_pourcentage_without = time_to_percentage(np.vstack(time_end_phase_without))
+    time_end_phase_tau_pourcentage_without = time_to_percentage(np.vstack(time_end_phase_tau_without))
 
-    time2 = np.vstack(data2["time"])  # data2["time_all"]
-    time_pourcentage2 = time_to_percentage(time2)
-    time2tau = np.vstack([arr[:-1, :] for arr in data2["time"]])
+    time_without = np.vstack(data_without["time"])  # data_without["time_all"]
+    time_pourcentage_without = time_to_percentage(time_without)
+    time_tau_without = np.vstack([arr[:-1, :] for arr in data_without["time"]])
+    time_tau_pourcentage_without = time_to_percentage(time_tau_without)
 
     # Figure q
     fig, axs = plt.subplots(3, 3, figsize=(10, 5))
     num_col = 0
     num_line = 0
-    y_max_1 = np.max([abs(q_deg[0:2, :]), abs(q2_deg[0:2, :])])
-    y_max_2 = np.max([abs(q_deg[2:5, :]), abs(q2_deg[2:5, :])])
-    y_max_3 = np.max([abs(q_deg[5:, :]), abs(q2_deg[5:, :])])
-    # y_min = np.min([q_deg, q2_deg])
-    # y_max = np.max([q_deg, q2_deg])
-    for nb_seg in range(q_deg.shape[0]):
-        axs[num_line, num_col].plot(time_pourcentage2, q2_deg[nb_seg], color="tab:blue", label="without \nconstraints",
+    y_max_1 = np.max([abs(q_CL_deg[0:2, :]), abs(q_without_deg[0:2, :])])
+    y_max_2 = np.max([abs(q_CL_deg[2:5, :]), abs(q_without_deg[2:5, :])])
+    y_max_3 = np.max([abs(q_CL_deg[5:, :]), abs(q_without_deg[5:, :])])
+    # y_min = np.min([q_CL_deg, q_without_deg])
+    # y_max = np.max([q_CL_deg, q_without_deg])
+    for nb_seg in range(q_CL_deg.shape[0]):
+        axs[num_line, num_col].plot(time_pourcentage_without, q_without_deg[nb_seg], color="tab:blue", label="without \nconstraints",
                                     alpha=0.75, linewidth=1)
-        axs[num_line, num_col].plot(time_pourcentage, q_deg[nb_seg], color="tab:orange",
+        axs[num_line, num_col].plot(time_pourcentage_CL, q_CL_deg[nb_seg], color="tab:orange",
                                     label="with holonomics \nconstraints", alpha=0.75, linewidth=1)
-        for xline in range(len(time_end_phase)):
-            axs[num_line, num_col].axvline(time_end_phase2_pourcentage[xline], color="tab:blue", linestyle="--",
+        for xline in range(len(time_end_phase_CL)):
+            axs[num_line, num_col].axvline(time_end_phase_pourcentage_without[xline], color="tab:blue", linestyle="--",
                                            linewidth=0.7)
-            axs[num_line, num_col].axvline(time_end_phase_pourcentage[xline], color="tab:orange", linestyle="--",
+            axs[num_line, num_col].axvline(time_end_phase_pourcentage_CL[xline], color="tab:orange", linestyle="--",
                                            linewidth=0.7)
             # if xline!=2:
             # for node in range(0,3):
             # if xline==0:
             #    axs[num_line, num_col].axhline(y=max_bounds_q[xline][nb_seg,1],
             #                                   xmin=0,
-            #                                   xmax=float(time_end_phase_pourcentage[0])/100, color="k",
+            #                                   xmax=float(time_end_phase_pourcentage_CL[0])/100, color="k",
             #                                   linestyle="-", linewidth=0.7)
             #    axs[num_line, num_col].axhline(y=min_bounds_q[xline][nb_seg,1],
             #                                   xmin=0,
-            #                                   xmax=float(time_end_phase_pourcentage[0])/100, color="k",
+            #                                   xmax=float(time_end_phase_pourcentage_CL[0])/100, color="k",
             #                                   linestyle="-", linewidth=0.7)
             # else:
             #    axs[num_line, num_col].axhline(y=max_bounds_q[xline][nb_seg,1],
-            #                               xmin=float(time_end_phase_pourcentage[xline-1])/100,
-            #                               xmax=float(time_end_phase_pourcentage[xline])/100, color="k",
+            #                               xmin=float(time_end_phase_pourcentage_CL[xline-1])/100,
+            #                               xmax=float(time_end_phase_pourcentage_CL[xline])/100, color="k",
             #                               linestyle="-", linewidth=0.7)
             #    axs[num_line, num_col].axhline(y=min_bounds_q[xline][nb_seg,1],
-            #                               xmin=float(time_end_phase_pourcentage[xline-1])/100,
-            #                               xmax=float(time_end_phase_pourcentage[xline])/100, color="k",
+            #                               xmin=float(time_end_phase_pourcentage_CL[xline-1])/100,
+            #                               xmax=float(time_end_phase_pourcentage_CL[xline])/100, color="k",
             #                               linestyle="-", linewidth=0.7)
         axs[num_line, num_col].set_title(dof_names[nb_seg], fontsize=8)
         # axs[num_line, num_col].set_ylim(y_min, y_max)
@@ -163,10 +169,10 @@ def graph_all_comparaison(sol_holo, sol2):
         # Y_label
         axs[0, 0].set_ylabel("Position [m]", fontsize=7)  # Pelvis Translation
         # axs[0, 1].set_ylabel("Position [m]", fontsize=8) # Pelvis Translation
-        axs[1, 0].set_ylabel("F (+) / E (-) [deg]", fontsize=7)  # Pelvis Rotation
+        axs[1, 0].set_ylabel(r"F (+) / E (-) [$^\circ$]", fontsize=7)  # Pelvis Rotation
         # axs[1, 1].set_ylabel("F (+) / E (-) [rad]", fontsize=8) # Arm Rotation
         # axs[1, 2].set_ylabel("F (+) / E (-) [rad]", fontsize=8) # Forearm Rotation
-        axs[2, 0].set_ylabel("F (+) / E (-) [deg]", fontsize=7)  # Thight Rotation
+        axs[2, 0].set_ylabel(r"F (+) / E (-) [$^\circ$]", fontsize=7)  # Thight Rotation
         # axs[2, 1].set_ylabel("F (-) / E (+) [rad]", fontsize=8) # Leg Rotation
         # axs[2, 2].set_ylabel("F (+) / E (-) [rad]", fontsize=8) # Foot Rotation
         # Récupérer les handles et labels de la légende de la figure de la première ligne, première colonne
@@ -183,20 +189,20 @@ def graph_all_comparaison(sol_holo, sol2):
     fig, axs = plt.subplots(3, 3, figsize=(10, 5))
     num_col = 0
     num_line = 0
-    y_max_1 = np.max([abs(qdot_deg[0:2, :]), abs(qdot_deg[0:2, :])])
-    y_max_2 = np.max([abs(qdot_deg[2:5, :]), abs(qdot_deg[2:5, :])])
-    y_max_3 = np.max([abs(qdot_deg[5:, :]), abs(qdot_deg[5:, :])])
-    # y_min = np.min([qdot_deg, qdot2_deg])
-    # y_max = np.max([qdot_deg, qdot2_deg])
-    for nb_seg in range(qdot_deg.shape[0]):
-        axs[num_line, num_col].plot(time_pourcentage2, qdot2_deg[nb_seg], color="tab:blue",
+    y_max_1 = np.max([abs(qdot_CL_deg[0:2, :]), abs(qdot_CL_deg[0:2, :])])
+    y_max_2 = np.max([abs(qdot_CL_deg[2:5, :]), abs(qdot_CL_deg[2:5, :])])
+    y_max_3 = np.max([abs(qdot_CL_deg[5:, :]), abs(qdot_CL_deg[5:, :])])
+    # y_min = np.min([qdot_CL_deg, qdot_without_deg])
+    # y_max = np.max([qdot_CL_deg, qdot_without_deg])
+    for nb_seg in range(qdot_CL_deg.shape[0]):
+        axs[num_line, num_col].plot(time_pourcentage_without, qdot_without_deg[nb_seg], color="tab:blue",
                                     label="without \nconstraints", alpha=0.75, linewidth=1)
-        axs[num_line, num_col].plot(time_pourcentage, qdot_deg[nb_seg], color="tab:orange",
+        axs[num_line, num_col].plot(time_pourcentage_CL, qdot_CL_deg[nb_seg], color="tab:orange",
                                     label="with holonomics \nconstraints", alpha=0.75, linewidth=1)
-        for xline in range(len(time_end_phase)):
-            axs[num_line, num_col].axvline(time_end_phase2_pourcentage[xline], color="tab:blue", linestyle="--",
+        for xline in range(len(time_end_phase_CL)):
+            axs[num_line, num_col].axvline(time_end_phase_pourcentage_without[xline], color="tab:blue", linestyle="--",
                                            linewidth=0.7)
-            axs[num_line, num_col].axvline(time_end_phase_pourcentage[xline], color="tab:orange", linestyle="--",
+            axs[num_line, num_col].axvline(time_end_phase_pourcentage_CL[xline], color="tab:orange", linestyle="--",
                                            linewidth=0.7)
         axs[num_line, num_col].set_title(dof_names[nb_seg], fontsize=8)
 
@@ -225,10 +231,10 @@ def graph_all_comparaison(sol_holo, sol2):
         # Y_label
         axs[0, 0].set_ylabel("Velocity [m/s]", fontsize=7)  # Pelvis Translation
         axs[0, 1].set_yticklabels([])  # Pelvis Translation
-        axs[1, 0].set_ylabel("F (+) / E (-) [r$\^circ$/s]", fontsize=7)  # Pelvis Rotation
+        axs[1, 0].set_ylabel("F (+) / E (-) [" + r"$^\circ$/s" + "]", fontsize=7)  # Pelvis Rotation
         axs[1, 1].set_yticklabels([])  # Arm Rotation
         axs[1, 2].set_yticklabels([])  # Forearm Rotation
-        axs[2, 0].set_ylabel("F (+) / E (-) [r$\^circ$/s]", fontsize=7)  # Thight Rotation
+        axs[2, 0].set_ylabel("F (+) / E (-) [" + r"$^\circ$/s" + "]", fontsize=7)  # Thight Rotation
         axs[2, 1].set_yticklabels([])  # Leg Rotation
         axs[2, 2].set_yticklabels([])  # Foot Rotation
         # Récupérer les handles et labels de la légende de la figure de la première ligne, première colonne
@@ -285,41 +291,41 @@ def graph_all_comparaison(sol_holo, sol2):
                             max_q=0.7)
             }
 
-    tau_min_bound = np.zeros((5, tau_deg.shape[1]))
-    tau_max_bound = np.zeros((5, tau_deg.shape[1]))
-    tau2_min_bound = np.zeros((5, tau2_deg.shape[1]))
-    tau2_max_bound = np.zeros((5, tau2_deg.shape[1]))
+    tau_CL_min_bound = np.zeros((5, tau_CL.shape[1]))
+    tau_CL_max_bound = np.zeros((5, tau_CL.shape[1]))
+    tau_without_min_bound = np.zeros((5, tau_without.shape[1]))
+    tau_without_max_bound = np.zeros((5, tau_without.shape[1]))
     for nb_seg, key in enumerate(actuators.keys()):
-        tau_min_bound[nb_seg, :] = -actuator_function(actuators[key].tau_max_minus, actuators[key].theta_opt_minus, actuators[key].r_minus, q_rad_without_last_node[nb_seg+3])
-        tau_max_bound[nb_seg, :] = actuator_function(actuators[key].tau_max_plus, actuators[key].theta_opt_plus, actuators[key].r_plus, q_rad_without_last_node[nb_seg+3])
-        tau2_min_bound[nb_seg, :] = -actuator_function(actuators[key].tau_max_minus, actuators[key].theta_opt_minus, actuators[key].r_minus, q2_rad_without_last_node[nb_seg+3])
-        tau2_max_bound[nb_seg, :] = actuator_function(actuators[key].tau_max_plus, actuators[key].theta_opt_plus, actuators[key].r_plus, q2_rad_without_last_node[nb_seg+3])
+        tau_CL_min_bound[nb_seg, :] = -actuator_function(actuators[key].tau_max_minus, actuators[key].theta_opt_minus, actuators[key].r_minus, q_CL_rad_without_last_node[nb_seg+3])
+        tau_CL_max_bound[nb_seg, :] = actuator_function(actuators[key].tau_max_plus, actuators[key].theta_opt_plus, actuators[key].r_plus, q_CL_rad_without_last_node[nb_seg+3])
+        tau_without_min_bound[nb_seg, :] = -actuator_function(actuators[key].tau_max_minus, actuators[key].theta_opt_minus, actuators[key].r_minus, q_without_rad_without_last_node[nb_seg+3])
+        tau_without_max_bound[nb_seg, :] = actuator_function(actuators[key].tau_max_plus, actuators[key].theta_opt_plus, actuators[key].r_plus, q_without_rad_without_last_node[nb_seg+3])
 
     # Figure tau
     fig, axs = plt.subplots(2, 3, figsize=(10, 5))
     num_col = 1 
     num_line = 0
 
-    y_max_1 = np.max([abs(tau2_deg[0:2, :]), abs(tau_deg[0:2, :])])
-    y_max_2 = np.max([abs(tau2_deg[2:, :]), abs(tau_deg[2:, :])])
+    y_max_1 = np.max([abs(tau_without[0:2, :]), abs(tau_CL[0:2, :])])
+    y_max_2 = np.max([abs(tau_without[2:, :]), abs(tau_CL[2:, :])])
 
     axs[0, 0].plot([], [], color="tab:orange", label="with holonomics \nconstraints")
     axs[0, 0].plot([], [], color="tab:blue", label="without \nconstraints")
     axs[0, 0].legend(loc='center right', bbox_to_anchor=(0.6, 0.5), fontsize=8)
     axs[0, 0].axis('off')
 
-    for nb_seg in range(tau_deg.shape[0]):
-        axs[num_line, num_col].step(range(len(tau2_deg[nb_seg])), tau2_max_bound[nb_seg], color="tab:blue", alpha=0.5, linewidth=0.5)
-        axs[num_line, num_col].step(range(len(tau2_deg[nb_seg])), tau2_min_bound[nb_seg], color="tab:blue", alpha=0.5, linewidth=0.5)
-        axs[num_line, num_col].step(range(len(tau_deg[nb_seg])), tau_max_bound[nb_seg], color="tab:orange", alpha=0.5, linewidth=0.5)
-        axs[num_line, num_col].step(range(len(tau_deg[nb_seg])), tau_min_bound[nb_seg], color="tab:orange", alpha=0.5, linewidth=0.5)
-        axs[num_line, num_col].step(range(len(tau2_deg[nb_seg])), tau2_deg[nb_seg], color="tab:blue", alpha=0.75, linewidth=1, label="without \nconstraints", where='mid')
-        axs[num_line, num_col].step(range(len(tau_deg[nb_seg])), tau_deg[nb_seg], color="tab:orange", alpha=0.75, linewidth=1, label="with holonomics \nconstraints", where='mid')
+    for nb_seg in range(tau_CL.shape[0]):
+        axs[num_line, num_col].step(range(len(tau_without[nb_seg])), tau_without_max_bound[nb_seg], color="tab:blue", alpha=0.5, linewidth=0.5)
+        axs[num_line, num_col].step(range(len(tau_without[nb_seg])), tau_without_min_bound[nb_seg], color="tab:blue", alpha=0.5, linewidth=0.5)
+        axs[num_line, num_col].step(range(len(tau_CL[nb_seg])), tau_CL_max_bound[nb_seg], color="tab:orange", alpha=0.5, linewidth=0.5)
+        axs[num_line, num_col].step(range(len(tau_CL[nb_seg])), tau_CL_min_bound[nb_seg], color="tab:orange", alpha=0.5, linewidth=0.5)
+        axs[num_line, num_col].step(range(len(tau_without[nb_seg])), tau_without[nb_seg], color="tab:blue", alpha=0.75, linewidth=1, label="without \nconstraints", where='mid')
+        axs[num_line, num_col].step(range(len(tau_CL[nb_seg])), tau_CL[nb_seg], color="tab:orange", alpha=0.75, linewidth=1, label="with holonomics \nconstraints", where='mid')
 
-        for xline in range(len(time_end_phase)):
-            axs[num_line, num_col].axvline(time_end_phase_pourcentage[xline], color="tab:orange", linestyle="--",
+        for xline in range(len(time_end_phase_CL)):
+            axs[num_line, num_col].axvline(time_end_phase_pourcentage_CL[xline], color="tab:orange", linestyle="--",
                                            linewidth=0.7)
-            axs[num_line, num_col].axvline(time_end_phase2_pourcentage[xline], color="tab:blue", linestyle="--",
+            axs[num_line, num_col].axvline(time_end_phase_pourcentage_without[xline], color="tab:blue", linestyle="--",
                                            linewidth=0.7)
         axs[num_line, num_col].set_title(dof_names_tau[nb_seg], fontsize=8)
         axs[num_line, num_col].set_xlim(0, 100)
@@ -349,12 +355,97 @@ def graph_all_comparaison(sol_holo, sol2):
     fig.savefig("tau.png", format="png")
 
     # Figure lambdas
-    time_tuck = data["time"][2] - data["time"][2][0]
+    time_tuck = data_CL["time"][2][:-1] - data_CL["time"][2][0]
     fig = plt.figure()
     plt.plot(time_tuck, lambdas[0], color='r', label=["Normal force"])
     plt.plot(time_tuck, lambdas[1], color='g', label=["Shear force"])
     plt.ylabel("Force on the tibia [N]")
     plt.xlabel("Time [s]")
     plt.legend()
-    plt.show()
     fig.savefig("lambdas.png", format="png")
+
+
+    # Tau ratio only CL phase
+    tau_CL_ratio = np.zeros(data_CL["tau"][2].shape)
+    tau_without_ratio = np.zeros(data_without["tau"][2].shape)
+    fig, axs = plt.subplots(2, 2)
+    for i_dof in range(5):
+        axs[0, 0].step(time_tuck, data_CL["tau"][2][i_dof, :], color="tab:orange", label="with holonomics \nconstraints", alpha=0.75, linewidth=1)
+        axs[0, 0].step(time_tuck, data_without["tau"][2][i_dof, :], color="tab:blue", label="without \nconstraints", alpha=0.75, linewidth=1)
+
+        for i_node in range(data_without["tau"][2].shape[1]):
+            if data_CL["tau"][2][i_dof, i_node] > 0:
+                tau_CL_ratio[i_dof, i_node] = data_CL["tau"][2][i_dof, i_node] / tau_CL_max_bound[i_dof, 40+i_node]
+            else:
+                tau_CL_ratio[i_dof, i_node] = np.abs(data_CL["tau"][2][i_dof, i_node] / tau_CL_min_bound[i_dof, 40+i_node])
+            if data_without["tau"][2][i_dof, i_node] > 0:
+                tau_without_ratio[i_dof, i_node] = data_without["tau"][2][i_dof, i_node] / tau_without_max_bound[i_dof, 40+i_node]
+            else:
+                tau_without_ratio[i_dof, i_node] = np.abs(data_without["tau"][2][i_dof, i_node] / tau_without_min_bound[i_dof, 40+i_node])
+        axs[1, 0].step(time_tuck, tau_CL_ratio[i_dof, :], color="tab:orange",
+                       label="with holonomics \nconstraints", alpha=0.75, linewidth=1)
+        axs[1, 0].step(time_tuck, tau_without_ratio[i_dof, :], color="tab:blue",
+                       label="without \nconstraints", alpha=0.75, linewidth=1)
+
+    sum_tau_CL = np.sum(np.abs(data_CL["tau"][2]))  # @mickaelbegon: Should we normalize by the phase duration?
+    sum_tau_without = np.sum(np.abs(data_without["tau"][2]))
+    axs[0, 1].bar([0, 1], [sum_tau_CL, sum_tau_without], color=["tab:orange", "tab:blue"])
+    axs[0, 1].get_xaxis().set_visible(False)
+    sum_tau_ratio_CL = np.sum(tau_CL_ratio)  # @mickaelbegon: Should we normalize by the phase duration?
+    sum_tau_ratio_without = np.sum(tau_without_ratio)
+    axs[1, 1].bar([0, 1], [sum_tau_ratio_CL, sum_tau_ratio_without], color=["tab:orange", "tab:blue"])
+    axs[1, 1].get_xaxis().set_visible(False)
+    plt.savefig("tau_ratio_tucked_phase.png", format="png")
+
+
+    # Tau ratio all phases
+    dt_CL = np.vstack((data_CL["time"][0][1:] - data_CL["time"][0][:-1],
+                       data_CL["time"][1][1:] - data_CL["time"][1][:-1],
+                       data_CL["time"][2][1:] - data_CL["time"][2][:-1],
+                       data_CL["time"][3][1:] - data_CL["time"][3][:-1],
+                       data_CL["time"][4][1:] - data_CL["time"][4][:-1]))
+    dt_without = np.vstack((data_without["time"][0][1:] - data_without["time"][0][:-1],
+                            data_without["time"][1][1:] - data_without["time"][1][:-1],
+                            data_without["time"][2][1:] - data_without["time"][2][:-1],
+                            data_without["time"][3][1:] - data_without["time"][3][:-1],
+                            data_without["time"][4][1:] - data_without["time"][4][:-1]))
+    tau_CL_ratio_all = np.zeros(tau_CL.shape)
+    tau_without_ratio_all = np.zeros(tau_without.shape)
+    fig, axs = plt.subplots(2, 2)
+    for i_dof in range(5):
+        axs[0, 0].step(time_tau_pourcentage_CL, tau_CL[i_dof, :], color="tab:orange", label="with holonomics \nconstraints", alpha=0.75, linewidth=1)
+        axs[0, 0].step(time_tau_pourcentage_without, tau_without[i_dof, :], color="tab:blue", label="without \nconstraints", alpha=0.75, linewidth=1)
+        for xline in range(len(time_end_phase_CL)):
+            axs[0, 0].axvline(time_end_phase_pourcentage_CL[xline], color="tab:orange", linestyle="--",
+                                           linewidth=0.7)
+            axs[0, 0].axvline(time_end_phase_pourcentage_without[xline], color="tab:blue", linestyle="--",
+                                           linewidth=0.7)
+
+        for i_node in range(tau_CL.shape[1]):
+            if tau_CL[i_dof, i_node] > 0:
+                tau_CL_ratio_all[i_dof, i_node] = tau_CL[i_dof, i_node] / tau_CL_max_bound[i_dof, i_node]
+            else:
+                tau_CL_ratio_all[i_dof, i_node] = np.abs(tau_CL[i_dof, i_node] / tau_CL_min_bound[i_dof, i_node])
+            if tau_without[i_dof, i_node] > 0:
+                tau_without_ratio_all[i_dof, i_node] = tau_without[i_dof, i_node] / tau_without_max_bound[i_dof, i_node]
+            else:
+                tau_without_ratio_all[i_dof, i_node] = np.abs(tau_without[i_dof, i_node] / tau_without_min_bound[i_dof, i_node])
+        axs[1, 0].step(time_tau_pourcentage_CL, tau_CL_ratio_all[i_dof, :], color="tab:orange",
+                       label="with holonomics \nconstraints", alpha=0.75, linewidth=1)
+        axs[1, 0].step(time_tau_pourcentage_without, tau_without_ratio_all[i_dof, :], color="tab:blue",
+                       label="without \nconstraints", alpha=0.75, linewidth=1)
+        for xline in range(len(time_end_phase_CL)):
+            axs[1, 0].axvline(time_end_phase_pourcentage_CL[xline], color="tab:orange", linestyle="--",
+                                           linewidth=0.7)
+            axs[1, 0].axvline(time_end_phase_pourcentage_without[xline], color="tab:blue", linestyle="--",
+                                           linewidth=0.7)
+    sum_tau_all_CL = np.sum(np.abs(tau_CL * dt_CL.T))
+    sum_tau_all_without = np.sum(np.abs(tau_without * dt_without.T))
+    axs[0, 1].bar([0, 1], [sum_tau_all_CL, sum_tau_all_without], color=["tab:orange", "tab:blue"])
+    axs[0, 1].get_xaxis().set_visible(False)
+    sum_tau_all_ratio_CL = np.sum(np.abs(tau_CL_ratio_all * dt_CL.T))
+    sum_tau_all_ratio_without = np.sum(np.abs(tau_without_ratio_all * dt_without.T))
+    axs[1, 1].bar([0, 1], [sum_tau_all_ratio_CL, sum_tau_all_ratio_without], color=["tab:orange", "tab:blue"])
+    axs[1, 1].get_xaxis().set_visible(False)
+    plt.savefig("tau_ratio_all.png", format="png")
+    plt.show()
