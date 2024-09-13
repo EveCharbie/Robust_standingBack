@@ -366,7 +366,7 @@ def minimize_actuator_torques_CL(controller: PenaltyController, actuators) -> ca
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = "82"
+version = "83"
 nb_phase = 5
 name_folder_model = "../Model"
 # pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_close_loop_landing_5phases_V76.pkl"
