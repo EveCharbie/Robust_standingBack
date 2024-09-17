@@ -61,7 +61,7 @@ from bioptim import (
 from casadi import MX, vertcat
 from holonomic_research.biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
 from Save import get_created_data_from_pickle
-from Salto_5phases_with_pelvis_landing import add_objectives, add_constraints, actuator_function, initialize_tau
+from Salto_5phases_with_pelvis_landing import add_objectives, add_constraints, actuator_function, initialize_tau, add_x_bounds, add_u_bounds
 from plot_actuators import Joint
 
 # --- Save results --- #
@@ -531,96 +531,14 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
 
     # Phase 0: Propulsion
     x_bounds = BoundsList()
-    x_bounds.add("q", bounds=bio_model[1].bounds_from_ranges("q"), phase=0)
-    x_bounds.add("qdot", bounds=bio_model[1].bounds_from_ranges("qdot"), phase=0)
-    x_bounds[0]["q"].min[2:7, 0] = np.array(pose_propulsion_start[2:7]) - 0.3
-    x_bounds[0]["q"].max[2:7, 0] = np.array(pose_propulsion_start[2:7]) + 0.3
-    x_bounds[0]["q"].max[2, 0] = 0.5
-    x_bounds[0]["q"].max[5, 0] = 2
-    x_bounds[0]["q"].min[6, 0] = -2
-    x_bounds[0]["q"].max[6, 0] = -0.7
-    x_bounds[0]["qdot"][:, 0] = [0] * n_qdot
-    x_bounds[0]["qdot"].max[5, :] = 0
-    x_bounds[0]["q"].min[2, 1:] = -np.pi
-    x_bounds[0]["q"].max[2, 1:] = np.pi
-    x_bounds[0]["q"].min[0, :] = -1
-    x_bounds[0]["q"].max[0, :] = 1
-    x_bounds[0]["q"].min[1, :] = -1
-    x_bounds[0]["q"].max[1, :] = 2
-    x_bounds[0]["qdot"].min[3, :] = 0   # A commenter si marche pas
-    x_bounds[0]["q"].min[3, 2] = np.pi/2
-
-
-    # Phase 1: Flight
-    x_bounds.add("q", bounds=bio_model[1].bounds_from_ranges("q"), phase=1)
-    x_bounds.add("qdot", bounds=bio_model[1].bounds_from_ranges("qdot"), phase=1)
-    #x_bounds[1]["q"].min[3:, 0] = np.array(pose_takeout_start[3:]) - 0.3 # 0.03
-    #x_bounds[1]["q"].max[3:, 0] = np.array(pose_takeout_start[3:]) + 0.3
-    x_bounds[1]["q"].min[0, :] = -1
-    x_bounds[1]["q"].max[0, :] = 1
-    x_bounds[1]["q"].min[1, :] = -1
-    x_bounds[1]["q"].max[1, :] = 2
-    x_bounds[1]["q"].min[2, 0] = -np.pi
-    x_bounds[1]["q"].max[2, 0] = np.pi * 1.5
-    x_bounds[1]["q"].min[2, 1] = -np.pi
-    x_bounds[1]["q"].max[2, 1] = np.pi * 1.5
-    x_bounds[1]["q"].min[2, -1] = -np.pi
-    x_bounds[1]["q"].max[2, -1] = np.pi * 1.5
-    #x_bounds[1]["q"].min[4, -1] = 1
-
-
-    # Phase 2: Tucked phase
-    x_bounds.add("q_u", bounds=bio_model[2].bounds_from_ranges("q", mapping=variable_bimapping), phase=2)
-    x_bounds.add("qdot_u", bounds=bio_model[2].bounds_from_ranges("qdot", mapping=variable_bimapping), phase=2)
-    x_bounds[2]["q_u"].min[0, :] = - 1
-    x_bounds[2]["q_u"].max[0, :] = 1
-    x_bounds[2]["q_u"].min[1, :] = -1
-    x_bounds[2]["q_u"].max[1, :] = 2
-    x_bounds[2]["q_u"].min[2, 0] = -np.pi
-    x_bounds[2]["q_u"].max[2, 0] = np.pi * 1.5
-    x_bounds[2]["q_u"].min[2, 1] = -np.pi
-    x_bounds[2]["q_u"].max[2, 1] = 2 * np.pi
-    x_bounds[2]["q_u"].min[2, 2] = 3/4 * np.pi
-    x_bounds[2]["q_u"].max[2, 2] = 3/2 * np.pi
-    x_bounds[2]["q_u"].max[3, :-1] = 2.6
-    x_bounds[2]["q_u"].min[3, :-1] = 1.96
-    x_bounds[2]["q_u"].max[4, :-1] = -1.5
-    x_bounds[2]["q_u"].min[4, :-1] = -2.3
-
-    # Phase 3: Preparation landing
-    x_bounds.add("q", bounds=bio_model[3].bounds_from_ranges("q"), phase=3)
-    x_bounds.add("qdot", bounds=bio_model[3].bounds_from_ranges("qdot"), phase=3)
-    x_bounds[3]["q"].min[0, :] = -1
-    x_bounds[3]["q"].max[0, :] = 1
-    x_bounds[3]["q"].min[1, 1:] = -1
-    x_bounds[3]["q"].max[1, 1:] = 2
-    x_bounds[3]["q"].min[2, :] = 3/4 * np.pi
-    x_bounds[3]["q"].max[2, :] = 2 * np.pi + 0.5
-    x_bounds[3]["q"].min[5, -1] = pose_landing_start[5] - 1 #0.06
-    x_bounds[3]["q"].max[5, -1] = pose_landing_start[5] + 0.5
-    x_bounds[3]["q"].min[6, -1] = pose_landing_start[6] - 1
-    x_bounds[3]["q"].max[6, -1] = pose_landing_start[6] + 0.1
-
-    # Phase 3: Landing
-    x_bounds.add("q", bounds=bio_model[4].bounds_from_ranges("q"), phase=4)
-    x_bounds.add("qdot", bounds=bio_model[4].bounds_from_ranges("qdot"), phase=4)
-    x_bounds[4]["q"].min[5, 0] = pose_landing_start[5] - 1 #0.06
-    x_bounds[4]["q"].max[5, 0] = pose_landing_start[5] + 0.5
-    x_bounds[4]["q"].min[6, 0] = pose_landing_start[6] - 1
-    x_bounds[4]["q"].max[6, 0] = pose_landing_start[6] + 0.1
-    x_bounds[4]["q"].min[0, :] = -1
-    x_bounds[4]["q"].max[0, :] = 1
-    x_bounds[4]["q"].min[1, :] = -1
-    x_bounds[4]["q"].max[1, :] = 2
-    x_bounds[4]["q"].min[2, 0] = 2/4 * np.pi
-    x_bounds[4]["q"].max[2, 0] = 2 * np.pi + 1.66
-    x_bounds[4]["q"].min[2, 1] = 2/4 * np.pi
-    x_bounds[4]["q"].max[2, 1] = 2 * np.pi + 1.66
-    x_bounds[4]["q"].max[:, -1] = np.array(pose_landing_end) + 0.2 #0.5
-    x_bounds[4]["q"].min[:, -1] = np.array(pose_landing_end) - 0.2
-    #x_bounds[4]["qdot"][:, -1] = [0] * n_qdot
-    #x_bounds[4]["q"][0, -1] = np.array(pose_propulsion_start[0])
-    #x_bounds[4]["q"][7, -1] = np.array(pose_landing_end[7])
+    q_bounds, qdot_bounds = add_x_bounds(bio_model)
+    for i_phase in range(len(bio_model)):
+        if i_phase == 2:
+            x_bounds.add("q_u", bounds=variable_bimapping["q"].map.to_first(q_bounds[i_phase]), phase=i_phase)
+            x_bounds.add("qdot_u", bounds=variable_bimapping["qdot"].map.to_first(qdot_bounds[i_phase]), phase=i_phase)
+        else:
+            x_bounds.add("q", bounds=q_bounds[i_phase], phase=i_phase)
+            x_bounds.add("qdot", bounds=qdot_bounds[i_phase], phase=i_phase)
 
     # Initial guess
     x_init = InitialGuessList()
@@ -654,24 +572,9 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
 
     # Define control path constraint
     u_bounds = BoundsList()
-    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
-                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=0)
-    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
-                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=1)
-    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], -150, tau_min[6], tau_min[7]],
-                 max_bound=[tau_max[3], tau_max[4], 150, tau_max[6], tau_max[7]], phase=2)
-    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
-                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=3)
-    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
-                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=4)
+    u_bounds = add_u_bounds(u_bounds, tau_min, tau_max)
 
     u_init = InitialGuessList()
-    #u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=0)
-    #u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=1)
-    #u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=2)
-    #u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=3)
-    #u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=4)
-    
     u_init.add("tau", sol_salto["tau"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
     u_init.add("tau", sol_salto["tau"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
     u_init.add("tau", sol_salto["tau"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)

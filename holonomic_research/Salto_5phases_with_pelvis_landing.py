@@ -369,6 +369,106 @@ def initialize_tau():
     tau_init = 0
     return tau_min, tau_max, tau_init
 
+def add_x_bounds(bio_model):
+
+    n_q = bio_model[0].nb_q
+    n_qdot = n_q
+
+    q_bounds = [bio_model[0].bounds_from_ranges("q") for i in range(len(bio_model))]
+    qdot_bounds = [bio_model[0].bounds_from_ranges("qdot") for i in range(len(bio_model))]
+
+    pose_propulsion_start = [-0.2343, -0.2177, -0.3274, 0.2999, 0.4935, 1.7082, -1.9999, 0.1692]
+    pose_landing_start = [0.013, 0.088, 5.804, -0.305, 8.258444956622276e-06, 1.014, -0.97, 0.006]
+    pose_landing_end = [0.053, 0.091, 6.08, 2.9, -0.17, 0.092, 0.17, 0.20]
+
+    # Phase 0: Propulsion
+    q_bounds[0].min[2:7, 0] = np.array(pose_propulsion_start[2:7]) - 0.3
+    q_bounds[0].max[2:7, 0] = np.array(pose_propulsion_start[2:7]) + 0.3
+    q_bounds[0].max[2, 0] = 0.5
+    q_bounds[0].max[5, 0] = 2
+    q_bounds[0].min[6, 0] = -2
+    q_bounds[0].max[6, 0] = -0.7
+    qdot_bounds[0][:, 0] = [0] * n_qdot
+    qdot_bounds[0].max[5, :] = 0
+    q_bounds[0].min[2, 1:] = -np.pi
+    q_bounds[0].max[2, 1:] = np.pi
+    q_bounds[0].min[0, :] = -1
+    q_bounds[0].max[0, :] = 1
+    q_bounds[0].min[1, :] = -1
+    q_bounds[0].max[1, :] = 2
+    qdot_bounds[0].min[3, :] = 0   # A commenter si marche pas
+    q_bounds[0].min[3, 2] = np.pi/2
+
+    # Phase 1: Flight
+    q_bounds[1].min[0, :] = -1
+    q_bounds[1].max[0, :] = 1
+    q_bounds[1].min[1, :] = -1
+    q_bounds[1].max[1, :] = 2
+    q_bounds[1].min[2, 0] = -np.pi
+    q_bounds[1].max[2, 0] = np.pi * 1.5
+    q_bounds[1].min[2, 1] = -np.pi
+    q_bounds[1].max[2, 1] = np.pi * 1.5
+    q_bounds[1].min[2, -1] = -np.pi
+    q_bounds[1].max[2, -1] = np.pi * 1.5
+
+    # Phase 2: Tucked phase
+    q_bounds[2].min[0, :] = - 1
+    q_bounds[2].max[0, :] = 1
+    q_bounds[2].min[1, :] = -1
+    q_bounds[2].max[1, :] = 2
+    q_bounds[2].min[2, 0] = -np.pi
+    q_bounds[2].max[2, 0] = np.pi * 1.5
+    q_bounds[2].min[2, 1] = -np.pi
+    q_bounds[2].max[2, 1] = 2 * np.pi
+    q_bounds[2].min[2, 2] = 3/4 * np.pi
+    q_bounds[2].max[2, 2] = 3/2 * np.pi
+    q_bounds[2].max[5, :-1] = 2.6
+    q_bounds[2].min[5, :-1] = 1.96
+    q_bounds[2].max[6, :-1] = -1.5
+    q_bounds[2].min[6, :-1] = -2.3
+
+    # Phase 3: Preparation landing
+    q_bounds[3].min[0, :] = -1
+    q_bounds[3].max[0, :] = 1
+    q_bounds[3].min[1, 1:] = -1
+    q_bounds[3].max[1, 1:] = 2
+    q_bounds[3].min[2, :] = 3/4 * np.pi
+    q_bounds[3].max[2, :] = 2 * np.pi + 0.5
+    q_bounds[3].min[5, -1] = pose_landing_start[5] - 1 #0.06
+    q_bounds[3].max[5, -1] = pose_landing_start[5] + 0.5
+    q_bounds[3].min[6, -1] = pose_landing_start[6] - 1
+    q_bounds[3].max[6, -1] = pose_landing_start[6] + 0.1
+
+    # Phase 3: Landing
+    q_bounds[4].min[5, 0] = pose_landing_start[5] - 1 #0.06
+    q_bounds[4].max[5, 0] = pose_landing_start[5] + 0.5
+    q_bounds[4].min[6, 0] = pose_landing_start[6] - 1
+    q_bounds[4].max[6, 0] = pose_landing_start[6] + 0.1
+    q_bounds[4].min[0, :] = -1
+    q_bounds[4].max[0, :] = 1
+    q_bounds[4].min[1, :] = -1
+    q_bounds[4].max[1, :] = 2
+    q_bounds[4].min[2, 0] = 2/4 * np.pi
+    q_bounds[4].max[2, 0] = 2 * np.pi + 1.66
+    q_bounds[4].min[2, 1] = 2/4 * np.pi
+    q_bounds[4].max[2, 1] = 2 * np.pi + 1.66
+    q_bounds[4].max[:, -1] = np.array(pose_landing_end) + 0.2 #0.5
+    q_bounds[4].min[:, -1] = np.array(pose_landing_end) - 0.2
+
+    return q_bounds, qdot_bounds
+
+def add_u_bounds(u_bounds, tau_min, tau_max):
+    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
+                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=0)
+    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
+                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=1)
+    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], -150, tau_min[6], tau_min[7]],
+                 max_bound=[tau_max[3], tau_max[4], 150, tau_max[6], tau_max[7]], phase=2)
+    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
+                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=3)
+    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
+                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=4)
+    return u_bounds
 
 # --- Parameters --- #
 movement = "Salto"
@@ -388,6 +488,10 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
                  BiorbdModel(biorbd_model_path[3]),
                  BiorbdModel(biorbd_model_path[4]),
                  )
+
+    n_q = bio_model[0].nb_q
+    n_qdot = n_q
+
     # Actuators parameters
     actuators = {"Shoulders": Joint(tau_max_plus=112.8107 * 2,
                                     theta_opt_plus=-41.0307 * np.pi / 180,
@@ -483,98 +587,11 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
     pose_landing_end = [0.053, 0.091, 6.08, 2.9, -0.17, 0.092, 0.17, 0.20]
 
     # --- Bounds ---#
-    # Initialize x_bounds
-    n_q = bio_model[0].nb_q
-    n_qdot = n_q
-
-    # Phase 0: Propulsion
     x_bounds = BoundsList()
-    x_bounds.add("q", bounds=bio_model[1].bounds_from_ranges("q"), phase=0)
-    x_bounds.add("qdot", bounds=bio_model[1].bounds_from_ranges("qdot"), phase=0)
-    x_bounds[0]["q"].min[2:7, 0] = np.array(pose_propulsion_start[2:7]) - 0.3
-    x_bounds[0]["q"].max[2:7, 0] = np.array(pose_propulsion_start[2:7]) + 0.3
-    x_bounds[0]["q"].max[2, 0] = 0.5
-    x_bounds[0]["q"].max[5, 0] = 2
-    x_bounds[0]["q"].min[6, 0] = -2
-    x_bounds[0]["q"].max[6, 0] = -0.7
-    x_bounds[0]["qdot"][:, 0] = [0] * n_qdot
-    x_bounds[0]["qdot"].max[5, :] = 0
-    x_bounds[0]["q"].min[2, 1:] = -np.pi
-    x_bounds[0]["q"].max[2, 1:] = np.pi
-    x_bounds[0]["q"].min[0, :] = -1
-    x_bounds[0]["q"].max[0, :] = 1
-    x_bounds[0]["q"].min[1, :] = -1
-    x_bounds[0]["q"].max[1, :] = 2
-    x_bounds[0]["qdot"].min[3, :] = 0   # A commenter si marche pas
-    x_bounds[0]["q"].min[3, 2] = np.pi/2
-
-    # Phase 1: Flight
-    x_bounds.add("q", bounds=bio_model[1].bounds_from_ranges("q"), phase=1)
-    x_bounds.add("qdot", bounds=bio_model[1].bounds_from_ranges("qdot"), phase=1)
-    x_bounds[1]["q"].min[0, :] = -1
-    x_bounds[1]["q"].max[0, :] = 1
-    x_bounds[1]["q"].min[1, :] = -1
-    x_bounds[1]["q"].max[1, :] = 2
-    x_bounds[1]["q"].min[2, 0] = -np.pi
-    x_bounds[1]["q"].max[2, 0] = np.pi * 1.5
-    x_bounds[1]["q"].min[2, 1] = -np.pi
-    x_bounds[1]["q"].max[2, 1] = np.pi * 1.5
-    x_bounds[1]["q"].min[2, -1] = -np.pi
-    x_bounds[1]["q"].max[2, -1] = np.pi * 1.5
-
-
-    # Phase 2: Tucked phase
-    x_bounds.add("q", bounds=bio_model[2].bounds_from_ranges("q"), phase=2)
-    x_bounds.add("qdot", bounds=bio_model[2].bounds_from_ranges("qdot"), phase=2)
-    x_bounds[2]["q"].min[0, :] = - 1
-    x_bounds[2]["q"].max[0, :] = 1
-    x_bounds[2]["q"].min[1, :] = -1
-    x_bounds[2]["q"].max[1, :] = 2
-    x_bounds[2]["q"].min[2, 0] = -np.pi
-    x_bounds[2]["q"].max[2, 0] = np.pi * 1.5
-    x_bounds[2]["q"].min[2, 1] = -np.pi
-    x_bounds[2]["q"].max[2, 1] = 2 * np.pi
-    x_bounds[2]["q"].min[2, 2] = 3/4 * np.pi
-    x_bounds[2]["q"].max[2, 2] = 3/2 * np.pi
-    x_bounds[2]["q"].max[5, :-1] = 2.6
-    x_bounds[2]["q"].min[5, :-1] = 1.96
-    x_bounds[2]["q"].max[6, :-1] = -1.5
-    x_bounds[2]["q"].min[6, :-1] = -2.3
-
-    # Phase 3: Preparation landing
-    x_bounds.add("q", bounds=bio_model[3].bounds_from_ranges("q"), phase=3)
-    x_bounds.add("qdot", bounds=bio_model[3].bounds_from_ranges("qdot"), phase=3)
-    x_bounds[3]["q"].min[0, :] = -1
-    x_bounds[3]["q"].max[0, :] = 1
-    x_bounds[3]["q"].min[1, 1:] = -1
-    x_bounds[3]["q"].max[1, 1:] = 2
-    x_bounds[3]["q"].min[2, :] = 3/4 * np.pi
-    x_bounds[3]["q"].max[2, :] = 2 * np.pi + 0.5
-    x_bounds[3]["q"].min[5, -1] = pose_landing_start[5] - 1 #0.06
-    x_bounds[3]["q"].max[5, -1] = pose_landing_start[5] + 0.5
-    x_bounds[3]["q"].min[6, -1] = pose_landing_start[6] - 1
-    x_bounds[3]["q"].max[6, -1] = pose_landing_start[6] + 0.1
-
-    # Phase 3: Landing
-    x_bounds.add("q", bounds=bio_model[4].bounds_from_ranges("q"), phase=4)
-    x_bounds.add("qdot", bounds=bio_model[4].bounds_from_ranges("qdot"), phase=4)
-    x_bounds[4]["q"].min[5, 0] = pose_landing_start[5] - 1 #0.06
-    x_bounds[4]["q"].max[5, 0] = pose_landing_start[5] + 0.5
-    x_bounds[4]["q"].min[6, 0] = pose_landing_start[6] - 1
-    x_bounds[4]["q"].max[6, 0] = pose_landing_start[6] + 0.1
-    x_bounds[4]["q"].min[0, :] = -1
-    x_bounds[4]["q"].max[0, :] = 1
-    x_bounds[4]["q"].min[1, :] = -1
-    x_bounds[4]["q"].max[1, :] = 2
-    x_bounds[4]["q"].min[2, 0] = 2/4 * np.pi
-    x_bounds[4]["q"].max[2, 0] = 2 * np.pi + 1.66
-    x_bounds[4]["q"].min[2, 1] = 2/4 * np.pi
-    x_bounds[4]["q"].max[2, 1] = 2 * np.pi + 1.66
-    x_bounds[4]["q"].max[:, -1] = np.array(pose_landing_end) + 0.2 #0.5
-    x_bounds[4]["q"].min[:, -1] = np.array(pose_landing_end) - 0.2
-    #x_bounds[4]["qdot"][:, -1] = [0] * n_qdot
-    #x_bounds[4]["q"][0, -1] = np.array(pose_propulsion_start[0])
-    #x_bounds[4]["q"][7, -1] = np.array(pose_landing_end[7])
+    q_bounds, qdot_bounds = add_x_bounds(bio_model)
+    for i_phase in range(len(bio_model)):
+        x_bounds.add("q", bounds=q_bounds[i_phase], phase=i_phase)
+        x_bounds.add("qdot", bounds=qdot_bounds[i_phase], phase=i_phase)
 
     # Initial guess
     x_init = InitialGuessList()
@@ -606,17 +623,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
 
     # Define control path constraint
     u_bounds = BoundsList()
-    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
-                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=0)
-    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
-                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=1)
-    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], -150, tau_min[6], tau_min[7]],
-                 max_bound=[tau_max[3], tau_max[4], 150, tau_max[6], tau_max[7]], phase=2)
-    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
-                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=3)
-    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
-                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=4)
-
+    u_bounds = add_u_bounds(u_bounds, tau_min, tau_max)
 
     u_init = InitialGuessList()
     #u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=0)
