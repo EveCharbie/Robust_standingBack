@@ -372,11 +372,11 @@ def initialize_tau():
 
 # --- Parameters --- #
 movement = "Salto"
-version = "15"
+version = "Eve4"
 nb_phase = 5
 name_folder_model = "../Model"
-pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Jump_4phases_V22.pkl"
-#pickle_sol_init = "init/Jump_4phases_V22.pkl"
+# pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Jump_4phases_V22.pkl"
+pickle_sol_init = "init/Jump_4phases_V22.pkl"
 sol_salto = get_created_data_from_pickle(pickle_sol_init)
 
 

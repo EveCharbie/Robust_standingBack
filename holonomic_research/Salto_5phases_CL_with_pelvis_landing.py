@@ -366,12 +366,12 @@ def minimize_actuator_torques_CL(controller: PenaltyController, actuators) -> ca
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = "84"
+version = "Eve4"
 nb_phase = 5
 name_folder_model = "../Model"
 # pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_close_loop_landing_5phases_V76.pkl"
-pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_5phases_VEve3.pkl"
-#pickle_sol_init = "init/Salto_5phases_V13.pkl"
+# pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_5phases_VEve3.pkl"
+pickle_sol_init = "init/Salto_5phases_VEve3.pkl"
 sol_salto = get_created_data_from_pickle(pickle_sol_init)
 
 # --- Prepare ocp --- #
@@ -450,10 +450,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
     dynamics = DynamicsList()
     dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, with_contact=True, phase=0)
     dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, phase=1)
-    dynamics.add(
-        DynamicsFcn.HOLONOMIC_TORQUE_DRIVEN,
-        phase=2
-    )
+    dynamics.add(DynamicsFcn.HOLONOMIC_TORQUE_DRIVEN, phase=2)
     dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, phase=3)
     dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, with_contact=True, phase=4)
 
@@ -487,33 +484,33 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
         dependent_joint_index=[3, 4],
     )
 
-    # "relaxed friction cone": 0.01*lagrange_0 < lagrange_1 < lagrange_0
-    constraints.add(
-        custom_contraint_lambdas_cisaillement_max_bound,
-        node=Node.ALL_SHOOTING,
-        bio_model=bio_model[2],
-        max_bound=0,
-        min_bound=-np.inf,
-        phase=2,
-    )
-    constraints.add(
-        custom_contraint_lambdas_cisaillement_min_bound,
-        node=Node.ALL_SHOOTING,
-        bio_model=bio_model[2],
-        max_bound=np.inf,
-        min_bound=0,
-        phase=2,
-    )
-
-    # The model can only pull on the legs, not push
-    constraints.add(
-        custom_contraint_lambdas_normal,
-        node=Node.ALL_SHOOTING,
-        bio_model=bio_model[2],
-        max_bound=np.inf,
-        min_bound=1,
-        phase=2,
-    )
+    # # "relaxed friction cone": 0.01*lagrange_0 < lagrange_1 < lagrange_0
+    # constraints.add(
+    #     custom_contraint_lambdas_cisaillement_max_bound,
+    #     node=Node.ALL_SHOOTING,
+    #     bio_model=bio_model[2],
+    #     max_bound=0,
+    #     min_bound=-np.inf,
+    #     phase=2,
+    # )
+    # constraints.add(
+    #     custom_contraint_lambdas_cisaillement_min_bound,
+    #     node=Node.ALL_SHOOTING,
+    #     bio_model=bio_model[2],
+    #     max_bound=np.inf,
+    #     min_bound=0,
+    #     phase=2,
+    # )
+    #
+    # # The model can only pull on the legs, not push
+    # constraints.add(
+    #     custom_contraint_lambdas_normal,
+    #     node=Node.ALL_SHOOTING,
+    #     bio_model=bio_model[2],
+    #     max_bound=np.inf,
+    #     min_bound=1,
+    #     phase=2,
+    # )
 
     # Path constraint
     pose_propulsion_start = [-0.2343, -0.2177, -0.3274, 0.2999, 0.4935, 1.7082, -1.9999, 0.1692]
