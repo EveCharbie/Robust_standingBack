@@ -57,6 +57,7 @@ from bioptim import (
     DynamicsFunctions,
     HolonomicConstraintsList,
     HolonomicConstraintsFcn,
+    Bounds,
 )
 from casadi import MX, vertcat
 from holonomic_research.biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
@@ -299,7 +300,7 @@ def custom_contraint_lambdas_normal(
     return lagrange_0
 
 
-def custom_contraint_lambdas_cisaillement_max_bound(
+def custom_contraint_lambdas_cisaillement_min_bound(
         controller: PenaltyController, bio_model: BiorbdModelCustomHolonomic) -> MX:
     """
     lagrange_1 < lagrange_0
@@ -320,10 +321,10 @@ def custom_contraint_lambdas_cisaillement_max_bound(
     # Contrainte lagrange_1 (min_bound = L_1/L_0 = -0.2, max_bound = L_1/L_0 = 0.2)
     lagrange_1 = lambdas[1]
 
-    return lagrange_1 - lagrange_0
+    return -(lagrange_1 - lagrange_0)
 
 
-def custom_contraint_lambdas_cisaillement_min_bound(
+def custom_contraint_lambdas_cisaillement_max_bound(
         controller: PenaltyController, bio_model: BiorbdModelCustomHolonomic) -> MX:
     """
     0.01*lagrange_0 < lagrange_1
@@ -344,7 +345,7 @@ def custom_contraint_lambdas_cisaillement_min_bound(
     # Contrainte lagrange_1 (min_bound = L_1/L_0 = -0.2, max_bound = L_1/L_0 = 0.2)
     lagrange_1 = lambdas[1]
 
-    return lagrange_1 - 0.01 * lagrange_0
+    return -(lagrange_1 - 0.01 * lagrange_0)
 
 def minimize_actuator_torques_CL(controller: PenaltyController, actuators) -> cas.MX:
 
@@ -507,35 +508,22 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
     #     custom_contraint_lambdas_normal,
     #     node=Node.ALL_SHOOTING,
     #     bio_model=bio_model[2],
-    #     max_bound=np.inf,
-    #     min_bound=1,
+    #     max_bound=-1,
+    #     min_bound=-np.inf,
     #     phase=2,
     # )
 
-    # Path constraint
-    pose_propulsion_start = [-0.2343, -0.2177, -0.3274, 0.2999, 0.4935, 1.7082, -1.9999, 0.1692]
-    pose_takeout_start = [-0.1233, 0.22, 0.3173, 1.5707, 0.1343, -0.2553, -0.1913, -0.342]
-    pose_salto_start = [0.135, 0.455, 1.285, 0.481, 1.818, 2.6, -1.658, 0.692]
-    pose_salto_end = [0.107, 0.797, 2.892, 0.216, 1.954, 2.599, -2.058, 0.224]
-    pose_salto_start_CL = [0.135, 0.455, 1.285, 2.6, -1.658, 0.692]
-    pose_salto_end_CL = [0.107, 0.797, 2.892, 2.599, -2.058, 0.224]
-    pose_landing_start = [0.013, 0.088, 5.804, -0.305, 8.258444956622276e-06, 1.014, -0.97, 0.006]
-    pose_landing_end = [0.053, 0.091, 6.08, 2.9, -0.17, 0.092, 0.17, 0.20]
-
-
     # --- Bounds ---#
-    # Initialize x_bounds
-    n_q = bio_model[0].nb_q
-    n_qdot = n_q
-    n_independent = bio_model[2].nb_independent_joints
-
-    # Phase 0: Propulsion
     x_bounds = BoundsList()
     q_bounds, qdot_bounds = add_x_bounds(bio_model)
     for i_phase in range(len(bio_model)):
         if i_phase == 2:
-            x_bounds.add("q_u", bounds=variable_bimapping["q"].map.to_first(q_bounds[i_phase]), phase=i_phase)
-            x_bounds.add("qdot_u", bounds=variable_bimapping["qdot"].map.to_first(qdot_bounds[i_phase]), phase=i_phase)
+            qu_bounds = Bounds("q_u", min_bound=variable_bimapping["q"].to_first.map(q_bounds[i_phase].min),
+                               max_bound=variable_bimapping["q"].to_first.map(q_bounds[i_phase].max))
+            qdotu_bounds = Bounds("qdot_u", min_bound=variable_bimapping["qdot"].to_first.map(qdot_bounds[i_phase].min),
+                                  max_bound=variable_bimapping["qdot"].to_first.map(qdot_bounds[i_phase].max))
+            x_bounds.add("q_u", bounds=qu_bounds, phase=i_phase)
+            x_bounds.add("qdot_u", bounds=qdotu_bounds, phase=i_phase)
         else:
             x_bounds.add("q", bounds=q_bounds[i_phase], phase=i_phase)
             x_bounds.add("qdot", bounds=qdot_bounds[i_phase], phase=i_phase)

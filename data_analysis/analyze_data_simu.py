@@ -13,8 +13,7 @@ from graph_simu import graph_all_comparaison, get_created_data_from_pickle, time
 # Solution with and without holonomic constraints
 # path_sol = "/home/mickaelbegon/Documents/Anais/Results_simu"
 path_sol = "../holonomic_research/"
-sol_CL = path_sol + "/" + "Salto_close_loop_landing_5phases_VEve3.pkl"
-sol_CL = path_sol + "/" + "Salto_close_loop_landing_5phases_VEve3.pkl"
+sol_CL = path_sol + "/" + "Salto_close_loop_landing_5phases_VEve4.pkl"
 sol_without = path_sol + "/" + "Salto_5phases_VEve3.pkl"
 path_model = "../Model/Model2D_7Dof_2C_5M_CL_V3.bioMod"
 model = biorbd.Model(path_model)
@@ -94,8 +93,8 @@ for i in range(data_CL["q_all"].shape[1]):
 
 if PLOT_INERTIA_FLAG:
     fig, ax = plt.subplots(1, 1, figsize=(10, 5))
-    ax.plot(inertie_sol_without[0, :], color="tab:blue", label="without \nconstraints", alpha=0.75, linewidth=1)#time_pourcentage_without.flatten(),
-    ax.plot(inertia_sol_CL[0, :], color="tab:orange", label="with holonomics \nconstraints", alpha=0.75, linewidth=1)#time_pourcentage_CL,
+    ax.plot(inertie_sol_without[:, 0], color="tab:blue", label="without \nconstraints", alpha=0.75, linewidth=1)#time_pourcentage_without.flatten(),
+    ax.plot(inertia_sol_CL[:, 0], color="tab:orange", label="with holonomics \nconstraints", alpha=0.75, linewidth=1)#time_pourcentage_CL,
     for xline in range(len(time_end_phase_CL)):
         ax.axvline(time_end_phase_pourcentage_without[xline], color="tab:blue", linestyle="--", linewidth=0.7)
         ax.axvline(time_end_phase_pourcentage_CL[xline], color="tab:orange", linestyle="--", linewidth=0.7)

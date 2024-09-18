@@ -111,9 +111,8 @@ def graph_all_comparaison(sol_holo, sol_without):
     y_max_1 = np.max([abs(q_CL_deg[0:2, :]), abs(q_without_deg[0:2, :])])
     y_max_2 = np.max([abs(q_CL_deg[2:5, :]), abs(q_without_deg[2:5, :])])
     y_max_3 = np.max([abs(q_CL_deg[5:, :]), abs(q_without_deg[5:, :])])
-    # y_min = np.min([q_CL_deg, q_without_deg])
-    # y_max = np.max([q_CL_deg, q_without_deg])
     for nb_seg in range(q_CL_deg.shape[0]):
+        axs[num_line, num_col].plot(np.array([0, 100]), np.array([0, 0]), '-k', linewidth=0.5)
         axs[num_line, num_col].plot(time_pourcentage_without, q_without_deg[nb_seg], color="tab:blue", label="without \nconstraints",
                                     alpha=0.75, linewidth=1)
         axs[num_line, num_col].plot(time_pourcentage_CL, q_CL_deg[nb_seg], color="tab:orange",
@@ -123,28 +122,7 @@ def graph_all_comparaison(sol_holo, sol_without):
                                            linewidth=0.7)
             axs[num_line, num_col].axvline(time_end_phase_pourcentage_CL[xline], color="tab:orange", linestyle="--",
                                            linewidth=0.7)
-            # if xline!=2:
-            # for node in range(0,3):
-            # if xline==0:
-            #    axs[num_line, num_col].axhline(y=max_bounds_q[xline][nb_seg,1],
-            #                                   xmin=0,
-            #                                   xmax=float(time_end_phase_pourcentage_CL[0])/100, color="k",
-            #                                   linestyle="-", linewidth=0.7)
-            #    axs[num_line, num_col].axhline(y=min_bounds_q[xline][nb_seg,1],
-            #                                   xmin=0,
-            #                                   xmax=float(time_end_phase_pourcentage_CL[0])/100, color="k",
-            #                                   linestyle="-", linewidth=0.7)
-            # else:
-            #    axs[num_line, num_col].axhline(y=max_bounds_q[xline][nb_seg,1],
-            #                               xmin=float(time_end_phase_pourcentage_CL[xline-1])/100,
-            #                               xmax=float(time_end_phase_pourcentage_CL[xline])/100, color="k",
-            #                               linestyle="-", linewidth=0.7)
-            #    axs[num_line, num_col].axhline(y=min_bounds_q[xline][nb_seg,1],
-            #                               xmin=float(time_end_phase_pourcentage_CL[xline-1])/100,
-            #                               xmax=float(time_end_phase_pourcentage_CL[xline])/100, color="k",
-            #                               linestyle="-", linewidth=0.7)
         axs[num_line, num_col].set_title(dof_names[nb_seg], fontsize=8)
-        # axs[num_line, num_col].set_ylim(y_min, y_max)
         axs[num_line, num_col].set_xlim(0, 100)
         axs[num_line, num_col].grid(True, linewidth=0.4)
         # Réduire la taille des labels des xticks et yticks
@@ -168,13 +146,8 @@ def graph_all_comparaison(sol_holo, sol_without):
 
         # Y_label
         axs[0, 0].set_ylabel("Position [m]", fontsize=7)  # Pelvis Translation
-        # axs[0, 1].set_ylabel("Position [m]", fontsize=8) # Pelvis Translation
         axs[1, 0].set_ylabel(r"F (+) / E (-) [$^\circ$]", fontsize=7)  # Pelvis Rotation
-        # axs[1, 1].set_ylabel("F (+) / E (-) [rad]", fontsize=8) # Arm Rotation
-        # axs[1, 2].set_ylabel("F (+) / E (-) [rad]", fontsize=8) # Forearm Rotation
         axs[2, 0].set_ylabel(r"F (+) / E (-) [$^\circ$]", fontsize=7)  # Thight Rotation
-        # axs[2, 1].set_ylabel("F (-) / E (+) [rad]", fontsize=8) # Leg Rotation
-        # axs[2, 2].set_ylabel("F (+) / E (-) [rad]", fontsize=8) # Foot Rotation
         # Récupérer les handles et labels de la légende de la figure de la première ligne, première colonne
         handles, labels = axs[0, 0].get_legend_handles_labels()
 
@@ -192,9 +165,8 @@ def graph_all_comparaison(sol_holo, sol_without):
     y_max_1 = np.max([abs(qdot_CL_deg[0:2, :]), abs(qdot_CL_deg[0:2, :])])
     y_max_2 = np.max([abs(qdot_CL_deg[2:5, :]), abs(qdot_CL_deg[2:5, :])])
     y_max_3 = np.max([abs(qdot_CL_deg[5:, :]), abs(qdot_CL_deg[5:, :])])
-    # y_min = np.min([qdot_CL_deg, qdot_without_deg])
-    # y_max = np.max([qdot_CL_deg, qdot_without_deg])
     for nb_seg in range(qdot_CL_deg.shape[0]):
+        axs[num_line, num_col].plot(np.array([0, 100]), np.array([0, 0]), '-k', linewidth=0.5)
         axs[num_line, num_col].plot(time_pourcentage_without, qdot_without_deg[nb_seg], color="tab:blue",
                                     label="without \nconstraints", alpha=0.75, linewidth=1)
         axs[num_line, num_col].plot(time_pourcentage_CL, qdot_CL_deg[nb_seg], color="tab:orange",
@@ -212,7 +184,6 @@ def graph_all_comparaison(sol_holo, sol_without):
             axs[num_line, num_col].set_ylim(-y_max_2 + (-y_max_2 * 0.1), y_max_2 + (y_max_2 * 0.1))
         elif num_line == 2:
             axs[num_line, num_col].set_ylim(-y_max_3 + (-y_max_3 * 0.1), y_max_3 + (y_max_3 * 0.1))
-        # axs[num_line, num_col].set_ylim(y_min, y_max)
         axs[num_line, num_col].set_xlim(0, 100)
         axs[num_line, num_col].grid(True, linewidth=0.4)
         # Réduire la taille des labels des xticks et yticks
@@ -315,6 +286,7 @@ def graph_all_comparaison(sol_holo, sol_without):
     axs[0, 0].axis('off')
 
     for nb_seg in range(tau_CL.shape[0]):
+        axs[num_line, num_col].plot(np.array([0, 100]), np.array([0, 0]), '-k', linewidth=0.5)
         axs[num_line, num_col].step(range(len(tau_without[nb_seg])), tau_without_max_bound[nb_seg], color="tab:blue", alpha=0.5, linewidth=0.5)
         axs[num_line, num_col].step(range(len(tau_without[nb_seg])), tau_without_min_bound[nb_seg], color="tab:blue", alpha=0.5, linewidth=0.5)
         axs[num_line, num_col].step(range(len(tau_CL[nb_seg])), tau_CL_max_bound[nb_seg], color="tab:orange", alpha=0.5, linewidth=0.5)
