@@ -218,6 +218,7 @@ def graph_all_comparaison(sol_holo, sol_without):
 
 
     # Theoretical min and max bound on tau based on actuators
+
     actuators = {"Shoulders": Joint(tau_max_plus=112.8107*2,
                                     theta_opt_plus=-41.0307*np.pi/180,
                                     r_plus=109.6679*np.pi/180,
@@ -269,7 +270,7 @@ def graph_all_comparaison(sol_holo, sol_without):
         tau_CL_max_bound[nb_seg, :] = actuator_function(actuators[key].tau_max_plus, actuators[key].theta_opt_plus, actuators[key].r_plus, q_CL_rad_without_last_node[nb_seg+3])
         tau_without_min_bound[nb_seg, :] = -actuator_function(actuators[key].tau_max_minus, actuators[key].theta_opt_minus, actuators[key].r_minus, q_without_rad_without_last_node[nb_seg+3])
         tau_without_max_bound[nb_seg, :] = actuator_function(actuators[key].tau_max_plus, actuators[key].theta_opt_plus, actuators[key].r_plus, q_without_rad_without_last_node[nb_seg+3])
-
+    
     # Figure tau
     fig, axs = plt.subplots(2, 3, figsize=(10, 5))
     num_col = 1 
@@ -433,6 +434,8 @@ def graph_all_comparaison(sol_holo, sol_without):
                                            linewidth=0.7)
     sum_tau_all_CL = np.sum(np.abs(tau_CL * dt_CL.T))
     sum_tau_all_without = np.sum(np.abs(tau_without * dt_without.T))
+    tau_ratio_CL = np.sum(np.abs(tau_CL_ratio_all),0)
+    tau_ratio_without = np.sum(np.abs(tau_without_ratio_all), 0)
     axs[0, 1].bar([0, 1], [sum_tau_all_CL, sum_tau_all_without], color=["tab:orange", "tab:blue"])
     # axs[0, 1].get_xaxis().set_visible(False)
     sum_tau_all_ratio_CL = np.sum(np.abs(tau_CL_ratio_all * dt_CL.T))
