@@ -36,7 +36,6 @@ import casadi as cas
 import pickle
 from bioptim import (
     BiorbdModel,
-    Node,
     InterpolationType,
     OptimalControlProgram,
     ConstraintList,
@@ -46,15 +45,12 @@ from bioptim import (
     PhaseTransitionList,
     DynamicsFcn,
     BiMappingList,
-    ConstraintFcn,
     BoundsList,
     InitialGuessList,
     Solver,
-    Axis,
     SolutionMerge,
     PenaltyController,
     PhaseTransitionFcn,
-    DynamicsFunctions,
     HolonomicConstraintsList,
     HolonomicConstraintsFcn,
     Bounds,
@@ -367,12 +363,12 @@ def minimize_actuator_torques_CL(controller: PenaltyController, actuators) -> ca
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = "Eve4"
+version = "Eve6"
 nb_phase = 5
 name_folder_model = "../Model"
 # pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_close_loop_landing_5phases_V76.pkl"
 # pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_5phases_VEve3.pkl"
-pickle_sol_init = "init/Salto_5phases_VEve3.pkl"
+pickle_sol_init = "init/Salto_5phases_VEve4.pkl"
 sol_salto = get_created_data_from_pickle(pickle_sol_init)
 
 # --- Prepare ocp --- #
@@ -383,6 +379,10 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
                  BiorbdModel(biorbd_model_path[3]),
                  BiorbdModel(biorbd_model_path[4]),
                  )
+
+    n_q = bio_model[0].nb_q
+    n_qdot = n_q
+
     # Actuators parameters
     actuators = {"Shoulders": Joint(tau_max_plus=112.8107 * 2,
                                     theta_opt_plus=-41.0307 * np.pi / 180,
@@ -451,7 +451,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
     dynamics = DynamicsList()
     dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, with_contact=True, phase=0)
     dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, phase=1)
-    dynamics.add(DynamicsFcn.HOLONOMIC_TORQUE_DRIVEN, phase=2)
+    dynamics.add(DynamicsFcn.HOLONOMIC_TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, phase=2)
     dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, phase=3)
     dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, with_contact=True, phase=4)
 
@@ -476,9 +476,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
         marker_2="CENTER_HAND",
         index=slice(1, 3),
         local_frame_index=11,
-        #phase=2
     )
-    # Made up constraints
 
     bio_model[2].set_holonomic_configuration(
         constraints_list=holonomic_constraints, independent_joint_index=[0, 1, 2, 5, 6, 7],
@@ -567,7 +565,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
     u_init.add("tau", sol_salto["tau"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
     u_init.add("tau", sol_salto["tau"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
     u_init.add("tau", sol_salto["tau"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
-    u_init.add("tau", sol_salto["tau"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
+    u_init.add("tau", sol_salto["tau"][4], interpolation=InterpolationType.EACH_FRAME, phase=4)
 
     return OptimalControlProgram(
         bio_model=bio_model,
@@ -581,7 +579,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
         objective_functions=objective_functions,
         constraints=constraints,
         n_threads=32,
-        #assume_phase_dynamics=True,
         phase_transitions=phase_transitions,
         variable_mappings=dof_mapping,
     ), bio_model

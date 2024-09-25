@@ -13,8 +13,8 @@ from graph_simu import graph_all_comparaison, get_created_data_from_pickle, time
 # Solution with and without holonomic constraints
 # path_sol = "/home/mickaelbegon/Documents/Anais/Results_simu"
 path_sol = "../holonomic_research/"
-sol_CL = path_sol + "/" + "Salto_close_loop_landing_5phases_VEve4.pkl"
-sol_without = path_sol + "/" + "Salto_5phases_VEve3.pkl"
+sol_CL = path_sol + "/" + "Salto_close_loop_landing_5phases_VEve6.pkl"
+sol_without = path_sol + "/" + "Salto_5phases_VEve4.pkl"
 path_model = "../Model/Model2D_7Dof_2C_5M_CL_V3.bioMod"
 model = biorbd.Model(path_model)
 
@@ -230,16 +230,16 @@ energy_sol_without_total = energy_sol_without_all.sum(axis=0)
 energy_diff = energy_CL - energy_sol_without
 
 # Figure Energy expenditure
-time_pourcentage_tau_CL = np.vstack((time_end_phase_pourcentage_CL[:20], 
-                                    time_end_phase_pourcentage_CL[21:21+20],
-                                    time_end_phase_pourcentage_CL[21+21:21+21+30],
-                                    time_end_phase_pourcentage_CL[21+21+31:21+21+31+30],
-                                    time_end_phase_pourcentage_CL[21+21+31+31:21+21+31+31+30]))
-time_pourcentage_tau_without = np.vstack((time_end_phase_pourcentage_without[:20], 
-                                        time_end_phase_pourcentage_without[21:21+20],
-                                        time_end_phase_pourcentage_without[21+21:21+21+30],
-                                        time_end_phase_pourcentage_without[21+21+31:21+21+31+30],
-                                        time_end_phase_pourcentage_without[21+21+31+31:21+21+31+31+30]))
+time_pourcentage_tau_CL = np.vstack((time_pourcentage_CL[:20],
+                                    time_pourcentage_CL[21:21+20],
+                                    time_pourcentage_CL[21+21:21+21+30],
+                                    time_pourcentage_CL[21+21+31:21+21+31+30],
+                                    time_pourcentage_CL[21+21+31+31:21+21+31+31+30]))
+time_pourcentage_tau_without = np.vstack((time_pourcentage_without[:20],
+                                        time_pourcentage_without[21:21+20],
+                                        time_pourcentage_without[21+21:21+21+30],
+                                        time_pourcentage_without[21+21+31:21+21+31+30],
+                                        time_pourcentage_without[21+21+31+31:21+21+31+31+30]))
 
 fig, axs = plt.subplots(2, 3)
 num_col = 1

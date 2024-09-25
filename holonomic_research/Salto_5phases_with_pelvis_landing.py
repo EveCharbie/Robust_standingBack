@@ -168,7 +168,7 @@ def add_objectives(objective_functions, actuators):
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
         quadratic=False,
-        weight=0.01,
+        weight=0.0001,
         phase=0,
     )
     objective_functions.add(
@@ -572,13 +572,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
 
 
     # Path constraint
-    #pose_propulsion_start = [0.0, -0.17, -0.9124, 0.0, 0.1936, 2.0082, -1.7997, 0.6472]
-    #pose_takeout_start = [0, 0, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119] # New take out
-    #pose_salto_start = [0, 1.8356, 1.5062, 0.3411, 1.3528, 2.1667, -1.9179, 0.0393]
-    #pose_salto_end = [0, 1.8356, 2.7470, 0.9906, 0.0252, 1.7447, -1.1335, 0.0097]
-    #pose_landing_start = [0, 0, 5.8322, 0.52, 0.95, 1.72, -0.81, 0.0]
-    #pose_landing_end = [0, 0, 6.28, 3.1, 0.03, 0.0, 0.0, 0.0]
-
     pose_propulsion_start = [-0.2343, -0.2177, -0.3274, 0.2999, 0.4935, 1.7082, -1.9999, 0.1692]
     pose_takeout_start = [-0.1233, 0.22, 0.3173, 1.5707, 0.1343, -0.2553, -0.1913, -0.342]
     pose_salto_start = [0.135, 0.455, 1.285, 0.481, 1.818, 2.6, -1.658, 0.692]
