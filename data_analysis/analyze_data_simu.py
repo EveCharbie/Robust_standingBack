@@ -13,8 +13,8 @@ from graph_simu import graph_all_comparaison, get_created_data_from_pickle, time
 # Solution with and without holonomic constraints
 # path_sol = "/home/mickaelbegon/Documents/Anais/Results_simu"
 path_sol = "../holonomic_research/"
-sol_CL = path_sol + "/" + "Salto_close_loop_landing_5phases_VEve6.pkl"
-sol_without = path_sol + "/" + "Salto_5phases_VEve4.pkl"
+sol_CL = path_sol + "/" + "Salto_close_loop_landing_5phases_VEve8.pkl"
+sol_without = path_sol + "/" + "Salto_5phases_VEve5.pkl"
 path_model = "../Model/Model2D_7Dof_2C_5M_CL_V3.bioMod"
 model = biorbd.Model(path_model)
 
@@ -23,8 +23,15 @@ PLOT_INERTIA_FLAG = True
 PLOT_ENERY_FLAG = True
 
 data_CL = pd.read_pickle(sol_CL)
-data_CL = get_created_data_from_pickle(sol_CL)
 data_without = pd.read_pickle(sol_without)
+
+fig, axs = plt.subplots(2, 3)
+axs = axs.ravel()
+for i in range(5):
+    axs[i].plot(np.hstack((data_CL["tau"][0][i, :], data_CL["tau"][1][i, :])).T, color="tab:orange")
+    axs[i].plot(np.hstack((data_without["tau"][0][i, :], data_without["tau"][1][i, :])).T, color="tab:blue")
+plt.savefig("Temporary.png")
+plt.show()
 
 # Preparation data_CL
 time_end_phase_CL = []
@@ -56,29 +63,6 @@ for i in range(len(data_CL["time"])):
     time_phase_sol_without.append(data_without["time"][i][-1] - data_without["time"][i][1])
 
 time_diff_phase = [a - b for a, b in zip(time_phase_sol_CL, time_phase_sol_without)]
-
-# Diminution des torques
-# Par rapport entre premiere et dernier valeur
-# Coude
-diff_tau_elbow_sol_CL = (data_CL["tau"][2][1][1] - data_CL["tau"][2][1][-1]) / data_CL["tau"][2][1][1] * 100
-diff_tau_elbow_sol_without = (data_without["tau"][2][1][1] - data_without["tau"][2][1][-1]) / data_without["tau"][2][1][1] * 100
-
-# Hanche
-diff_tau_hip_sol_CL = (data_CL["tau"][2][2][1] - data_CL["tau"][2][2][-1]) / data_CL["tau"][2][2][1] * 100
-diff_tau_hip_sol_without = (data_without["tau"][2][2][1] - data_without["tau"][2][2][-1]) / data_without["tau"][2][2][1] * 100
-
-# Par moyenne
-# Coude
-tau_mean_elbow_sol_CL = np.mean(data_CL["tau"][2][1])
-tau_std_elbow_sol_CL = np.std(data_CL["tau"][2][1])
-tau_mean_elbow_sol_without = np.mean(data_without["tau"][2][1])
-tau_std_elbow_sol_without = np.std(data_without["tau"][2][1])
-
-# Hanche
-tau_mean_hip_sol_CL = np.mean(data_CL["tau"][2][2])
-tau_std_hip_sol_CL = np.std(data_CL["tau"][2][2])
-tau_mean_hip_sol_without = np.mean(data_without["tau"][2][2])
-tau_std_hip_sol_without = np.std(data_without["tau"][2][2])
 
 # Graphique
 if PLOT_TAU_FLAG:

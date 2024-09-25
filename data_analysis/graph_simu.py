@@ -36,8 +36,6 @@ def time_to_percentage(time):
 
 # --- Graph --- #
 def graph_all_comparaison(sol_holo, sol_without):
-    # Sol 1
-    # data_CL = get_created_data_from_pickle(sol_holo)
     data_CL = pd.read_pickle(sol_holo)
     lambdas = data_CL["lambda"]
     q_CL_rad = data_CL["q_all"][:, :]
