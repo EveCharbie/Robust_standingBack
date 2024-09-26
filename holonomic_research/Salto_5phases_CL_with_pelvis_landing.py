@@ -376,9 +376,9 @@ sol_salto = get_created_data_from_pickle(pickle_sol_init)
 def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
     bio_model = (BiorbdModel(biorbd_model_path[0]),
                  BiorbdModel(biorbd_model_path[1]),
-                 # BiorbdModelCustomHolonomic(biorbd_model_path[2]),
-                 # BiorbdModel(biorbd_model_path[3]),
-                 # BiorbdModel(biorbd_model_path[4]),
+                 BiorbdModelCustomHolonomic(biorbd_model_path[2]),
+                 BiorbdModel(biorbd_model_path[3]),
+                 BiorbdModel(biorbd_model_path[4]),
                  )
 
     n_q = bio_model[0].nb_q
@@ -452,15 +452,15 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
     dynamics = DynamicsList()
     dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, with_contact=True, phase=0)
     dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, phase=1)
-    # dynamics.add(DynamicsFcn.HOLONOMIC_TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, phase=2)
-    # dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, phase=3)
-    # dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, with_contact=True, phase=4)
+    dynamics.add(DynamicsFcn.HOLONOMIC_TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, phase=2)
+    dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, phase=3)
+    dynamics.add(DynamicsFcn.TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, with_contact=True, phase=4)
 
     # Transition de phase
     phase_transitions = PhaseTransitionList()
-    # phase_transitions.add(custom_phase_transition_pre, phase_pre_idx=1)
-    # phase_transitions.add(custom_phase_transition_post, phase_pre_idx=2)
-    # phase_transitions.add(PhaseTransitionFcn.IMPACT, phase_pre_idx=3)
+    phase_transitions.add(custom_phase_transition_pre, phase_pre_idx=1)
+    phase_transitions.add(custom_phase_transition_post, phase_pre_idx=2)
+    phase_transitions.add(PhaseTransitionFcn.IMPACT, phase_pre_idx=3)
 
     # --- Constraints ---#
     # Constraints
@@ -468,50 +468,50 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
     constraints = add_constraints(constraints)
     holonomic_constraints = HolonomicConstraintsList()
 
-    # # Phase 2 (Tucked phase):
-    # holonomic_constraints.add(
-    #     "holonomic_constraints",
-    #     HolonomicConstraintsFcn.superimpose_markers,
-    #     biorbd_model=bio_model[2],
-    #     marker_1="BELOW_KNEE",
-    #     marker_2="CENTER_HAND",
-    #     index=slice(1, 3),
-    #     local_frame_index=11,
+    # Phase 2 (Tucked phase):
+    holonomic_constraints.add(
+        "holonomic_constraints",
+        HolonomicConstraintsFcn.superimpose_markers,
+        biorbd_model=bio_model[2],
+        marker_1="BELOW_KNEE",
+        marker_2="CENTER_HAND",
+        index=slice(1, 3),
+        local_frame_index=11,
+    )
+
+    bio_model[2].set_holonomic_configuration(
+        constraints_list=holonomic_constraints, independent_joint_index=[0, 1, 2, 5, 6, 7],
+        dependent_joint_index=[3, 4],
+    )
+
+    # # "relaxed friction cone": 0.01*lagrange_0 < lagrange_1 < lagrange_0
+    # constraints.add(
+    #     custom_contraint_lambdas_cisaillement_max_bound,
+    #     node=Node.ALL_SHOOTING,
+    #     bio_model=bio_model[2],
+    #     max_bound=0,
+    #     min_bound=-np.inf,
+    #     phase=2,
+    # )
+    # constraints.add(
+    #     custom_contraint_lambdas_cisaillement_min_bound,
+    #     node=Node.ALL_SHOOTING,
+    #     bio_model=bio_model[2],
+    #     max_bound=np.inf,
+    #     min_bound=0,
+    #     phase=2,
     # )
     #
-    # bio_model[2].set_holonomic_configuration(
-    #     constraints_list=holonomic_constraints, independent_joint_index=[0, 1, 2, 5, 6, 7],
-    #     dependent_joint_index=[3, 4],
+    # # The model can only pull on the legs, not push
+    # constraints.add(
+    #     custom_contraint_lambdas_normal,
+    #     node=Node.ALL_SHOOTING,
+    #     bio_model=bio_model[2],
+    #     max_bound=-1,
+    #     min_bound=-np.inf,
+    #     phase=2,
     # )
-    #
-    # # # "relaxed friction cone": 0.01*lagrange_0 < lagrange_1 < lagrange_0
-    # # constraints.add(
-    # #     custom_contraint_lambdas_cisaillement_max_bound,
-    # #     node=Node.ALL_SHOOTING,
-    # #     bio_model=bio_model[2],
-    # #     max_bound=0,
-    # #     min_bound=-np.inf,
-    # #     phase=2,
-    # # )
-    # # constraints.add(
-    # #     custom_contraint_lambdas_cisaillement_min_bound,
-    # #     node=Node.ALL_SHOOTING,
-    # #     bio_model=bio_model[2],
-    # #     max_bound=np.inf,
-    # #     min_bound=0,
-    # #     phase=2,
-    # # )
-    # #
-    # # # The model can only pull on the legs, not push
-    # # constraints.add(
-    # #     custom_contraint_lambdas_normal,
-    # #     node=Node.ALL_SHOOTING,
-    # #     bio_model=bio_model[2],
-    # #     max_bound=-1,
-    # #     min_bound=-np.inf,
-    # #     phase=2,
-    # # )
-    #
+
     # --- Bounds ---#
     x_bounds = BoundsList()
     q_bounds, qdot_bounds = add_x_bounds(bio_model)
@@ -528,8 +528,20 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
             x_bounds.add("qdot", bounds=qdot_bounds[i_phase], phase=i_phase)
 
     # Initial guess
+    pose_salto_start = [0.135, 0.455, 1.285, 0.481, 1.818, 2.6, -1.658, 0.692]
+    pose_salto_end = [0.107, 0.797, 2.892, 0.216, 1.954, 2.599, -2.058, 0.224]
+
     x_init = InitialGuessList()
-    # Commented section
+    x_init.add("q", sol_salto["q"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
+    x_init.add("qdot", sol_salto["qdot"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
+    x_init.add("q", sol_salto["q"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
+    x_init.add("qdot", sol_salto["qdot"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
+    q_2_linear = variable_bimapping["q"].to_first.map(np.linspace(pose_salto_start, pose_salto_end, n_shooting[2]+1).T)
+    x_init.add("q_u", q_2_linear, interpolation=InterpolationType.EACH_FRAME, phase=2)
+    x_init.add("qdot_u", [0] * 6, interpolation=InterpolationType.CONSTANT, phase=2)
+    x_init.add("q", sol_salto["q"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
+    x_init.add("qdot", sol_salto["qdot"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
+
     # x_init.add("q", np.array([pose_propulsion_start, pose_takeout_start]).T, interpolation=InterpolationType.LINEAR,
     #           phase=0)
     # x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=0)
@@ -545,10 +557,10 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
     # x_init.add("q", np.array([pose_landing_start, pose_landing_end]).T, interpolation=InterpolationType.LINEAR, phase=4)
     # x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=4)
 
-    x_init.add("q", sol_salto["q"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
-    x_init.add("qdot", sol_salto["qdot"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
-    x_init.add("q", sol_salto["q"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    x_init.add("qdot", sol_salto["qdot"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
+    # x_init.add("q", sol_salto["q"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
+    # x_init.add("qdot", sol_salto["qdot"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
+    # x_init.add("q", sol_salto["q"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
+    # x_init.add("qdot", sol_salto["qdot"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
     # x_init.add("q_u", sol_salto["q"][2][[0,1,2,5,6,7], :], interpolation=InterpolationType.EACH_FRAME, phase=2)
     # x_init.add("qdot_u", sol_salto["qdot"][2][[0,1,2,5,6,7], :], interpolation=InterpolationType.EACH_FRAME, phase=2)
     # x_init.add("q", sol_salto["q"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
@@ -565,6 +577,12 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
     u_init = InitialGuessList()
     u_init.add("tau", sol_salto["tau"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
     u_init.add("tau", sol_salto["tau"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
+    u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=2)
+    u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=3)
+    u_init.add("tau", sol_salto["tau"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
+
+    # u_init.add("tau", sol_salto["tau"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
+    # u_init.add("tau", sol_salto["tau"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
     # u_init.add("tau", sol_salto["tau"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
     # u_init.add("tau", sol_salto["tau"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
     # u_init.add("tau", sol_salto["tau"][4], interpolation=InterpolationType.EACH_FRAME, phase=4)
@@ -598,8 +616,8 @@ def main():
                            model_path,
                            model_path,
                            model_path_1contact),
-        phase_time=(0.2, 0.2),  #, 0.3, 0.3, 0.3),
-        n_shooting=(20, 20),  #, 30, 30, 30),
+        phase_time=(0.2, 0.2, 0.3, 0.3, 0.3),
+        n_shooting=(20, 20, 30, 30, 30),
     )
 
     # --- Solve the program --- #
