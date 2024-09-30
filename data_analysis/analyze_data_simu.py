@@ -13,7 +13,7 @@ from graph_simu import graph_all_comparaison, get_created_data_from_pickle, time
 # Solution with and without holonomic constraints
 # path_sol = "/home/mickaelbegon/Documents/Anais/Results_simu"
 path_sol = "../holonomic_research/"
-sol_CL = path_sol + "/" + "Salto_close_loop_landing_5phases_VEve10.pkl"
+sol_CL = path_sol + "/" + "Salto_close_loop_landing_5phases_VEve12.pkl"
 sol_without = path_sol + "/" + "Salto_5phases_VEve6.pkl"
 path_model = "../Model/Model2D_7Dof_2C_5M_CL_V3.bioMod"
 model = biorbd.Model(path_model)
@@ -25,13 +25,13 @@ PLOT_ENERY_FLAG = True
 data_CL = pd.read_pickle(sol_CL)
 data_without = pd.read_pickle(sol_without)
 
-fig, axs = plt.subplots(2, 3)
-axs = axs.ravel()
-for i in range(5):
-    axs[i].plot(np.hstack((data_CL["tau"][0][i, :], data_CL["tau"][1][i, :])).T, color="tab:orange")
-    axs[i].plot(np.hstack((data_without["tau"][0][i, :], data_without["tau"][1][i, :])).T, color="tab:blue")
-plt.savefig("Temporary.png")
-plt.show()
+# fig, axs = plt.subplots(2, 3)
+# axs = axs.ravel()
+# for i in range(5):
+#     axs[i].plot(np.hstack((data_CL["tau"][0][i, :], data_CL["tau"][1][i, :])).T, color="tab:orange")
+#     axs[i].plot(np.hstack((data_without["tau"][0][i, :], data_without["tau"][1][i, :])).T, color="tab:blue")
+# plt.savefig("Temporary.png")
+# plt.show()
 
 # Preparation data_CL
 time_end_phase_CL = []
@@ -92,6 +92,8 @@ if PLOT_INERTIA_FLAG:
     plt.savefig("Inertia.png")
     plt.show()
 
+
+# TODO: annaisfarr : Correct or delete
 # inertia_CL = np.concatenate((inertia_sol_CL, inertia_total_CL[:, np.newaxis]), axis=1)
 # inertia_2 = np.concatenate((inertie_sol_without, inertia_total_sol_without[:, np.newaxis]), axis=1)
 
@@ -189,7 +191,7 @@ energy_sol_without = np.trapz(np.abs(tau_without*qdot_without[3:, :]), time_with
 energy_sol_without_all = np.abs(tau_without[:, :]*qdot_without[3:, :])
 energy_sol_without_total = energy_sol_without_all.sum(axis=0)
 
-# TODO: Corriger
+# TODO: annaisfarr : Correct or delete
 #table_detail_energy_sol_without = np.zeros((5, len(data_without["time"])+1))
 #table_detail_energy_CL = np.zeros((5, len(data_CL["time"])+1))
 #for j in range(0,5):

@@ -226,7 +226,7 @@ def graph_all_comparaison(sol_holo, sol_without):
                                     r_minus=103.9095*np.pi/180,
                                     min_q=-0.7,
                                     max_q=3.1),
-                "Elbows": Joint(tau_max_plus=80*2,
+                "Elbows": Joint(tau_max_plus=100*2,
                                 theta_opt_plus=np.pi/2-0.1,
                                 r_plus=40*np.pi/180,
                                 tau_max_minus=50*2,
@@ -280,15 +280,23 @@ def graph_all_comparaison(sol_holo, sol_without):
 
     axs[0, 0].plot([], [], color="tab:orange", label="with holonomics \nconstraints")
     axs[0, 0].plot([], [], color="tab:blue", label="without \nconstraints")
+    axs[0, 0].fill_between([], [], [], color="tab:orange", alpha=0.1, label="physiological \nmin/max" + r" $\tau$ with", linewidth=0.5)
+    axs[0, 0].fill_between([], [], [], color="tab:blue", alpha=0.1, label="physiological \nmin/max" + r" $\tau$ without", linewidth=0.5)
     axs[0, 0].legend(loc='center right', bbox_to_anchor=(0.6, 0.5), fontsize=8)
     axs[0, 0].axis('off')
 
     for nb_seg in range(tau_CL.shape[0]):
         axs[num_line, num_col].plot(np.array([0, 100]), np.array([0, 0]), '-k', linewidth=0.5)
-        axs[num_line, num_col].step(range(len(tau_without[nb_seg])), tau_without_max_bound[nb_seg], color="tab:blue", alpha=0.5, linewidth=0.5)
-        axs[num_line, num_col].step(range(len(tau_without[nb_seg])), tau_without_min_bound[nb_seg], color="tab:blue", alpha=0.5, linewidth=0.5)
-        axs[num_line, num_col].step(range(len(tau_CL[nb_seg])), tau_CL_max_bound[nb_seg], color="tab:orange", alpha=0.5, linewidth=0.5)
-        axs[num_line, num_col].step(range(len(tau_CL[nb_seg])), tau_CL_min_bound[nb_seg], color="tab:orange", alpha=0.5, linewidth=0.5)
+
+        # axs[num_line, num_col].step(range(len(tau_without[nb_seg])), tau_without_max_bound[nb_seg], color="tab:blue", alpha=0.5, linewidth=0.5)
+        axs[num_line, num_col].fill_between(range(len(tau_without[nb_seg])), tau_without_max_bound[nb_seg], np.ones(tau_without_max_bound[nb_seg].shape) * 1000, color="tab:blue", alpha=0.1, step='pre', linewidth=0.5)
+        # axs[num_line, num_col].step(range(len(tau_without[nb_seg])), tau_without_min_bound[nb_seg], color="tab:blue", alpha=0.5, linewidth=0.5)
+        axs[num_line, num_col].fill_between(range(len(tau_without[nb_seg])), np.ones(tau_without_max_bound[nb_seg].shape) * -1000, tau_without_min_bound[nb_seg], color="tab:blue", alpha=0.1, step='pre', linewidth=0.5)
+        # axs[num_line, num_col].step(range(len(tau_CL[nb_seg])), tau_CL_max_bound[nb_seg], color="tab:orange", alpha=0.5, linewidth=0.5)
+        axs[num_line, num_col].fill_between(range(len(tau_CL[nb_seg])), tau_CL_max_bound[nb_seg], np.ones(tau_without_max_bound[nb_seg].shape) * 1000, color="tab:orange", alpha=0.1, step='pre', linewidth=0.5)
+        # axs[num_line, num_col].step(range(len(tau_CL[nb_seg])), tau_CL_min_bound[nb_seg], color="tab:orange", alpha=0.5, linewidth=0.5)
+        axs[num_line, num_col].fill_between(range(len(tau_CL[nb_seg])), np.ones(tau_without_max_bound[nb_seg].shape) * -1000, tau_CL_min_bound[nb_seg], color="tab:orange", alpha=0.1, step='pre', linewidth=0.5)
+
         axs[num_line, num_col].step(range(len(tau_without[nb_seg])), tau_without[nb_seg], color="tab:blue", alpha=0.75, linewidth=1, label="without \nconstraints", where='mid')
         axs[num_line, num_col].step(range(len(tau_CL[nb_seg])), tau_CL[nb_seg], color="tab:orange", alpha=0.75, linewidth=1, label="with holonomics \nconstraints", where='mid')
 
@@ -338,7 +346,7 @@ def graph_all_comparaison(sol_holo, sol_without):
     # Tau ratio only CL phase
     tau_CL_ratio = np.zeros(data_CL["tau"][2].shape)
     tau_without_ratio = np.zeros(data_without["tau"][2].shape)
-    fig, axs = plt.subplots(2, 2)
+    fig, axs = plt.subplots(2, 2, figsize=(8, 5))
     for i_dof in range(5):
         axs[0, 0].step(time_tuck, data_CL["tau"][2][i_dof, :], color="tab:orange", label="with holonomics \nconstraints", alpha=0.75, linewidth=1)
         axs[0, 0].step(time_tuck, data_without["tau"][2][i_dof, :], color="tab:blue", label="without \nconstraints", alpha=0.75, linewidth=1)
@@ -360,11 +368,25 @@ def graph_all_comparaison(sol_holo, sol_without):
     sum_tau_CL = np.sum(np.abs(data_CL["tau"][2]))  # @mickaelbegon: Should we normalize by the phase duration?
     sum_tau_without = np.sum(np.abs(data_without["tau"][2]))
     axs[0, 1].bar([0, 1], [sum_tau_CL, sum_tau_without], color=["tab:orange", "tab:blue"])
-    axs[0, 1].get_xaxis().set_visible(False)
+    # axs[0, 1].get_xaxis().set_visible(False)
     sum_tau_ratio_CL = np.sum(tau_CL_ratio)  # @mickaelbegon: Should we normalize by the phase duration?
     sum_tau_ratio_without = np.sum(tau_without_ratio)
     axs[1, 1].bar([0, 1], [sum_tau_ratio_CL, sum_tau_ratio_without], color=["tab:orange", "tab:blue"])
-    axs[1, 1].get_xaxis().set_visible(False)
+    # axs[1, 1].get_xaxis().set_visible(False)
+
+    axs[0, 0].set_xlabel("Tucked time [s]")
+    axs[0, 0].set_ylabel("Joint torque [Nm]")
+    axs[1, 0].set_xlabel("Tucked time [s]")
+    axs[1, 0].set_ylabel("Physiological joint torque ratio")
+    axs[0, 1].set_xticks([0, 1], ["with", "without"])
+    axs[1, 1].set_xticks([0, 1], ["with", "without"])
+
+    axs[1, 1].plot([], [], color="tab:orange", label=r"$\tau$" + " with holonomics \nconstraints")
+    axs[1, 1].plot([], [], color="tab:blue", label=r"$\tau$" + " without \nconstraints")
+    axs[1, 1].fill_between([], [], [], color="tab:orange", label="sum " + r"$\tau$" + " with \nholonomics constrain")
+    axs[1, 1].fill_between([], [], [], color="tab:blue", label="sum " + r"$\tau$" + " without \nholonomics constrain")
+    axs[1, 1].legend(loc='center right', bbox_to_anchor=(1.85, 1.5), fontsize=8)
+    plt.subplots_adjust(right=0.75, hspace=0.25)
     plt.savefig("tau_ratio_tucked_phase.png", format="png")
 
 
@@ -381,7 +403,7 @@ def graph_all_comparaison(sol_holo, sol_without):
                             data_without["time"][4][1:] - data_without["time"][4][:-1]))
     tau_CL_ratio_all = np.zeros(tau_CL.shape)
     tau_without_ratio_all = np.zeros(tau_without.shape)
-    fig, axs = plt.subplots(2, 2)
+    fig, axs = plt.subplots(2, 2, figsize=(8, 5))
     for i_dof in range(5):
         axs[0, 0].step(time_tau_pourcentage_CL, tau_CL[i_dof, :], color="tab:orange", label="with holonomics \nconstraints", alpha=0.75, linewidth=1)
         axs[0, 0].step(time_tau_pourcentage_without, tau_without[i_dof, :], color="tab:blue", label="without \nconstraints", alpha=0.75, linewidth=1)
@@ -412,10 +434,25 @@ def graph_all_comparaison(sol_holo, sol_without):
     sum_tau_all_CL = np.sum(np.abs(tau_CL * dt_CL.T))
     sum_tau_all_without = np.sum(np.abs(tau_without * dt_without.T))
     axs[0, 1].bar([0, 1], [sum_tau_all_CL, sum_tau_all_without], color=["tab:orange", "tab:blue"])
-    axs[0, 1].get_xaxis().set_visible(False)
+    # axs[0, 1].get_xaxis().set_visible(False)
     sum_tau_all_ratio_CL = np.sum(np.abs(tau_CL_ratio_all * dt_CL.T))
     sum_tau_all_ratio_without = np.sum(np.abs(tau_without_ratio_all * dt_without.T))
     axs[1, 1].bar([0, 1], [sum_tau_all_ratio_CL, sum_tau_all_ratio_without], color=["tab:orange", "tab:blue"])
-    axs[1, 1].get_xaxis().set_visible(False)
+    # axs[1, 1].get_xaxis().set_visible(False)
+
+    axs[0, 0].set_xlabel("Time [s]")
+    axs[0, 0].set_ylabel("Joint torque [Nm]")
+    axs[1, 0].set_xlabel("Time [s]")
+    axs[1, 0].set_ylabel("Physiological joint torque ratio")
+    axs[0, 1].set_xticks([0, 1], ["with", "without"])
+    axs[1, 1].set_xticks([0, 1], ["with", "without"])
+
+    axs[1, 1].plot([], [], color="tab:orange", label=r"$\tau$" + " with holonomics \nconstraints")
+    axs[1, 1].plot([], [], color="tab:blue", label=r"$\tau$" + " without \nconstraints")
+    axs[1, 1].fill_between([], [], [], color="tab:orange", label="sum " + r"$\tau$" + " with \nholonomics constrain")
+    axs[1, 1].fill_between([], [], [], color="tab:blue", label="sum " + r"$\tau$" + " without \nholonomics constrain")
+    axs[1, 1].legend(loc='center right', bbox_to_anchor=(1.85, 1.5), fontsize=8)
+    plt.subplots_adjust(right=0.75, hspace=0.25)
+
     plt.savefig("tau_ratio_all.png", format="png")
     plt.show()

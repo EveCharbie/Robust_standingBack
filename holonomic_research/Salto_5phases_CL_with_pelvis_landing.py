@@ -296,6 +296,25 @@ def custom_contraint_lambdas_normal(
 
     return lagrange_0
 
+def custom_contraint_lambdas_cisaillement(
+        controller: PenaltyController, bio_model: BiorbdModelCustomHolonomic) -> MX:
+    """
+    lagrange_1**2 < lagrange_0**2
+    """
+    # Recuperer les q
+    q_u = controller.states["q_u"].cx
+    qdot_u = controller.states["qdot_u"].cx
+    tau = controller.controls["tau"].cx
+    pelvis_mx = MX.zeros(3)
+    new_tau = vertcat(pelvis_mx, tau)
+
+    # Calculer lambdas
+    lambdas = bio_model.compute_the_lagrangian_multipliers(q_u, qdot_u, new_tau)
+    lagrange_0 = lambdas[0]
+    lagrange_1 = lambdas[1]
+
+    return lagrange_0**2 - lagrange_1**2
+
 
 def custom_contraint_lambdas_cisaillement_min_bound(
         controller: PenaltyController, bio_model: BiorbdModelCustomHolonomic) -> MX:
@@ -364,7 +383,7 @@ def minimize_actuator_torques_CL(controller: PenaltyController, actuators) -> ca
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = "Eve11"
+version = "Eve12"
 nb_phase = 5
 name_folder_model = "../Model"
 # pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_close_loop_landing_5phases_V76.pkl"
@@ -394,7 +413,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
                                     r_minus=103.9095 * np.pi / 180,
                                     min_q=-0.7,
                                     max_q=3.1),
-                 "Elbows": Joint(tau_max_plus=80 * 2,
+                 "Elbows": Joint(tau_max_plus=100 * 2,
                                  theta_opt_plus=np.pi / 2 - 0.1,
                                  r_plus=40 * np.pi / 180,
                                  tau_max_minus=50 * 2,
@@ -485,30 +504,21 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
         dependent_joint_index=[3, 4],
     )
 
-    # "relaxed friction cone": 0.01*lagrange_0 < lagrange_1 < lagrange_0
+    # "relaxed friction cone"
     constraints.add(
-        custom_contraint_lambdas_cisaillement_max_bound,
-        node=Node.ALL_SHOOTING,
-        bio_model=bio_model[2],
-        max_bound=0,
-        min_bound=-np.inf,
-        phase=2,
-    )
-    constraints.add(
-        custom_contraint_lambdas_cisaillement_min_bound,
+        custom_contraint_lambdas_cisaillement,
         node=Node.ALL_SHOOTING,
         bio_model=bio_model[2],
         max_bound=np.inf,
         min_bound=0,
         phase=2,
     )
-
     # The model can only pull on the legs, not push
     constraints.add(
         custom_contraint_lambdas_normal,
         node=Node.ALL_SHOOTING,
         bio_model=bio_model[2],
-        max_bound=-1,
+        max_bound=-0.1,
         min_bound=-np.inf,
         phase=2,
     )
