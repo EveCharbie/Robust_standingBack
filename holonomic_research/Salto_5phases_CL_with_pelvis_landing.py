@@ -54,6 +54,7 @@ from bioptim import (
     HolonomicConstraintsList,
     HolonomicConstraintsFcn,
     Bounds,
+    Node,
 )
 from casadi import MX, vertcat
 from holonomic_research.biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
@@ -363,7 +364,7 @@ def minimize_actuator_torques_CL(controller: PenaltyController, actuators) -> ca
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = "Eve10"
+version = "Eve11"
 nb_phase = 5
 name_folder_model = "../Model"
 # pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_close_loop_landing_5phases_V76.pkl"
@@ -484,33 +485,33 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
         dependent_joint_index=[3, 4],
     )
 
-    # # "relaxed friction cone": 0.01*lagrange_0 < lagrange_1 < lagrange_0
-    # constraints.add(
-    #     custom_contraint_lambdas_cisaillement_max_bound,
-    #     node=Node.ALL_SHOOTING,
-    #     bio_model=bio_model[2],
-    #     max_bound=0,
-    #     min_bound=-np.inf,
-    #     phase=2,
-    # )
-    # constraints.add(
-    #     custom_contraint_lambdas_cisaillement_min_bound,
-    #     node=Node.ALL_SHOOTING,
-    #     bio_model=bio_model[2],
-    #     max_bound=np.inf,
-    #     min_bound=0,
-    #     phase=2,
-    # )
-    #
-    # # The model can only pull on the legs, not push
-    # constraints.add(
-    #     custom_contraint_lambdas_normal,
-    #     node=Node.ALL_SHOOTING,
-    #     bio_model=bio_model[2],
-    #     max_bound=-1,
-    #     min_bound=-np.inf,
-    #     phase=2,
-    # )
+    # "relaxed friction cone": 0.01*lagrange_0 < lagrange_1 < lagrange_0
+    constraints.add(
+        custom_contraint_lambdas_cisaillement_max_bound,
+        node=Node.ALL_SHOOTING,
+        bio_model=bio_model[2],
+        max_bound=0,
+        min_bound=-np.inf,
+        phase=2,
+    )
+    constraints.add(
+        custom_contraint_lambdas_cisaillement_min_bound,
+        node=Node.ALL_SHOOTING,
+        bio_model=bio_model[2],
+        max_bound=np.inf,
+        min_bound=0,
+        phase=2,
+    )
+
+    # The model can only pull on the legs, not push
+    constraints.add(
+        custom_contraint_lambdas_normal,
+        node=Node.ALL_SHOOTING,
+        bio_model=bio_model[2],
+        max_bound=-1,
+        min_bound=-np.inf,
+        phase=2,
+    )
 
     # --- Bounds ---#
     x_bounds = BoundsList()
