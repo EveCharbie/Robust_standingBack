@@ -363,7 +363,7 @@ def minimize_actuator_torques_CL(controller: PenaltyController, actuators) -> ca
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = "Eve8"
+version = "Eve10"
 nb_phase = 5
 name_folder_model = "../Model"
 # pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_close_loop_landing_5phases_V76.pkl"
@@ -439,14 +439,14 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
     # Add objective functions
     objective_functions = ObjectiveList()
     objective_functions = add_objectives(objective_functions, actuators)
-    # objective_functions.add(
-    #     minimize_actuator_torques_CL,
-    #     custom_type=ObjectiveFcn.Lagrange,
-    #     actuators=actuators,
-    #     quadratic=False,
-    #     weight=0.1,
-    #     phase=2,
-    # )
+    objective_functions.add(
+        minimize_actuator_torques_CL,
+        custom_type=ObjectiveFcn.Lagrange,
+        actuators=actuators,
+        quadratic=True,
+        weight=0.1,
+        phase=2,
+    )
 
     # --- Dynamics ---#
     dynamics = DynamicsList()

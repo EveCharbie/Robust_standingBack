@@ -13,8 +13,8 @@ from graph_simu import graph_all_comparaison, get_created_data_from_pickle, time
 # Solution with and without holonomic constraints
 # path_sol = "/home/mickaelbegon/Documents/Anais/Results_simu"
 path_sol = "../holonomic_research/"
-sol_CL = path_sol + "/" + "Salto_close_loop_landing_5phases_VEve8.pkl"
-sol_without = path_sol + "/" + "Salto_5phases_VEve5.pkl"
+sol_CL = path_sol + "/" + "Salto_close_loop_landing_5phases_VEve10.pkl"
+sol_without = path_sol + "/" + "Salto_5phases_VEve6.pkl"
 path_model = "../Model/Model2D_7Dof_2C_5M_CL_V3.bioMod"
 model = biorbd.Model(path_model)
 
