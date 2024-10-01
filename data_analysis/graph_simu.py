@@ -199,13 +199,13 @@ def graph_all_comparaison(sol_holo, sol_without):
 
         # Y_label
         axs[0, 0].set_ylabel("Velocity [m/s]", fontsize=7)  # Pelvis Translation
-        axs[0, 1].set_yticklabels([])  # Pelvis Translation
+        # axs[0, 1].set_yticklabels([])  # Pelvis Translation
         axs[1, 0].set_ylabel("F (+) / E (-) [" + r"$^\circ$/s" + "]", fontsize=7)  # Pelvis Rotation
-        axs[1, 1].set_yticklabels([])  # Arm Rotation
-        axs[1, 2].set_yticklabels([])  # Forearm Rotation
+        # axs[1, 1].set_yticklabels([])  # Arm Rotation
+        # axs[1, 2].set_yticklabels([])  # Forearm Rotation
         axs[2, 0].set_ylabel("F (+) / E (-) [" + r"$^\circ$/s" + "]", fontsize=7)  # Thight Rotation
-        axs[2, 1].set_yticklabels([])  # Leg Rotation
-        axs[2, 2].set_yticklabels([])  # Foot Rotation
+        # axs[2, 1].set_yticklabels([])  # Leg Rotation
+        # axs[2, 2].set_yticklabels([])  # Foot Rotation
         # Récupérer les handles et labels de la légende de la figure de la première ligne, première colonne
         handles, labels = axs[0, 0].get_legend_handles_labels()
 
@@ -226,7 +226,7 @@ def graph_all_comparaison(sol_holo, sol_without):
                                     r_minus=103.9095*np.pi/180,
                                     min_q=-0.7,
                                     max_q=3.1),
-                "Elbows": Joint(tau_max_plus=100*2,
+                "Elbows": Joint(tau_max_plus=80*2,
                                 theta_opt_plus=np.pi/2-0.1,
                                 r_plus=40*np.pi/180,
                                 tau_max_minus=50*2,
@@ -325,9 +325,9 @@ def graph_all_comparaison(sol_holo, sol_without):
     # Y_label
     axs[0, 1].set_ylabel("Joint torque [Nm]", fontsize=7)  # Arm Rotation
     axs[1, 0].set_ylabel("Joint torque [Nm]", fontsize=7)  # Leg Rotation
-    axs[0, 2].set_yticklabels([])
-    axs[1, 1].set_yticklabels([])
-    axs[1, 2].set_yticklabels([])
+    # axs[0, 2].set_yticklabels([])
+    # axs[1, 1].set_yticklabels([])
+    # axs[1, 2].set_yticklabels([])
     plt.tight_layout()
     plt.subplots_adjust(wspace=0.3, hspace=0.4)
     fig.savefig("tau.png", format="png")

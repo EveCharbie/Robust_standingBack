@@ -451,7 +451,7 @@ def add_u_bounds(u_bounds, tau_min, tau_max):
 
 # --- Parameters --- #
 movement = "Salto"
-version = "Eve6"
+version = "Eve7"
 nb_phase = 5
 name_folder_model = "../Model"
 # pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Jump_4phases_V22.pkl"
@@ -480,7 +480,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
                                     r_minus=103.9095 * np.pi / 180,
                                     min_q=-0.7,
                                     max_q=3.1),
-                 "Elbows": Joint(tau_max_plus=100 * 2,
+                 "Elbows": Joint(tau_max_plus = 80 * 2,
                                  theta_opt_plus=np.pi / 2 - 0.1,
                                  r_plus=40 * np.pi / 180,
                                  tau_max_minus=50 * 2,
@@ -642,6 +642,7 @@ def main():
     solver.set_maximum_iterations(10000)
     solver.set_bound_frac(1e-8)
     solver.set_bound_push(1e-8)
+    solver.set_tol(1e-6)
     #ocp.add_plot_penalty()
     sol = ocp.solve(solver)
     sol.print_cost()

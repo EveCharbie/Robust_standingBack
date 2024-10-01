@@ -383,12 +383,11 @@ def minimize_actuator_torques_CL(controller: PenaltyController, actuators) -> ca
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = "Eve12"
+version = "Eve14"
 nb_phase = 5
 name_folder_model = "../Model"
-# pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_close_loop_landing_5phases_V76.pkl"
+# pickle_sol_init = "init/Salto_close_loop_landing_5phases_VEve12.pkl"
 # pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_5phases_VEve3.pkl"
-# pickle_sol_init = "init/Salto_5phases_VEve5.pkl"
 pickle_sol_init = "init/Jump_4phases_V22.pkl"
 sol_salto = get_created_data_from_pickle(pickle_sol_init)
 
@@ -413,7 +412,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
                                     r_minus=103.9095 * np.pi / 180,
                                     min_q=-0.7,
                                     max_q=3.1),
-                 "Elbows": Joint(tau_max_plus=100 * 2,
+                 "Elbows": Joint(tau_max_plus=80 * 2,
                                  theta_opt_plus=np.pi / 2 - 0.1,
                                  r_plus=40 * np.pi / 180,
                                  tau_max_minus=50 * 2,
@@ -543,6 +542,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
     pose_salto_end = [0.107, 0.797, 2.892, 0.216, 1.954, 2.599, -2.058, 0.224]
 
     x_init = InitialGuessList()
+    # Init straight jump
     x_init.add("q", sol_salto["q"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
     x_init.add("qdot", sol_salto["qdot"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
     x_init.add("q", sol_salto["q"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
@@ -553,29 +553,13 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
     x_init.add("q", sol_salto["q"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
     x_init.add("qdot", sol_salto["qdot"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
 
-    # x_init.add("q", np.array([pose_propulsion_start, pose_takeout_start]).T, interpolation=InterpolationType.LINEAR,
-    #           phase=0)
-    # x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=0)
-    # x_init.add("q", np.array([pose_takeout_start, pose_salto_start]).T, interpolation=InterpolationType.LINEAR,
-    #           phase=1)
-    # x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=1)
-    # x_init.add("q_u", np.array([pose_salto_start_CL, pose_salto_end_CL]).T,
-    #           interpolation=InterpolationType.LINEAR, phase=2)
-    # x_init.add("qdot_u", np.array([[0] * n_independent, [0] * n_independent]).T,
-    #           interpolation=InterpolationType.LINEAR, phase=2)
-    # x_init.add("q", np.array([pose_salto_end, pose_landing_start]).T, interpolation=InterpolationType.LINEAR, phase=3)
-    # x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=3)
-    # x_init.add("q", np.array([pose_landing_start, pose_landing_end]).T, interpolation=InterpolationType.LINEAR, phase=4)
-    # x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=4)
-
+    # Init CL salto
     # x_init.add("q", sol_salto["q"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
     # x_init.add("qdot", sol_salto["qdot"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
     # x_init.add("q", sol_salto["q"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
     # x_init.add("qdot", sol_salto["qdot"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    # x_init.add("q_u", sol_salto["q"][2][[0,1,2,5,6,7], :], interpolation=InterpolationType.EACH_FRAME, phase=2)
-    # x_init.add("qdot_u", sol_salto["qdot"][2][[0,1,2,5,6,7], :], interpolation=InterpolationType.EACH_FRAME, phase=2)
-    # x_init.add("q", sol_salto["q"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
-    # x_init.add("qdot", sol_salto["qdot"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
+    # x_init.add("q_u", sol_salto["q_u"], interpolation=InterpolationType.EACH_FRAME, phase=2)
+    # x_init.add("qdot_u", sol_salto["qdot_u"], interpolation=InterpolationType.EACH_FRAME, phase=2)
     # x_init.add("q", sol_salto["q"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
     # x_init.add("qdot", sol_salto["qdot"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
     # x_init.add("q", sol_salto["q"][4], interpolation=InterpolationType.EACH_FRAME, phase=4)
@@ -586,12 +570,14 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
     u_bounds = add_u_bounds(u_bounds, tau_min, tau_max)
 
     u_init = InitialGuessList()
+    # Init straight jump
     u_init.add("tau", sol_salto["tau"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
     u_init.add("tau", sol_salto["tau"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
     u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=2)
     u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=3)
     u_init.add("tau", sol_salto["tau"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
 
+    # Init CL salto
     # u_init.add("tau", sol_salto["tau"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
     # u_init.add("tau", sol_salto["tau"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
     # u_init.add("tau", sol_salto["tau"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
@@ -636,6 +622,8 @@ def main():
     solver.set_maximum_iterations(10000)
     solver.set_bound_frac(1e-8)
     solver.set_bound_push(1e-8)
+    solver.set_tol(1e-6)
+    # solver.set_nlp_scaling_method("none")  # Doesn't work
     #ocp.add_plot_penalty()
     sol = ocp.solve(solver)
     sol.print_cost()
