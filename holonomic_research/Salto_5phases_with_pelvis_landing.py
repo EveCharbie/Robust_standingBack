@@ -167,8 +167,8 @@ def add_objectives(objective_functions, actuators):
         minimize_actuator_torques,
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
-        quadratic=True,
-        weight=0.0001,
+        quadratic=False,
+        weight=0.01,
         phase=0,
     )
     objective_functions.add(
@@ -213,7 +213,7 @@ def add_objectives(objective_functions, actuators):
         minimize_actuator_torques,
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
-        quadratic=True,
+        quadratic=False,
         weight=0.1,
         phase=3,
     )
@@ -228,7 +228,7 @@ def add_objectives(objective_functions, actuators):
         minimize_actuator_torques,
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
-        quadratic=True,
+        quadratic=False,
         weight=0.01,
         phase=4,
     )
@@ -451,7 +451,7 @@ def add_u_bounds(u_bounds, tau_min, tau_max):
 
 # --- Parameters --- #
 movement = "Salto"
-version = "Eve7"
+version = "Eve9"
 nb_phase = 5
 name_folder_model = "../Model"
 # pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Jump_4phases_V22.pkl"
@@ -480,7 +480,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
                                     r_minus=103.9095 * np.pi / 180,
                                     min_q=-0.7,
                                     max_q=3.1),
-                 "Elbows": Joint(tau_max_plus = 80 * 2,
+                 "Elbows": Joint(tau_max_plus=80 * 2,
                                  theta_opt_plus=np.pi / 2 - 0.1,
                                  r_plus=40 * np.pi / 180,
                                  tau_max_minus=50 * 2,
@@ -527,7 +527,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
         minimize_actuator_torques,
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
-        quadratic=True,
+        quadratic=False,
         weight=0.1,
         phase=2,
     )
@@ -586,6 +586,10 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
     x_init.add("qdot", sol_salto["qdot"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
     x_init.add("q", sol_salto["q"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
     x_init.add("qdot", sol_salto["qdot"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
+    #x_init.add("q_u", sol_salto["q"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
+    #x_init.add("qdot_u", sol_salto["qdot"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
+    #x_init.add("q", sol_salto["q"][2], interpolation=InterpolationType.EACH_FRAME, phase=3)
+    #x_init.add("qdot", sol_salto["qdot"][2], interpolation=InterpolationType.EACH_FRAME, phase=3)
     x_init.add("q", sol_salto["q"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
     x_init.add("qdot", sol_salto["qdot"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
 
@@ -617,6 +621,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
         objective_functions=objective_functions,
         constraints=constraints,
         n_threads=32,
+        #assume_phase_dynamics=True,
         phase_transitions=phase_transitions,
         variable_mappings=dof_mapping,
     ), bio_model
