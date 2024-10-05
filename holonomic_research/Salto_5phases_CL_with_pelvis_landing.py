@@ -383,7 +383,7 @@ def minimize_actuator_torques_CL(controller: PenaltyController, actuators) -> ca
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = "Eve14"
+version = "Eve15"
 nb_phase = 5
 name_folder_model = "../Model"
 # pickle_sol_init = "init/Salto_close_loop_landing_5phases_VEve12.pkl"
@@ -462,7 +462,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
         minimize_actuator_torques_CL,
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
-        quadratic=True,
+        quadratic=False,
         weight=0.1,
         phase=2,
     )

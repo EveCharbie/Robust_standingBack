@@ -451,7 +451,7 @@ def add_u_bounds(u_bounds, tau_min, tau_max):
 
 # --- Parameters --- #
 movement = "Salto"
-version = "Eve9"
+version = "Eve10"
 nb_phase = 5
 name_folder_model = "../Model"
 # pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Jump_4phases_V22.pkl"
