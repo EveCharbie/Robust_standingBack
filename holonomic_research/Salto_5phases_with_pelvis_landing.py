@@ -345,7 +345,7 @@ def initialize_tau():
     tau_max_total = [0, 0, 0, 325.531, 138, 981.1876, 735.3286, 343.9806]
     tau_min = [i * 0.7 for i in tau_min_total]
     tau_max = [i * 0.7 for i in tau_max_total]
-    tau_init = 0
+    tau_init = 1
     return tau_min, tau_max, tau_init
 
 def add_x_bounds(bio_model):
@@ -441,8 +441,8 @@ def add_u_bounds(u_bounds, tau_min, tau_max):
                  max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=0)
     u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
                  max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=1)
-    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], -150, tau_min[6], tau_min[7]],
-                 max_bound=[tau_max[3], tau_max[4], 150, tau_max[6], tau_max[7]], phase=2)
+    u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
+                 max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=2)
     u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
                  max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=3)
     u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
@@ -577,8 +577,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
                interpolation=InterpolationType.LINEAR, phase=2)
     x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T,
                interpolation=InterpolationType.LINEAR, phase=2)
-    #x_init.add("q", np.array([pose_salto_end, pose_landing_start]).T, interpolation=InterpolationType.LINEAR, phase=3)
-    #x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=3)
+    x_init.add("q", np.array([pose_salto_end, pose_landing_start]).T, interpolation=InterpolationType.LINEAR, phase=3)
+    x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=3)
     #x_init.add("q", np.array([pose_landing_start, pose_landing_end]).T, interpolation=InterpolationType.LINEAR, phase=4)
     #x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=4)
 
