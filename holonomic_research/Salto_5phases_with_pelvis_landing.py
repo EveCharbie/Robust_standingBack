@@ -196,7 +196,7 @@ def add_objectives(objective_functions, actuators):
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
         quadratic=False,
-        weight=0.01,
+        weight=0.1,
         phase=1,
     )
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=100, phase=1)
@@ -214,7 +214,7 @@ def add_objectives(objective_functions, actuators):
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
         quadratic=False,
-        weight=0.01,
+        weight=0.1,
         phase=3,
     )
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=100, phase=3)
@@ -451,7 +451,7 @@ def add_u_bounds(u_bounds, tau_min, tau_max):
 
 # --- Parameters --- #
 movement = "Salto"
-version = "Eve13"
+version = "Eve14"
 nb_phase = 5
 name_folder_model = "../Model"
 # pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Jump_4phases_V22.pkl"
