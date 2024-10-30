@@ -615,14 +615,14 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     if WITH_MULTI_START:
         x_init.add_noise(
             bounds=x_bounds,
-            magnitude=0.1,
+            magnitude=0.2,
             magnitude_type=MagnitudeType.RELATIVE,
             n_shooting=[n_shooting[i] + 1 for i in range(len(n_shooting))],
             seed=seed,
         )
         u_init.add_noise(
             bounds=u_bounds,
-            magnitude=0.05,
+            magnitude=0.2,
             magnitude_type=MagnitudeType.RELATIVE,
             n_shooting=[n_shooting[i] for i in range(len(n_shooting))],
             seed=seed,
@@ -672,7 +672,7 @@ def should_solve(*combinatorial_parameters, **extra_parameters):
 
 # --- Parameters --- #
 movement = "Salto"
-version = "Eve16"
+version = "Eve17"
 nb_phase = 5
 name_folder_model = "../Model"
 # pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Jump_4phases_V22.pkl"
