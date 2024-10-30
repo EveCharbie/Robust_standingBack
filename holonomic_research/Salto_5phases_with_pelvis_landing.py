@@ -31,6 +31,7 @@ Phase 4: Landing
 """
 
 # --- Import package --- #
+import os
 import numpy as np
 import casadi as cas
 import pickle
@@ -57,21 +58,30 @@ from bioptim import (
     DynamicsFunctions,
     HolonomicConstraintsList,
     HolonomicConstraintsFcn,
+    MagnitudeType,
+    MultiStart,
 )
 from Save import get_created_data_from_pickle
 from plot_actuators import Joint, actuator_function
 
 # --- Save results --- #
-def save_results(sol, c3d_file_path):
-    """
-    Solving the ocp
-    Parameters
-     ----------
-     sol: Solution
-        The solution to the ocp at the current pool
-    c3d_file_path: str
-        The path to the c3d file of the task
-    """
+def save_results(sol,
+                 *combinatorial_parameters,
+                 **extra_parameters,):
+
+    biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, seed = combinatorial_parameters
+
+    save_folder = extra_parameters["save_folder"]
+
+    folder_path = f"{save_folder}/{str(movement)}_{str(nb_phase)}phases_V{version}"
+    if not os.path.exists(folder_path):
+        os.mkdir(folder_path)
+    file_path = f"{folder_path}/sol_{seed}"
+    if sol.status == 0:
+        file_path += "_CVG.pkl"
+    else:
+        file_path += "_DVG.pkl"
+
 
     data = {}
     states = sol.decision_states(to_merge=SolutionMerge.NODES)
@@ -130,8 +140,10 @@ def save_results(sol, c3d_file_path):
     else:
         data["status"] = "Restoration Failed !"
 
-    with open(f"{c3d_file_path}", "wb") as file:
+    with open(file_path, "wb") as file:
         pickle.dump(data, file)
+
+    return
 
 
 def CoM_over_toes(controller: PenaltyController) -> cas.MX:
@@ -449,18 +461,9 @@ def add_u_bounds(u_bounds, tau_min, tau_max):
                  max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=4)
     return u_bounds
 
-# --- Parameters --- #
-movement = "Salto"
-version = "Eve15"
-nb_phase = 5
-name_folder_model = "../Model"
-# pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Jump_4phases_V22.pkl"
-pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Jump_4phases_V22.pkl"
-sol_salto = get_created_data_from_pickle(pickle_sol_init)
-
 
 # --- Prepare ocp --- #
-def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
+def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, seed=0):
     bio_model = (BiorbdModel(biorbd_model_path[0]),
                  BiorbdModel(biorbd_model_path[1]),
                  BiorbdModel(biorbd_model_path[2]),
@@ -609,6 +612,22 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
     #u_init.add("tau", sol_salto["tau"][2], interpolation=InterpolationType.EACH_FRAME, phase=3)
     u_init.add("tau", sol_salto["tau"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
 
+    if WITH_MULTI_START:
+        x_init.add_noise(
+            bounds=x_bounds,
+            magnitude=0.1,
+            magnitude_type=MagnitudeType.RELATIVE,
+            n_shooting=[n_shooting[i] + 1 for i in range(len(n_shooting))],
+            seed=seed,
+        )
+        u_init.add_noise(
+            bounds=u_bounds,
+            magnitude=0.05,
+            magnitude_type=MagnitudeType.RELATIVE,
+            n_shooting=[n_shooting[i] for i in range(len(n_shooting))],
+            seed=seed,
+        )
+
     return OptimalControlProgram(
         bio_model=bio_model,
         dynamics=dynamics,
@@ -621,43 +640,99 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
         objective_functions=objective_functions,
         constraints=constraints,
         n_threads=32,
-        #assume_phase_dynamics=True,
         phase_transitions=phase_transitions,
         variable_mappings=dof_mapping,
-    ), bio_model
+    )
+
+
+def prepare_multi_start(
+    combinatorial_parameters: dict,
+    save_folder: str = None,
+    n_pools: int = 10,
+    solver: Solver = None,
+):
+    """
+    The initialization of the multi-start
+    """
+
+    return MultiStart(
+        combinatorial_parameters=combinatorial_parameters,
+        prepare_ocp_callback=prepare_ocp,
+        post_optimization_callback=(save_results, {"save_folder": save_folder}),
+        should_solve_callback=(should_solve, {"save_folder": save_folder}),
+        n_pools=n_pools,
+        solver=solver,
+    )
+
+
+def should_solve(*combinatorial_parameters, **extra_parameters):
+    return True
+
+
+
+# --- Parameters --- #
+movement = "Salto"
+version = "Eve16"
+nb_phase = 5
+name_folder_model = "../Model"
+# pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Jump_4phases_V22.pkl"
+pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Jump_4phases_V22.pkl"
+sol_salto = get_created_data_from_pickle(pickle_sol_init)
+
 
 
 # --- Load model --- #
 def main():
+
+    WITH_MULTI_START = True
+
     model_path = str(name_folder_model) + "/" + "Model2D_7Dof_0C_5M_CL_V3.bioMod"
     model_path_1contact = str(name_folder_model) + "/" + "Model2D_7Dof_2C_5M_CL_V3.bioMod"
 
-    ocp, bio_model = prepare_ocp(
-        biorbd_model_path=(model_path_1contact,
-                           model_path,
-                           model_path,
-                           model_path,
-                           model_path_1contact),
-        phase_time=(0.2, 0.2, 0.3, 0.3, 0.3),
-        n_shooting=(20, 20, 30, 30, 30),
-    )
-
-    # --- Solve the program --- #
+    # Solver options
     solver = Solver.IPOPT(show_options=dict(show_bounds=True), _linear_solver="MA57")#show_online_optim=True,
     solver.set_maximum_iterations(10000)
     solver.set_bound_frac(1e-8)
     solver.set_bound_push(1e-8)
     solver.set_tol(1e-6)
-    # solver.set_nlp_scaling_method("none")  # Doesn't work
-    #ocp.add_plot_penalty()
-    sol = ocp.solve(solver)
-    sol.print_cost()
+
+    biorbd_model_path = [(model_path_1contact,
+                         model_path,
+                         model_path,
+                         model_path,
+                         model_path_1contact)]
+    phase_time = [(0.2, 0.2, 0.3, 0.3, 0.3)]
+    n_shooting = [(20, 20, 30, 30, 30)]
+
+    seed = list(range(20))
+    combinatorial_parameters = {
+        "bio_model_path": biorbd_model_path,
+        "phase_time": phase_time,
+        "n_shooting": n_shooting,
+        "WITH_MULTI_START": [True],
+        "seed": seed,
+    }
 
 
-# --- Save results --- #
-    save_results(sol, str(movement) + "_" + str(nb_phase) + "phases_V" + version + ".pkl")
-    sol.graphs(show_bounds=True, save_name=str(movement) + "_" + str(nb_phase) + "phases_V" + version)
-    sol.animate()
+    if WITH_MULTI_START:
+        save_folder = "./solutions"
+        multi_start = prepare_multi_start(
+            combinatorial_parameters=combinatorial_parameters,
+            save_folder=save_folder,
+            solver=solver,
+        )
+
+        multi_start.solve()
+    else:
+        ocp = prepare_ocp(biorbd_model_path[0], phase_time[0], n_shooting[0], WITH_MULTI_START=False)
+
+        sol = ocp.solve(solver)
+        sol.print_cost()
+
+        # --- Save results --- #
+        save_results(sol, combinatorial_parameters)
+        sol.graphs(show_bounds=True, save_name=str(movement) + "_" + str(nb_phase) + "phases_V" + version)
+        sol.animate()
 
 
 if __name__ == "__main__":
