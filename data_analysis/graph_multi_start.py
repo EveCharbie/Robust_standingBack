@@ -3,10 +3,11 @@ import numpy as np
 import pandas as pd
 import biorbd
 import matplotlib.pyplot as plt
-from graph_simu import graph_all_comparaison, get_created_data_from_pickle, time_to_percentage
+from matplotlib import colormaps as cmap
+
 
 # Solution with and without holonomic constraints
-path_sol = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/holonomic_research/solutions/Salto_5phases_VEve16"
+path_sol = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/holonomic_research/solutions/Salto_5phases_VEve18"
 
 path_sol_CL = "/home/mickaelbegon/Documents/Anais/Results_simu"
 sol_CL = path_sol_CL + "/" + "Salto_close_loop_landing_5phases_VEve12.pkl"
@@ -34,17 +35,8 @@ for nb_seg in range(tau_CL.shape[0]):
         axs[num_line, num_col].set_xlabel('Time [%]', fontsize=7)
 
 
-colors = ["tab:blue",
-          "tab:orange",
-          "tab:green",
-          "tab:red",
-          "tab:purple",
-          "tab:brown",
-          "tab:pink",
-          "tab:gray",
-          "tab:olive",
-          "tab:cyan",
-          "m"]
+i_colors = np.linspace(0.0, 1.0, 20)
+colors = [cmap["viridis"](i) for i in i_colors]
 for file in os.listdir(path_sol):
     if file.endswith("CVG.pkl"):
         sol_without = path_sol + "/" + file
@@ -78,5 +70,5 @@ for file in os.listdir(path_sol):
 
 plt.tight_layout()
 plt.subplots_adjust(wspace=0.3, hspace=0.4)
-fig.savefig("tau_multi_start.png", format="png")
+fig.savefig("tau_multi_start_2.png", format="png")
 plt.show()
