@@ -388,7 +388,7 @@ nb_phase = 5
 name_folder_model = "../Model"
 # pickle_sol_init = "init/Salto_close_loop_landing_5phases_VEve12.pkl"
 # pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_5phases_VEve3.pkl"
-pickle_sol_init = "init/Jump_4phases_V22.pkl"
+pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Jump_4phases_V22.pkl"
 sol_salto = get_created_data_from_pickle(pickle_sol_init)
 
 # --- Prepare ocp --- #

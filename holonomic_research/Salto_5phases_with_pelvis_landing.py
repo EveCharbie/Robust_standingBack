@@ -31,6 +31,7 @@ Phase 4: Landing
 """
 
 # --- Import package --- #
+import os
 import numpy as np
 import casadi as cas
 import pickle
@@ -57,21 +58,30 @@ from bioptim import (
     DynamicsFunctions,
     HolonomicConstraintsList,
     HolonomicConstraintsFcn,
+    MagnitudeType,
+    MultiStart,
 )
 from Save import get_created_data_from_pickle
 from plot_actuators import Joint, actuator_function
 
 # --- Save results --- #
-def save_results(sol, c3d_file_path):
-    """
-    Solving the ocp
-    Parameters
-     ----------
-     sol: Solution
-        The solution to the ocp at the current pool
-    c3d_file_path: str
-        The path to the c3d file of the task
-    """
+def save_results(sol,
+                 *combinatorial_parameters,
+                 **extra_parameters,):
+
+    biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, seed = combinatorial_parameters
+
+    save_folder = extra_parameters["save_folder"]
+
+    folder_path = f"{save_folder}/{str(movement)}_{str(nb_phase)}phases_V{version}"
+    if not os.path.exists(folder_path):
+        os.mkdir(folder_path)
+    file_path = f"{folder_path}/sol_{seed}"
+    if sol.status == 0:
+        file_path += "_CVG.pkl"
+    else:
+        file_path += "_DVG.pkl"
+
 
     data = {}
     states = sol.decision_states(to_merge=SolutionMerge.NODES)
@@ -130,8 +140,10 @@ def save_results(sol, c3d_file_path):
     else:
         data["status"] = "Restoration Failed !"
 
-    with open(f"{c3d_file_path}", "wb") as file:
+    with open(file_path, "wb") as file:
         pickle.dump(data, file)
+
+    return
 
 
 def CoM_over_toes(controller: PenaltyController) -> cas.MX:
@@ -161,7 +173,7 @@ def add_objectives(objective_functions, actuators):
     # Phase 0 (Propulsion):
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_COM_VELOCITY, node=Node.END, weight=-1, axes=Axis.Z, phase=0)
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=1000, min_bound=0.1, max_bound=0.4, phase=0)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=100, phase=0)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=1, phase=0)
     # objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=0.0001, phase=0)
     objective_functions.add(
         minimize_actuator_torques,
@@ -199,12 +211,12 @@ def add_objectives(objective_functions, actuators):
         weight=0.1,
         phase=1,
     )
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=100, phase=1)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=1, phase=1)
 
     # Phase 2 (Tucked phase):
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=-10, min_bound=0.1, max_bound=0.4, phase=2)
     # objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", weight=0.1, phase=2)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=100, phase=2)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=1, phase=2)
 
     # Phase 3 (Preparation landing):
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=10, min_bound=0.1, max_bound=0.3, phase=3)
@@ -217,7 +229,7 @@ def add_objectives(objective_functions, actuators):
         weight=0.1,
         phase=3,
     )
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=100, phase=3)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=1, phase=3)
 
     # Phase 4 (Landing):
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_STATE, key="qdot", node=Node.END, weight=100, phase=4)
@@ -232,7 +244,7 @@ def add_objectives(objective_functions, actuators):
         weight=0.01,
         phase=4,
     )
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=100, phase=4)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=1, phase=4)
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_COM_POSITION, node=Node.END, weight=100, axes=Axis.Y,
                             phase=4)
 
@@ -449,18 +461,9 @@ def add_u_bounds(u_bounds, tau_min, tau_max):
                  max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=4)
     return u_bounds
 
-# --- Parameters --- #
-movement = "Salto"
-version = "Eve14"
-nb_phase = 5
-name_folder_model = "../Model"
-# pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/Code - examples/Jump-salto/Jump_4phases_V22.pkl"
-pickle_sol_init = "init/Salto_close_loop_landing_5phases_VEve12.pkl" #"init/Jump_4phases_V22.pkl"
-sol_salto = get_created_data_from_pickle(pickle_sol_init)
-
 
 # --- Prepare ocp --- #
-def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
+def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, seed=0):
     bio_model = (BiorbdModel(biorbd_model_path[0]),
                  BiorbdModel(biorbd_model_path[1]),
                  BiorbdModel(biorbd_model_path[2]),
@@ -567,47 +570,66 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
 
     # Initial guess
     x_init = InitialGuessList()
-    #x_init.add("q", np.array([pose_propulsion_start, pose_takeout_start]).T, interpolation=InterpolationType.LINEAR,
-    #           phase=0)
-    #x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=0)
-    #x_init.add("q", np.array([pose_takeout_start, pose_salto_start]).T, interpolation=InterpolationType.LINEAR,
-   #            phase=1)
-    #x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=1)
+    # Initial guess from Jump
+    x_init.add("q", sol_salto["q"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
+    x_init.add("qdot", sol_salto["qdot"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
+    x_init.add("q", sol_salto["q"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
+    x_init.add("qdot", sol_salto["qdot"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
     x_init.add("q", np.array([pose_salto_start, pose_salto_end]).T,
                interpolation=InterpolationType.LINEAR, phase=2)
     x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T,
                interpolation=InterpolationType.LINEAR, phase=2)
     x_init.add("q", np.array([pose_salto_end, pose_landing_start]).T, interpolation=InterpolationType.LINEAR, phase=3)
     x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=3)
-    #x_init.add("q", np.array([pose_landing_start, pose_landing_end]).T, interpolation=InterpolationType.LINEAR, phase=4)
-    #x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=4)
+    x_init.add("q", sol_salto["q"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
+    x_init.add("qdot", sol_salto["qdot"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
 
+    # Initial guess from somersault
     x_init.add("q", sol_salto["q"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
     x_init.add("qdot", sol_salto["qdot"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
     x_init.add("q", sol_salto["q"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
     x_init.add("qdot", sol_salto["qdot"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    #x_init.add("q_u", sol_salto["q"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
-    #x_init.add("qdot_u", sol_salto["qdot"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
-    #x_init.add("q", sol_salto["q"][2], interpolation=InterpolationType.EACH_FRAME, phase=3)
-    #x_init.add("qdot", sol_salto["qdot"][2], interpolation=InterpolationType.EACH_FRAME, phase=3)
-    x_init.add("q", sol_salto["q"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
-    x_init.add("qdot", sol_salto["qdot"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
+    x_init.add("q", sol_salto["q"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
+    x_init.add("qdot", sol_salto["qdot"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
+    x_init.add("q", sol_salto["q"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
+    x_init.add("qdot", sol_salto["qdot"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
+    x_init.add("q", sol_salto["q"][4], interpolation=InterpolationType.EACH_FRAME, phase=4)
+    x_init.add("qdot", sol_salto["qdot"][4], interpolation=InterpolationType.EACH_FRAME, phase=4)
 
     # Define control path constraint
     u_bounds = BoundsList()
     u_bounds = add_u_bounds(u_bounds, tau_min, tau_max)
 
     u_init = InitialGuessList()
-    #u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=0)
-    #u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=1)
-    u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=2)
-    u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=3)
-    #u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=4)
-
+    # Initial guess from jump
     u_init.add("tau", sol_salto["tau"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
     u_init.add("tau", sol_salto["tau"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    #u_init.add("tau", sol_salto["tau"][2], interpolation=InterpolationType.EACH_FRAME, phase=3)
+    u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=2)
+    u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=3)
     u_init.add("tau", sol_salto["tau"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
+
+    # Initial guess from somersault
+    u_init.add("tau", sol_salto["tau"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
+    u_init.add("tau", sol_salto["tau"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
+    u_init.add("tau", sol_salto["tau"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
+    u_init.add("tau", sol_salto["tau"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
+    u_init.add("tau", sol_salto["tau"][4], interpolation=InterpolationType.EACH_FRAME, phase=4)
+
+    if WITH_MULTI_START:
+        x_init.add_noise(
+            bounds=x_bounds,
+            magnitude=0.2,
+            magnitude_type=MagnitudeType.RELATIVE,
+            n_shooting=[n_shooting[i] + 1 for i in range(len(n_shooting))],
+            seed=seed,
+        )
+        u_init.add_noise(
+            bounds=u_bounds,
+            magnitude=0.2,
+            magnitude_type=MagnitudeType.RELATIVE,
+            n_shooting=[n_shooting[i] for i in range(len(n_shooting))],
+            seed=seed,
+        )
 
     return OptimalControlProgram(
         bio_model=bio_model,
@@ -621,43 +643,100 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting):
         objective_functions=objective_functions,
         constraints=constraints,
         n_threads=32,
-        #assume_phase_dynamics=True,
         phase_transitions=phase_transitions,
         variable_mappings=dof_mapping,
-    ), bio_model
+    )
+
+
+def prepare_multi_start(
+    combinatorial_parameters: dict,
+    save_folder: str = None,
+    n_pools: int = 10,
+    solver: Solver = None,
+):
+    """
+    The initialization of the multi-start
+    """
+
+    return MultiStart(
+        combinatorial_parameters=combinatorial_parameters,
+        prepare_ocp_callback=prepare_ocp,
+        post_optimization_callback=(save_results, {"save_folder": save_folder}),
+        should_solve_callback=(should_solve, {"save_folder": save_folder}),
+        n_pools=n_pools,
+        solver=solver,
+    )
+
+
+def should_solve(*combinatorial_parameters, **extra_parameters):
+    return True
+
+
+
+# --- Parameters --- #
+movement = "Salto"
+version = "Eve18"
+nb_phase = 5
+name_folder_model = "../Model"
+# pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Jump_4phases_V22.pkl"
+pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_close_loop_landing_5phases_VEve12.pkl"
+sol_salto = get_created_data_from_pickle(pickle_sol_init)
+
 
 
 # --- Load model --- #
 def main():
+
+    WITH_MULTI_START = True
+
     model_path = str(name_folder_model) + "/" + "Model2D_7Dof_0C_5M_CL_V3.bioMod"
     model_path_1contact = str(name_folder_model) + "/" + "Model2D_7Dof_2C_5M_CL_V3.bioMod"
 
-    ocp, bio_model = prepare_ocp(
-        biorbd_model_path=(model_path_1contact,
-                           model_path,
-                           model_path,
-                           model_path,
-                           model_path_1contact),
-        phase_time=(0.2, 0.2, 0.3, 0.3, 0.3),
-        n_shooting=(20, 20, 30, 30, 30),
-    )
-
-    # --- Solve the program --- #
+    # Solver options
     solver = Solver.IPOPT(show_options=dict(show_bounds=True), _linear_solver="MA57")#show_online_optim=True,
     solver.set_maximum_iterations(10000)
     solver.set_bound_frac(1e-8)
     solver.set_bound_push(1e-8)
     solver.set_tol(1e-6)
-    # solver.set_nlp_scaling_method("none")  # Doesn't work
-    #ocp.add_plot_penalty()
-    sol = ocp.solve(solver)
-    sol.print_cost()
+
+    biorbd_model_path = [(model_path_1contact,
+                         model_path,
+                         model_path,
+                         model_path,
+                         model_path_1contact)]
+    phase_time = [(0.2, 0.2, 0.3, 0.3, 0.3)]
+    n_shooting = [(20, 20, 30, 30, 30)]
+
+    seed = list(range(20))
+    combinatorial_parameters = {
+        "bio_model_path": biorbd_model_path,
+        "phase_time": phase_time,
+        "n_shooting": n_shooting,
+        "WITH_MULTI_START": [True],
+        "seed": seed,
+    }
 
 
-# --- Save results --- #
-    save_results(sol, str(movement) + "_" + str(nb_phase) + "phases_V" + version + ".pkl")
-    sol.graphs(show_bounds=True, save_name=str(movement) + "_" + str(nb_phase) + "phases_V" + version)
-    sol.animate()
+    if WITH_MULTI_START:
+        save_folder = "./solutions"
+        multi_start = prepare_multi_start(
+            combinatorial_parameters=combinatorial_parameters,
+            save_folder=save_folder,
+            solver=solver,
+            # n_pools=1,
+        )
+
+        multi_start.solve()
+    else:
+        ocp = prepare_ocp(biorbd_model_path[0], phase_time[0], n_shooting[0], WITH_MULTI_START=False)
+
+        sol = ocp.solve(solver)
+        sol.print_cost()
+
+        # --- Save results --- #
+        save_results(sol, combinatorial_parameters)
+        sol.graphs(show_bounds=True, save_name=str(movement) + "_" + str(nb_phase) + "phases_V" + version)
+        sol.animate()
 
 
 if __name__ == "__main__":
