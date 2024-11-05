@@ -171,17 +171,20 @@ for filename in os.listdir(data_folder):
                                                 position_activation=position_activation_L,
                                                 sensor_columns=sensor_columns_L,
                                                 FLAG_PLOT=True)
+            time = np.astype(np.array(insole_data['Sensor nummer'][3:]), float)
         elif filename[-5] == 'R':
             force_data = get_force_from_insoles(insole_data=insole_data,
                                                 force_orientation=force_orientation_R,
                                                 position_activation=position_activation_R,
                                                 sensor_columns=sensor_columns_R,
                                                 FLAG_PLOT=True)
+            time = np.astype(np.array(insole_data['Sensor nummer'][3:]), float)
         else:
             raise RuntimeError("Wrong file name, it should end with L.CSV or R.CSV")
 
         with open(f"EmCo_insoles_forces/{filename[:-4]}.pkl", 'wb') as file:
-            pickle.dump(force_data, file)
+            data = {"force_data": force_data, "time": time}
+            pickle.dump(data, file)
 
 
 
