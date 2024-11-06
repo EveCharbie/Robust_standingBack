@@ -2,70 +2,82 @@
 Main code calling scipt python create_cylinder_insole functions to analyze pressure inserts data.
 WARNING: the right foot insole was placed on the left tibia and inversely.
 
-forces_control is expressed in the local frame of the insole (side, front), so we keep only the front component, which is the force perpendicular to the tibia in the plane.
+forces_insoles is expressed in the local frame of the insole (side, front), so we keep only the front component, which is the force perpendicular to the tibia in the plane.
 """
-import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
-from scipy.signal import find_peaks
+import pandas as pd
 
 
-def force_treatment(forces_control, time_control):
+def force_treatment(forces_insoles, time, first_peak_time):
 
-    idx_1s = np.where(time_control > 4.5)[0][0]
-    idx_6s = np.where(time_control > 7)[0][0]
+    idx_1s = np.where(time_insoles > 4.5)[0][0]
+    idx_6s = np.where(time_insoles > 7)[0][0]
 
-    # Remove the first 100 samples to remove the base force value
-    forces_control_zero = np.nanmean(forces_control[idx_1s:idx_6s, 1])
-    force = forces_control[:, 1] - forces_control_zero
-    time = time_control
+    # Remove the base force value
+    forces_insoles_zero = np.nanmean(forces_insoles[idx_1s:idx_6s, 1])
+    force = forces_insoles[:, 1] - forces_insoles_zero
 
-    # Find the maximum force
-    idx_max = np.argmax(force)
-    begining = idx_max
-    end = idx_max
-    current_force = force[begining]
-    while current_force > 0:
-        begining -= 1
-        current_force = force[begining]
-    current_force = force[end]
-    while current_force > 0:
-        end += 1
-        current_force = force[end]
+    first_peak_time_idx = np.argmin(np.abs(time - first_peak_time))
+    begining = first_peak_time_idx - 4
+    end = first_peak_time_idx + 96
 
-    begining = 0
-    end = -1
-
-    # peaks_idx, _ = find_peaks(force[begining:end], distance=500, prominence=0.8)
-    # peaks_values = force[begining:end][peaks_idx]
-    # time_peaks = time[begining:end][peaks_idx]
+    return force[begining:end], time[begining:end] - time[begining] - 0.008
 
 
-    return force[begining:end], time[begining:end] - time[begining] # , time_peaks - time[begining], peaks_values
 
+# Get simulation forces
+# path_sol = "/home/mickaelbegon/Documents/Anais/Results_simu"
+path_sol = "../holonomic_research/"
+sol_CL = path_sol + "/" + "Salto_close_loop_landing_5phases_VEve12.pkl"
+data_CL = pd.read_pickle(sol_CL)
+lambdas = data_CL["lambda"]
 
-fig = plt.figure()
+fig, ax = plt.subplots(1, 1)
 
 force_results_path = "EmCo_insoles_forces/"
-for file in os.listdir(force_results_path):
-    if "control" in file:
-        with open(f"{force_results_path}/{file}", 'rb') as f:
-            data = pickle.load(f)
+# Time of the first steep peak identified by hand
+file_names = {"salto_control_pre_1": 16.3979823,
+              "salto_control_pre_2": 12.9099990,
+              "salto_control_pre_3": 11.634994,
+              "salto_control_post_1": 12.482998,
+              "salto_control_post_2": 13.61491,
+              "salto_control_post_3": 13.2349997}
 
-        forces_control = data["force_data"]
-        time_control = data["time"]
+times = np.zeros((100, 6))
+forces = np.zeros((100, 6))
+for file in file_names.keys():
+    with open(force_results_path + file + "_L.pkl", "rb") as f:
+        data_L = pickle.load(f)
+    forces_insoles = data_L["force_data"] * 2
+    # with open(force_results_path+file+"_R.pkl", "rb") as f:
+    #     data_R = pickle.load(f)
+    # forces_insoles = data_R["force_data"] + data_L["force_data"]
+    # if np.sum(data_R["time"] != data_L["time"]) > 0:
+    #     print("Time is different between the right and left insoles")
+    time_insoles = data_L["time"]
 
-        force, time = force_treatment(forces_control, time_control)
-        #  peaks_idx, peaks_values
+    force, time = force_treatment(-forces_insoles, time_insoles, file_names[file])
+    ax.plot(time, force, label=file, color='k', alpha=0.1)
 
-        plt.plot(time, force, label=file)
-        # plt.plot(peaks_idx, peaks_values, 'or')
+    times[:, list(file_names.keys()).index(file)] = time
+    forces[:, list(file_names.keys()).index(file)] = force
 
-plt.plot([0, 1], [0, 0], '--k')
-plt.legend(bbox_to_anchor=(1.0, 1), loc='upper left')
-plt.xlabel("Time [s]")
-plt.ylabel("Force [N]")
+# Plot the mean
+ax.plot(time, np.mean(forces, axis=1), label="Mean", color='k', linewidth=2)
+# ax.fill_between(time, np.min(forces, axis=1), np.max(forces, axis=1), color='k', alpha=0.1)
+ax.plot([time[0], time[-1]], [0, 0], '-k', linewidth=0.5)
+
+# Plot the simulation results
+time_tuck = data_CL["time"][2][:-1] - data_CL["time"][2][0]
+ax.plot(time_tuck, lambdas[0], color='r', label=["Normal force"])
+ax.plot(time_tuck, lambdas[1], color='g', label=["Shear force"])
+
+ax.legend(bbox_to_anchor=(1.0, 1), loc='upper left')
+ax.set_xlabel("Time [s]")
+ax.set_ylabel("Force on the tibia [N]")
+plt.subplots_adjust(right=0.7)
 plt.savefig("hand_leg_forces_experimental_vs_simulations.png", dpi=300)
 plt.show()
 
