@@ -170,6 +170,7 @@ for filename in os.listdir(data_folder):
                                                 force_orientation=force_orientation_L,
                                                 position_activation=position_activation_L,
                                                 sensor_columns=sensor_columns_L,
+                                                side="L",
                                                 FLAG_PLOT=True)
             time = np.astype(np.array(insole_data['Sensor nummer'][3:]), float)
         elif filename[-5] == 'R':
@@ -177,6 +178,7 @@ for filename in os.listdir(data_folder):
                                                 force_orientation=force_orientation_R,
                                                 position_activation=position_activation_R,
                                                 sensor_columns=sensor_columns_R,
+                                                side="R",
                                                 FLAG_PLOT=True)
             time = np.astype(np.array(insole_data['Sensor nummer'][3:]), float)
         else:
