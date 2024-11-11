@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import biorbd
 import matplotlib.pyplot as plt
-from graph_simu import graph_all_comparaison, get_created_data_from_pickle, time_to_percentage
+from graph_simu import graph_all_comparaison # , get_created_data_from_pickle, time_to_percentage
 
 # Solution with and without holonomic constraints
 path_sol = "/home/mickaelbegon/Documents/Anais/Results_simu"
@@ -26,34 +26,23 @@ format_graph = "svg"
 data_CL = pd.read_pickle(sol_CL)
 data_without = pd.read_pickle(sol_without)
 
-# fig, axs = plt.subplots(2, 3)
-# axs = axs.ravel()
-# for i in range(5):
-#     axs[i].plot(np.hstack((data_CL["tau"][0][i, :], data_CL["tau"][1][i, :])).T, color="tab:orange")
-#     axs[i].plot(np.hstack((data_without["tau"][0][i, :], data_without["tau"][1][i, :])).T, color="tab:blue")
-# plt.savefig("Temporary.png")
-# plt.show()
-
 # Preparation data_CL
 time_end_phase_CL = []
 for i in range(len(data_CL["time"])):
     time_end_phase_CL.append(data_CL["time"][i][-1])
-time_end_phase_pourcentage_CL = time_to_percentage(np.vstack(time_end_phase_CL))
+# time_end_phase_pourcentage_CL = time_to_percentage(np.vstack(time_end_phase_CL))
 
 time_end_phase_without = []
 for i in range(len(data_without["time"])):
     time_end_phase_without.append(data_without["time"][i][-1])
-time_end_phase_pourcentage_without = time_to_percentage(np.vstack(time_end_phase_without))
+# time_end_phase_pourcentage_without = time_to_percentage(np.vstack(time_end_phase_without))
 dof_names_tau = ["Shoulder", "Elbow",
                  "Hip", "Knee", "Ankle"]
 
 time_CL = np.vstack(data_CL["time"])
-time_pourcentage_CL = time_to_percentage(time_CL)
-time_without = np.vstack(data_without["time"])  # data_without["time_all"]
-time_pourcentage_without = time_to_percentage(time_without)
-
-# Difference time
-time_diff = data_CL["time"][-1][-1] - data_without["time"][-1][-1]
+# time_pourcentage_CL = time_to_percentage(time_CL)
+time_without = np.vstack(data_without["time"])
+# time_pourcentage_without = time_to_percentage(time_without)
 
 # Duree phase solutions with and without holonomic constraints
 time_phase_sol_CL = []
@@ -63,11 +52,12 @@ for i in range(len(data_CL["time"])):
     time_phase_sol_CL.append(data_CL["time"][i][-1] - data_CL["time"][i][1])
     time_phase_sol_without.append(data_without["time"][i][-1] - data_without["time"][i][1])
 
-time_diff_phase = [a - b for a, b in zip(time_phase_sol_CL, time_phase_sol_without)]
+print("*** Phase_time *** \nCL :", time_phase_sol_CL, "\nwithout : ", time_phase_sol_without)
+print("Total CL :", np.sum(time_phase_sol_CL), "\nTotal without : ", np.sum(time_phase_sol_without))
 
 # Graphique
 if PLOT_TAU_FLAG:
-    graph_all_comparaison(sol_CL, sol_without)
+    graph_all_comparaison(data_CL, data_without, format_graph)
 
 # Inertie
 inertia_sol_CL = np.zeros((data_CL["q_all"].shape[1], 3))
@@ -78,11 +68,11 @@ for i in range(data_CL["q_all"].shape[1]):
 
 if PLOT_INERTIA_FLAG:
     fig, ax = plt.subplots(1, 1, figsize=(10, 5))
-    ax.plot(inertie_sol_without[:, 0], color="tab:blue", label="without \nconstraints", alpha=0.75, linewidth=1)#time_pourcentage_without.flatten(),
+    ax.plot(time_without, inertie_sol_without[:, 0], color="tab:blue", label="without \nconstraints", alpha=0.75, linewidth=1)#time_pourcentage_without.flatten(),
     ax.plot(inertia_sol_CL[:, 0], color="tab:orange", label="with holonomics \nconstraints", alpha=0.75, linewidth=1)#time_pourcentage_CL,
     for xline in range(len(time_end_phase_CL)):
-        ax.axvline(time_end_phase_pourcentage_without[xline], color="tab:blue", linestyle="--", linewidth=0.7)
-        ax.axvline(time_end_phase_pourcentage_CL[xline], color="tab:orange", linestyle="--", linewidth=0.7)
+        ax.axvline(time_end_phase_without[xline], color="tab:blue", linestyle="--", linewidth=0.7)
+        ax.axvline(time_end_phase_CL[xline], color="tab:orange", linestyle="--", linewidth=0.7)
     ax.set_title("Inertia X-axis", fontsize=10)
     ax.set_xlim(0, 100)
     ax.grid(True, linewidth=0.4)
@@ -118,16 +108,26 @@ energy_sol_without_total = energy_sol_without_all.sum(axis=0)
 energy_diff = energy_CL - energy_sol_without
 
 # Figure Energy expenditure
-time_pourcentage_tau_CL = np.vstack((time_pourcentage_CL[:20],
-                                    time_pourcentage_CL[21:21+20],
-                                    time_pourcentage_CL[21+21:21+21+30],
-                                    time_pourcentage_CL[21+21+31:21+21+31+30],
-                                    time_pourcentage_CL[21+21+31+31:21+21+31+31+30]))
-time_pourcentage_tau_without = np.vstack((time_pourcentage_without[:20],
-                                        time_pourcentage_without[21:21+20],
-                                        time_pourcentage_without[21+21:21+21+30],
-                                        time_pourcentage_without[21+21+31:21+21+31+30],
-                                        time_pourcentage_without[21+21+31+31:21+21+31+31+30]))
+time_tau_CL = np.vstack((time_CL[:20],
+                                    time_CL[21:21+20],
+                                    time_CL[21+21:21+21+30],
+                                    time_CL[21+21+31:21+21+31+30],
+                                    time_CL[21+21+31+31:21+21+31+31+30]))
+time_tau_without = np.vstack((time_without[:20],
+                                        time_without[21:21+20],
+                                        time_without[21+21:21+21+30],
+                                        time_without[21+21+31:21+21+31+30],
+                                        time_without[21+21+31+31:21+21+31+31+30]))
+# time_pourcentage_tau_CL = np.vstack((time_pourcentage_CL[:20],
+#                                     time_pourcentage_CL[21:21+20],
+#                                     time_pourcentage_CL[21+21:21+21+30],
+#                                     time_pourcentage_CL[21+21+31:21+21+31+30],
+#                                     time_pourcentage_CL[21+21+31+31:21+21+31+31+30]))
+# time_pourcentage_tau_without = np.vstack((time_pourcentage_without[:20],
+#                                         time_pourcentage_without[21:21+20],
+#                                         time_pourcentage_without[21+21:21+21+30],
+#                                         time_pourcentage_without[21+21+31:21+21+31+30],
+#                                         time_pourcentage_without[21+21+31+31:21+21+31+31+30]))
 
 fig, axs = plt.subplots(2, 3)
 num_col = 1
@@ -142,14 +142,14 @@ axs[0, 0].legend(loc='center right', bbox_to_anchor=(0.6, 0.5), fontsize=8)
 axs[0, 0].axis('off')
 
 for nb_seg in range(energy_CL_all.shape[0]):
-    axs[num_line, num_col].plot(time_pourcentage_tau_without, energy_sol_without_all[nb_seg], color="tab:blue", alpha=0.75,
+    axs[num_line, num_col].plot(time_tau_without, energy_sol_without_all[nb_seg], color="tab:blue", alpha=0.75,
                                 linewidth=1, label="without \nconstraints")
-    axs[num_line, num_col].plot(time_pourcentage_tau_CL, energy_CL_all[nb_seg], color="tab:orange", alpha=0.75,
+    axs[num_line, num_col].plot(time_tau_CL, energy_CL_all[nb_seg], color="tab:orange", alpha=0.75,
                                 linewidth=1, label="with holonomics \nconstraints")
     for xline in range(len(time_end_phase_CL)):
-        axs[num_line, num_col].axvline(time_end_phase_pourcentage_without[xline], color="tab:blue", linestyle="--",
+        axs[num_line, num_col].axvline(time_end_phase_without[xline], color="tab:blue", linestyle="--",
                                        linewidth=0.7)
-        axs[num_line, num_col].axvline(time_end_phase_pourcentage_CL[xline], color="tab:orange", linestyle="--",
+        axs[num_line, num_col].axvline(time_end_phase_CL[xline], color="tab:orange", linestyle="--",
                                        linewidth=0.7)
     axs[num_line, num_col].set_title(dof_names_tau[nb_seg], fontsize=8)
     axs[num_line, num_col].set_xlim(0, 100)
@@ -180,16 +180,16 @@ plt.subplots_adjust(wspace=0.3, hspace=0.4)
 fig.savefig("Power"+ "." + format_graph, format=format_graph)
 
 # Power total
-plt.plot(time_pourcentage_tau_without, energy_sol_without_total, color="tab:blue", alpha=0.75,
+plt.plot(time_tau_without, energy_sol_without_total, color="tab:blue", alpha=0.75,
          linewidth=1, label="without \nconstraints")
-plt.plot(time_pourcentage_tau_CL, energy_CL_total, color="tab:orange", alpha=0.75,
+plt.plot(time_tau_CL, energy_CL_total, color="tab:orange", alpha=0.75,
          linewidth=1, label="with holonomics \nconstraints")
 
 # Ajouter des lignes verticales
 for xline in range(len(time_end_phase_CL)):
-    plt.axvline(time_end_phase_pourcentage_without[xline], color="tab:blue", linestyle="--",
+    plt.axvline(time_end_phase_without[xline], color="tab:blue", linestyle="--",
                 linewidth=0.7)
-    plt.axvline(time_end_phase_pourcentage_CL[xline], color="tab:orange", linestyle="--",
+    plt.axvline(time_end_phase_CL[xline], color="tab:orange", linestyle="--",
                 linewidth=0.7)
 
 plt.xlabel('Time [%]', fontsize=8)
@@ -247,9 +247,9 @@ if PLOT_ENERY_FLAG:
         axs[num_line, num_col].step(range(len(energy_CL_all[nb_seg])), energy_CL_all[nb_seg], color="tab:orange", alpha=0.75,
                                     linewidth=1, label="with holonomics \nconstraints", where='mid')
         for xline in range(len(time_end_phase_CL)):
-            axs[num_line, num_col].axvline(time_end_phase_pourcentage_CL[xline], color="tab:orange", linestyle="--",
+            axs[num_line, num_col].axvline(time_end_phase_CL[xline], color="tab:orange", linestyle="--",
                                            linewidth=0.7)
-            axs[num_line, num_col].axvline(time_end_phase_pourcentage_without[xline], color="tab:blue", linestyle="--",
+            axs[num_line, num_col].axvline(time_end_phase_without[xline], color="tab:blue", linestyle="--",
                                            linewidth=0.7)
         axs[num_line, num_col].set_title(dof_names_tau[nb_seg], fontsize=8)
         axs[num_line, num_col].set_xlim(0, 100)

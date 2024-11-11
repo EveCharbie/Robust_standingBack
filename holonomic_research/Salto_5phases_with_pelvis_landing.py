@@ -92,22 +92,35 @@ def save_results(sol,
     qdot = []
     tau = []
     time = []
+    min_bounds_q = []
+    max_bounds_q = []
+    min_bounds_qdot = []
+    max_bounds_qdot = []
+    min_bounds_tau = []
+    max_bounds_tau = []
 
-    if len(sol.ocp.n_shooting) == 1:
-        q = states["q_u"]
-        qdot = states["q_udot"]
-        tau = controls["tau"]
-    else:
-        for i in range(len(states)):
-            q.append(states[i]["q"])
-            qdot.append(states[i]["qdot"])
-            tau.append(controls[i]["tau"])
-            time.append(list_time[i])
+    for i in range(len(states)):
+        q.append(states[i]["q"])
+        qdot.append(states[i]["qdot"])
+        tau.append(controls[i]["tau"])
+        time.append(list_time[i])
+        min_bounds_q.append(sol.ocp.nlp[i].x_bounds['q'].min)
+        max_bounds_q.append(sol.ocp.nlp[i].x_bounds['q'].max)
+        min_bounds_qdot.append(sol.ocp.nlp[i].x_bounds['qdot'].min)
+        max_bounds_qdot.append(sol.ocp.nlp[i].x_bounds['qdot'].max)
+        min_bounds_tau.append(sol.ocp.nlp[i].u_bounds["tau"].min)
+        max_bounds_tau.append(sol.ocp.nlp[i].u_bounds["tau"].max)
 
     data["q"] = q
     data["qdot"] = qdot
     data["tau"] = tau
     data["time"] = time
+    data["min_bounds_q"] = min_bounds_q
+    data["max_bounds_q"] = max_bounds_q
+    data["min_bounds_qdot"] = min_bounds_qdot
+    data["max_bounds_qdot"] = max_bounds_qdot
+    data["min_bounds_tau"] = min_bounds_q
+    data["max_bounds_tau"] = max_bounds_q
     data["cost"] = sol.cost
     data["iterations"] = sol.iterations
     # data["detailed_cost"] = sol.add_detailed_cost
@@ -554,12 +567,9 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
 
 
     # Path constraint
-    pose_propulsion_start = [-0.2343, -0.2177, -0.3274, 0.2999, 0.4935, 1.7082, -1.9999, 0.1692]
-    pose_takeout_start = [-0.1233, 0.22, 0.3173, 1.5707, 0.1343, -0.2553, -0.1913, -0.342]
     pose_salto_start = [0.135, 0.455, 1.285, 0.481, 1.818, 2.6, -1.658, 0.692]
     pose_salto_end = [0.107, 0.797, 2.892, 0.216, 1.954, 2.599, -2.058, 0.224]
     pose_landing_start = [0.013, 0.088, 5.804, -0.305, 8.258444956622276e-06, 1.014, -0.97, 0.006]
-    pose_landing_end = [0.053, 0.091, 6.08, 2.9, -0.17, 0.092, 0.17, 0.20]
 
     # --- Bounds ---#
     x_bounds = BoundsList()
@@ -584,17 +594,17 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     x_init.add("q", sol_salto["q"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
     x_init.add("qdot", sol_salto["qdot"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
 
-    # Initial guess from somersault
-    x_init.add("q", sol_salto["q"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
-    x_init.add("qdot", sol_salto["qdot"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
-    x_init.add("q", sol_salto["q"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    x_init.add("qdot", sol_salto["qdot"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    x_init.add("q", sol_salto["q"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
-    x_init.add("qdot", sol_salto["qdot"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
-    x_init.add("q", sol_salto["q"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
-    x_init.add("qdot", sol_salto["qdot"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
-    x_init.add("q", sol_salto["q"][4], interpolation=InterpolationType.EACH_FRAME, phase=4)
-    x_init.add("qdot", sol_salto["qdot"][4], interpolation=InterpolationType.EACH_FRAME, phase=4)
+    # # Initial guess from somersault
+    # x_init.add("q", sol_salto["q"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
+    # x_init.add("qdot", sol_salto["qdot"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
+    # x_init.add("q", sol_salto["q"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
+    # x_init.add("qdot", sol_salto["qdot"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
+    # x_init.add("q", sol_salto["q"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
+    # x_init.add("qdot", sol_salto["qdot"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
+    # x_init.add("q", sol_salto["q"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
+    # x_init.add("qdot", sol_salto["qdot"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
+    # x_init.add("q", sol_salto["q"][4], interpolation=InterpolationType.EACH_FRAME, phase=4)
+    # x_init.add("qdot", sol_salto["qdot"][4], interpolation=InterpolationType.EACH_FRAME, phase=4)
 
     # Define control path constraint
     u_bounds = BoundsList()
@@ -608,12 +618,12 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=3)
     u_init.add("tau", sol_salto["tau"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
 
-    # Initial guess from somersault
-    u_init.add("tau", sol_salto["tau"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
-    u_init.add("tau", sol_salto["tau"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    u_init.add("tau", sol_salto["tau"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
-    u_init.add("tau", sol_salto["tau"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
-    u_init.add("tau", sol_salto["tau"][4], interpolation=InterpolationType.EACH_FRAME, phase=4)
+    # # Initial guess from somersault
+    # u_init.add("tau", sol_salto["tau"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
+    # u_init.add("tau", sol_salto["tau"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
+    # u_init.add("tau", sol_salto["tau"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
+    # u_init.add("tau", sol_salto["tau"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
+    # u_init.add("tau", sol_salto["tau"][4], interpolation=InterpolationType.EACH_FRAME, phase=4)
 
     if WITH_MULTI_START:
         x_init.add_noise(
@@ -675,11 +685,11 @@ def should_solve(*combinatorial_parameters, **extra_parameters):
 
 # --- Parameters --- #
 movement = "Salto"
-version = "Eve18"
+version = "Eve_final"
 nb_phase = 5
 name_folder_model = "../Model"
-# pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Jump_4phases_V22.pkl"
-pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_close_loop_landing_5phases_VEve12.pkl"
+pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Jump_4phases_V22.pkl"
+# pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_close_loop_landing_5phases_VEve12.pkl"
 sol_salto = get_created_data_from_pickle(pickle_sol_init)
 
 
