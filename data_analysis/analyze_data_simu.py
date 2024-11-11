@@ -21,6 +21,7 @@ model = biorbd.Model(path_model)
 PLOT_TAU_FLAG = True
 PLOT_INERTIA_FLAG = True
 PLOT_ENERY_FLAG = True
+format_graph = "svg"
 
 data_CL = pd.read_pickle(sol_CL)
 data_without = pd.read_pickle(sol_without)
@@ -82,93 +83,15 @@ if PLOT_INERTIA_FLAG:
     for xline in range(len(time_end_phase_CL)):
         ax.axvline(time_end_phase_pourcentage_without[xline], color="tab:blue", linestyle="--", linewidth=0.7)
         ax.axvline(time_end_phase_pourcentage_CL[xline], color="tab:orange", linestyle="--", linewidth=0.7)
-    ax.set_title("Inertia X-axis", fontsize=8)
+    ax.set_title("Inertia X-axis", fontsize=10)
     ax.set_xlim(0, 100)
     ax.grid(True, linewidth=0.4)
-    ax.set_ylabel("Inertia")
-    ax.set_xlabel("Time [s]")
+    ax.set_ylabel("Inertia", fontsize=7)
+    ax.set_xlabel("Time [s]", fontsize=7)
     ax.legend(bbox_to_anchor=(1.05, 0.5))
     plt.subplots_adjust(right=0.8)
-    plt.savefig("Inertia.png")
-    plt.show()
-
-
-# TODO: annaisfarr : Correct or delete
-# inertia_CL = np.concatenate((inertia_sol_CL, inertia_total_CL[:, np.newaxis]), axis=1)
-# inertia_2 = np.concatenate((inertie_sol_without, inertia_total_sol_without[:, np.newaxis]), axis=1)
-
-# Calcul energie moyenne par phase et moyenne totale
-
-# table_inertie_sol_without = np.zeros((4, len(data_without["time"])+1))
-# table_inertie_CL = np.zeros((4, len(data_CL["time"])+1))
-# for j in range(0,4):
-#    frame_start_sol_without = 0
-#    frame_end_sol_without = 0
-#    frame_start_CL = 0
-#    frame_end_CL = 0
-#    for i in range(len(data_CL["time"])+1):
-#        if i < len(data_CL["time"]):
-#            frame_end_sol_without = frame_end_sol_without + data_without["time"][i].shape[0]
-#            table_inertie_sol_without[j,i] = np.mean(inertia_2[frame_start_sol_without:frame_end_sol_without, j])
-#            frame_start_sol_without = frame_start_sol_without + data_without["time"][i].shape[0]
-#            frame_end_CL = frame_end_CL + data_CL["time"][i].shape[0]
-#            table_inertie_CL[j,i] = np.mean(inertia_CL[frame_start_CL:frame_end_CL, j])
-#            frame_start_CL = frame_start_CL + data_CL["time"][i].shape[0]
-#        else:
-#            table_inertie_sol_without[j,i] = np.mean(inertia_2[:, j])
-#            table_inertie_CL[j,i] = np.mean(inertia_CL[:, j])
-
-# 
-# num_col = 0
-# num_line = 0
-# 
-# fig = plt.figure(figsize=(10, 6))
-# gs = fig.add_gridspec(2, 3)
-# 
-# y_max = np.max([abs(inertia_2[:, 0:3]), abs(inertia_CL[:, 0:3])])
-# 
-# axs = []
-# for i in range(3):
-#     axs.append(fig.add_subplot(gs[0, i]))
-# axs.append(fig.add_subplot(gs[1, :2]))
-# 
-# for nb_ax in range(len(axs_names)):
-#     if nb_ax < 3:
-#         axs[nb_ax].plot(time_pourcentage_without, inertia_2[:, nb_ax], color="tab:blue", label="without \nconstraints",
-#                         alpha=0.75, linewidth=1)
-#         axs[nb_ax].plot(time_pourcentage_CL, inertia_CL[:, nb_ax], color="tab:orange",
-#                         label="with holonomics \nconstraints", alpha=0.75, linewidth=1)
-# 
-#         for xline in range(len(time_end_phase_CL)):
-#             axs[nb_ax].axvline(time_end_phase2_pourcentage[xline], color="tab:blue", linestyle="--", linewidth=0.7)
-#             axs[nb_ax].axvline(time_end_phase_pourcentage_CL[xline], color="tab:orange", linestyle="--", linewidth=0.7)
-#     else:
-#         axs[nb_ax].plot(time_pourcentage_without, inertia_2[:, nb_ax], color="tab:blue", label="without \nconstraints",
-#                         alpha=0.75, linewidth=1)
-#         axs[nb_ax].plot(time_pourcentage_CL, inertia_CL[:, nb_ax], color="tab:orange",
-#                         label="with holonomics \nconstraints", alpha=0.75, linewidth=1)
-# 
-#         for xline in range(len(time_end_phase_CL)):
-#             axs[nb_ax].axvline(time_end_phase2_pourcentage[xline], color="tab:blue", linestyle="--", linewidth=0.7)
-#             axs[nb_ax].axvline(time_end_phase_pourcentage_CL[xline], color="tab:orange", linestyle="--", linewidth=0.7)
-# 
-#     if nb_ax < 3:
-#         axs[nb_ax].set_ylim(-y_max + (-y_max * 0.1), y_max + (y_max * 0.1))
-#     axs[nb_ax].set_title(axs_names[nb_ax], fontsize=8)
-#     axs[nb_ax].grid(True, linewidth=0.4)
-#     axs[nb_ax].tick_params(axis='both', which='major', labelsize=6)
-#     handles, labels = axs[0].get_legend_handles_labels()
-#     axs_legend = fig.add_subplot(gs[1, 2])  # Create an empty subplot for the legend
-#     axs_legend.legend(handles, labels, loc='center', fontsize=8)
-#     axs_legend.axis('off')
-#     axs[0].set_ylabel("Inertia [kg/m2]", fontsize=7)
-#     axs[3].set_ylabel("Inertia [kg/m2]", fontsize=7)
-#     axs[3].set_xlabel('Time [%]', fontsize=7)
-#     plt.tight_layout()
-#     plt.subplots_adjust(wspace=0.5, hspace=0.3)
-#     plt.show()
-# 
-#     fig.savefig("Inertia.png", format="png")
+    plt.savefig("Inertia" + "." + format_graph, format = format_graph)
+    #plt.show()
 
 # Energy expenditure (intégrale de la somme de la valeur absolue de tau multiplier par la vitesse angulaire le tout multiplier par dt)
     # Sol Holo
@@ -190,27 +113,6 @@ qdot_without = np.hstack([array[:,:-1] for array in data_without["qdot"]])
 energy_sol_without = np.trapz(np.abs(tau_without*qdot_without[3:, :]), time_without.T)
 energy_sol_without_all = np.abs(tau_without[:, :]*qdot_without[3:, :])
 energy_sol_without_total = energy_sol_without_all.sum(axis=0)
-
-# TODO: annaisfarr : Correct or delete
-#table_detail_energy_sol_without = np.zeros((5, len(data_without["time"])+1))
-#table_detail_energy_CL = np.zeros((5, len(data_CL["time"])+1))
-#for j in range(0,5):
-#    frame_start_sol_without = 0
-#    frame_end_sol_without = 0
-#    frame_start_CL = 0
-#    frame_end_CL = 0
-#    for i in range(len(data_CL["time"])+1):
-#        if i < len(data_CL["time"]):
-#            frame_end_sol_without = frame_end_sol_without + data_without["time"][i].shape[0]
-#            table_detail_energy_sol_without[j,i] = np.trapz(np.abs(tau_without*qdot_without[3:, frame_start_sol_without:frame_end_sol_without]), time2_integral[frame_start_sol_without:frame_end_sol_without])
-#            frame_start_sol_without = frame_start_sol_without + data_without["time"][i].shape[0]
-#            frame_end_CL = frame_end_CL + data_CL["time"][i].shape[0]
-#            table_detail_energy_CL[j,i] = np.trapz(np.abs(tau*qdot[3:, frame_start_CL:frame_end_CL]), time_integral[frame_start_CL:frame_end_CL])
-#            frame_start_CL = frame_start_CL + data_CL["time"][i].shape[0]
-#        else:
-#            table_detail_energy_sol_without[j,i] = np.sum(table_detail_energy_sol_without)
-#            table_detail_energy_CL[j,i] = np.sum(table_detail_energy_CL)
-
 
 #Diff energy
 energy_diff = energy_CL - energy_sol_without
@@ -275,7 +177,7 @@ axs[1, 1].set_yticklabels([])
 axs[1, 2].set_yticklabels([])
 plt.tight_layout()
 plt.subplots_adjust(wspace=0.3, hspace=0.4)
-fig.savefig("Power.png", format="png")
+fig.savefig("Power"+ "." + format_graph, format=format_graph)
 
 # Power total
 plt.plot(time_pourcentage_tau_without, energy_sol_without_total, color="tab:blue", alpha=0.75,
@@ -298,7 +200,7 @@ plt.grid(True, linewidth=0.4)
 plt.xlim(0, 100)
 plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), fontsize=8)
 plt.tight_layout()
-fig.savefig("Power_total.png", format="png")
+fig.savefig("Power_total"+ "." + format_graph, format=format_graph)
 
 
 # Calcul energie moyenne par phase et moyenne totale
@@ -368,20 +270,29 @@ if PLOT_ENERY_FLAG:
             axs[num_line, num_col].set_xlabel('Time [%]', fontsize=7)
 
     # Y_label
-    axs[0, 1].set_ylabel("Energy expenditure [...]", fontsize=7)  # Arm Rotation
-    axs[1, 0].set_ylabel("Energy expenditure [...]", fontsize=7)  # Leg Rotation
+    axs[0, 1].set_ylabel("Energy expenditure", fontsize=7)  # Arm Rotation
+    axs[1, 0].set_ylabel("Energy expenditure", fontsize=7)  # Leg Rotation
     axs[0, 2].set_yticklabels([])
     axs[1, 1].set_yticklabels([])
     axs[1, 2].set_yticklabels([])
     plt.tight_layout()
     plt.subplots_adjust(wspace=0.3, hspace=0.4)
-    fig.savefig("Energy_expenditure.png", format="png")
+    fig.savefig("Energy_expenditure"+ "." + format_graph, format=format_graph)
 
     fig = plt.figure()
-    plt.plot(time_CL, tau_CL[0, :]*qdot_CL[4, :], color='r', label=["Holo"])
-    plt.plot(time_without, tau_without[0,:]*qdot_without[4, :], color='g', label=["Sol 2"])
+    plt.plot(time_CL, tau_CL[0, :]*qdot_CL[4, :], color='r', label="with holonomics \nconstraints")
+    plt.plot(time_without, tau_without[0,:]*qdot_without[4, :], color='g', label="without \nconstraints")
     plt.ylabel("Energy expenditure")
     plt.xlabel("Time [s]")
     plt.legend()
-    plt.savefig("Energy.png", format="png")
-    plt.show()
+    plt.savefig("Energy"+ "." + format_graph, format=format_graph)
+    #plt.show()
+
+    #fig = plt.figure()
+    #plt.plot(time_CL, inertia_sol_CL[:,0]*np.sum(qdot_CL, axis=0), color='r', label=["Holo"])
+    #plt.plot(time_without, inertie_sol_without[:,0]*np.sum(qdot_without, axis=0), color='g', label=["Sol 2"])
+    #plt.ylabel("Moment cinétique")
+    #plt.xlabel("Time [s]")
+    #plt.legend()
+    #plt.savefig("Moment_cinetique.png", format="png")
+    #plt.show()
