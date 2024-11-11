@@ -1725,13 +1725,23 @@ def position_insole(marker_list: list, model):
         raise RuntimeError("ERROR: The marker list must contain the index of the markers that are in the biorbd model.")
     return center, position_markers
 
-def get_force_from_insoles(insole_data, force_orientation, position_activation, sensor_columns, FLAG_PLOT=True):
+def get_force_from_insoles(insole_data, force_orientation, position_activation, sensor_columns, side, FLAG_PLOT=True):
     insole_data_array = np.array(insole_data.iloc[3:, 1:-1])
     nb_cells = position_activation["all_sensors_positions"].shape[0]
     force_data_per_cell = np.zeros((insole_data_array.shape[0], insole_data_array.shape[1], 2))
     for i_cell in range(nb_cells):
         position_activation_this_time = position_activation["all_sensors_positions"][i_cell]
-        force_orientation_this_time = force_orientation[np.where(position_activation_this_time == sensor_columns), :]
+        column_idx = int(np.where(position_activation_this_time == sensor_columns)[0])
+        if side == "L":
+            if column_idx in range(6, 12):
+                force_orientation_this_time = force_orientation[np.where(position_activation_this_time == sensor_columns), :]
+            else:
+                force_orientation_this_time = 0  # Do not consider the force
+        elif side == "R":
+            if column_idx in range(7, 13):
+                force_orientation_this_time = force_orientation[np.where(position_activation_this_time == sensor_columns), :]
+            else:
+                force_orientation_this_time = 0
         for i_frame in range(insole_data_array.shape[0]):
             force_data_per_cell[i_frame, i_cell, :] = insole_data_array[i_frame, i_cell] * force_orientation_this_time
     force_data = np.sum(force_data_per_cell, axis=1)
