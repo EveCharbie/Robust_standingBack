@@ -37,7 +37,8 @@ def get_created_data_from_pickle(file: str):
 # --- Graph --- #
 def graph_all_comparaison(data_CL, data_without, format_graph="svg"):
 
-    n_shooting = (20, 20, 30, 30, 30)
+    n_shooting_plus_one = (21, 21, 31, 31, 31)
+    phase_delimiter = ["-", "--", ":", "-.", "-"]
 
     # Solution with closed-loop constraints          
     # lambdas = data_CL["lambda"]
@@ -64,11 +65,14 @@ def graph_all_comparaison(data_CL, data_without, format_graph="svg"):
     for i in range(len(time_CL)):
         time_end_phase_CL.append(time_CL[i][-1])
         time_end_phase_tau_CL.append(time_CL[i][-2])
+    time_vector_CL = np.vstack(data_CL["time"]).reshape(-1, ) - time_CL[0][-1]
+    time_end_phase_CL = np.array(time_end_phase_CL) - time_CL[0][-1]
+    time_end_phase_tau_CL = np.array(time_end_phase_tau_CL) - time_CL[0][-1]
     # time_end_phase_pourcentage_CL = time_to_percentage(np.vstack(time_end_phase_CL))
     # time_end_phase_tau_pourcentage_CL = time_to_percentage(np.vstack(time_end_phase_tau_CL))
 
     # time_pourcentage_CL = time_to_percentage(time_CL)
-    time_tau_CL = np.vstack([arr[:-1, :] for arr in time_CL])
+    time_tau_CL = np.vstack([arr[:-1, :] for arr in time_CL]).reshape(-1, ) - time_CL[0][-1]
     # time_tau_pourcentage_CL = time_to_percentage(time_tau_CL)
 
     # Solution without closed-loop constraints
@@ -90,18 +94,21 @@ def graph_all_comparaison(data_CL, data_without, format_graph="svg"):
     for i in range(len(time_without)):
         time_end_phase_without.append(time_without[i][-1])
         time_end_phase_tau_without.append(time_without[i][-2])
+    time_vector_without = np.vstack(data_without["time"]).reshape(-1, ) - time_without[0][-1]
+    time_end_phase_without = np.array(time_end_phase_without) - time_without[0][-1]
+    time_end_phase_tau_without = np.array(time_end_phase_tau_without) - time_without[0][-1]
     # time_end_phase_pourcentage_without = time_to_percentage(np.vstack(time_end_phase_without))
 
     # time_pourcentage_without = time_to_percentage(time_without)
-    time_tau_without = np.vstack([arr[:-1, :] for arr in time_without])
+    time_tau_without = np.vstack([arr[:-1, :] for arr in time_without]).reshape(-1, ) - time_without[0][-1]
     # time_tau_pourcentage_without = time_to_percentage(time_tau_without)
 
     # Min and max bounds on q
-    min_bound_q = np.ones((q_without_rad.shape[0], time_tau_without.shape[0])) * -1000
-    max_bound_q = np.ones((q_without_rad.shape[0], time_tau_without.shape[0])) * 1000
+    min_bound_q = np.ones((q_without_rad.shape[0], time_vector_without.shape[0])) * -1000
+    max_bound_q = np.ones((q_without_rad.shape[0], time_vector_without.shape[0])) * 1000
     for i_phase in range(5):
-        idx_beginning = sum(n_shooting[:i_phase])
-        idx_end = sum(n_shooting[:i_phase+1])
+        idx_beginning = sum(n_shooting_plus_one[:i_phase])
+        idx_end = sum(n_shooting_plus_one[:i_phase+1]) - 1
         for i_dof in range(8):
             if data_without["min_bounds_q"][i_phase][i_dof, 0] > min_bound_q[i_dof, idx_beginning]:
                 min_bound_q[i_dof, idx_beginning] = data_without["min_bounds_q"][i_phase][i_dof, 0]
@@ -112,50 +119,50 @@ def graph_all_comparaison(data_CL, data_without, format_graph="svg"):
             max_bound_q[:, i_node] = data_without["max_bounds_q"][i_phase][:, 1]
         min_bound_q[:, idx_end] = data_without["min_bounds_q"][i_phase][:, 2]
         max_bound_q[:, idx_end] = data_without["max_bounds_q"][i_phase][:, 2]
+    min_bound_q *= 180/np.pi
+    max_bound_q *= 180/np.pi
+    tempo_min_6 = min_bound_q[6, :].copy()
+    min_bound_q[6, :] = -max_bound_q[6, :]
+    max_bound_q[6, :] = -tempo_min_6
 
     # Figure q
-    fig, axs = plt.subplots(3, 3, figsize=(10, 5))
+    time_max_graph = max(time_vector_without[-1], time_vector_CL[-1])
+    time_min_graph = min(time_vector_without[0], time_vector_CL[0])
+    fig, axs = plt.subplots(3, 3, figsize=(10, 6))
     num_col = 0
     num_line = 0
     y_max_1 = np.max([abs(q_CL_deg[0:2, :]), abs(q_without_deg[0:2, :])])
     y_max_2 = np.max([abs(q_CL_deg[2:5, :]), abs(q_without_deg[2:5, :])])
     y_max_3 = np.max([abs(q_CL_deg[5:, :]), abs(q_without_deg[5:, :])])
     for i_dof in range(q_CL_deg.shape[0]):
-        axs[num_line, num_col].plot(np.array([0, 100]), np.array([0, 0]), '-k', linewidth=0.5)
-        axs[num_line, num_col].plot(time_without, q_without_deg[i_dof], color="tab:blue", label="Kinematic tucking constraints",
+        axs[num_line, num_col].plot(np.array([time_min_graph, time_max_graph]), np.array([0, 0]), '-k', linewidth=0.5)
+
+        for xline in range(len(time_end_phase_CL)-1):
+            axs[num_line, num_col].axvline(time_end_phase_without[xline], color="tab:blue", linestyle=phase_delimiter[xline],
+                                           linewidth=0.7)
+            axs[num_line, num_col].axvline(time_end_phase_CL[xline], color="tab:orange", linestyle=phase_delimiter[xline],
+                                           linewidth=0.7)
+
+        axs[num_line, num_col].fill_between(time_vector_without, max_bound_q[i_dof, :],
+                                            np.ones(max_bound_q[i_dof, :].shape) * 1000, color="tab:blue",
+                                            alpha=0.1, step='pre', linewidth=0.5)
+        axs[num_line, num_col].fill_between(time_vector_without, np.ones(min_bound_q[i_dof, :].shape) * -1000,
+                                            min_bound_q[i_dof, :], color="tab:blue", alpha=0.1, step='pre',
+                                            linewidth=0.5)
+        axs[num_line, num_col].fill_between(time_vector_CL, max_bound_q[i_dof, :],
+                                            np.ones(max_bound_q[i_dof, :].shape) * 1000, color="tab:orange",
+                                            alpha=0.1, step='pre', linewidth=0.5)
+        axs[num_line, num_col].fill_between(time_vector_CL, np.ones(min_bound_q[i_dof, :].shape) * -1000,
+                                            min_bound_q[i_dof, :], color="tab:orange", alpha=0.1, step='pre',
+                                            linewidth=0.5)
+
+        axs[num_line, num_col].plot(time_vector_without, q_without_deg[i_dof, :], color="tab:blue", label="Kinematic tucking constraints",
                                     alpha=0.75, linewidth=1)
-        axs[num_line, num_col].plot(time_CL, q_CL_deg[i_dof], color="tab:orange",
+        axs[num_line, num_col].plot(time_vector_CL, q_CL_deg[i_dof, :], color="tab:orange",
                                     label="Holonomic tucking constraints", alpha=0.75, linewidth=1)
-        for xline in range(len(time_end_phase_CL)):
-            axs[num_line, num_col].axvline(time_end_phase_without[xline], color="tab:blue", linestyle="--",
-                                           linewidth=0.7)
-            axs[num_line, num_col].axvline(time_end_phase_CL[xline], color="tab:orange", linestyle="--",
-                                           linewidth=0.7)
-
-        axs[num_line, num_col].fill_between(time_tau_without, min_bound_q[i_dof],
-                                            np.ones(tau_without_max_bound[i_dof].shape) * 1000, color="tab:blue",
-                                            alpha=0.1, step='pre', linewidth=0.5)
-        # axs[num_line, num_col].step(range(len(tau_without[i_dof])), tau_without_min_bound[i_dof], color="tab:blue", alpha=0.5, linewidth=0.5)
-        axs[num_line, num_col].fill_between(time_tau_without, np.ones(tau_without_max_bound[i_dof].shape) * -1000,
-                                            tau_without_min_bound[i_dof], color="tab:blue", alpha=0.1, step='pre',
-                                            linewidth=0.5)
-        # axs[num_line, num_col].step(range(len(tau_CL[i_dof])), tau_CL_max_bound[i_dof], color="tab:orange", alpha=0.5, linewidth=0.5)
-        axs[num_line, num_col].fill_between(time_tau_CL, tau_CL_max_bound[i_dof],
-                                            np.ones(tau_without_max_bound[i_dof].shape) * 1000, color="tab:orange",
-                                            alpha=0.1, step='pre', linewidth=0.5)
-        # axs[num_line, num_col].step(range(len(tau_CL[i_dof])), tau_CL_min_bound[i_dof], color="tab:orange", alpha=0.5, linewidth=0.5)
-        axs[num_line, num_col].fill_between(time_tau_CL, np.ones(tau_without_max_bound[i_dof].shape) * -1000,
-                                            tau_CL_min_bound[i_dof], color="tab:orange", alpha=0.1, step='pre',
-                                            linewidth=0.5)
-
-        axs[num_line, num_col].step(time_tau_without, tau_without[i_dof], color="tab:blue", alpha=0.75, linewidth=1,
-                                    label="Kinematic tucking constraints", where='mid')
-        axs[num_line, num_col].step(time_tau_CL, tau_CL[i_dof], color="tab:orange", alpha=0.75, linewidth=1,
-                                    label="Holonomic tucking constraints", where='mid')
-
 
         axs[num_line, num_col].set_title(dof_names[i_dof], fontsize=8)
-        axs[num_line, num_col].set_xlim(0, 100)
+        axs[num_line, num_col].set_xlim(time_min_graph, time_max_graph)
         axs[num_line, num_col].grid(True, linewidth=0.4)
         # Réduire la taille des labels des xticks et yticks
         axs[num_line, num_col].tick_params(axis='both', which='major', labelsize=6)
@@ -176,37 +183,41 @@ def graph_all_comparaison(data_CL, data_without, format_graph="svg"):
         if num_line == 2:
             axs[num_line, num_col].set_xlabel('Time [s]', fontsize=7)
 
-        # Y_label
-        axs[0, 0].set_ylabel("Position [m]", fontsize=7)  # Pelvis Translation
-        axs[1, 0].set_ylabel(r"F (+) / E (-) [$^\circ$]", fontsize=7)  # Pelvis Rotation
-        axs[2, 0].set_ylabel(r"F (+) / E (-) [$^\circ$]", fontsize=7)  # Thight Rotation
-        # Récupérer les handles et labels de la légende de la figure de la première ligne, première colonne
-        handles, labels = axs[0, 0].get_legend_handles_labels()
+    # Y_label
+    axs[0, 0].set_ylabel("Position [m]", fontsize=7)  # Pelvis Translation
+    axs[1, 0].set_ylabel(r"Joint angle [$^\circ$]", fontsize=7)  # Pelvis Rotation
+    axs[2, 0].set_ylabel(r"Joint angle [$^\circ$]", fontsize=7)  # Thight Rotation
 
-        # Ajouter la légende à la figure de la première ligne, troisième colonne
-        axs[0, 2].legend(handles, labels, loc='center', fontsize=8)
-        axs[0, 2].axis('off')
+    # Récupérer les handles et labels de la légende de la figure de la première ligne, première colonne
+    axs[0, 0].fill_between(np.array([0, 0]), np.array([0, 0]), np.array([0, 0]), color="tab:blue", alpha=0.1, step='pre', linewidth=0.5, label="$q_{bounds}$ Kinematic tucking constraints")
+    axs[0, 0].fill_between(np.array([0, 0]), np.array([0, 0]), np.array([0, 0]), color="tab:orange", alpha=0.1, step='pre', linewidth=0.5, label="$q_{bounds}$ Holonomic tucking constraints")
+    handles, labels = axs[0, 0].get_legend_handles_labels()
+
+    # Ajouter la légende à la figure de la première ligne, troisième colonne
+    axs[0, 2].legend(handles, labels, loc='center', fontsize=8)
+    axs[0, 2].axis('off')
     plt.tight_layout()
-    plt.subplots_adjust(wspace=0.5, hspace=1)
+    plt.subplots_adjust(wspace=0.15, hspace=0.4)
     fig.savefig("q"+ "." + format_graph, format=format_graph)
 
+
     # Figure qdot
-    fig, axs = plt.subplots(3, 3, figsize=(10, 5))
+    fig, axs = plt.subplots(3, 3, figsize=(10, 6))
     num_col = 0
     num_line = 0
     y_max_1 = np.max([abs(qdot_without_deg[0:2, :]), abs(qdot_without_deg[0:2, :])])
     y_max_2 = np.max([abs(qdot_without_deg[2:5, :]), abs(qdot_without_deg[2:5, :])])
     y_max_3 = np.max([abs(qdot_without_deg[5:, :]), abs(qdot_without_deg[5:, :])])
     for i_dof in range(qdot_CL_deg.shape[0]):
-        axs[num_line, num_col].plot(np.array([0, 100]), np.array([0, 0]), '-k', linewidth=0.5)
-        axs[num_line, num_col].plot(time_without, qdot_without_deg[i_dof], color="tab:blue",
+        axs[num_line, num_col].plot(np.array([time_min_graph, time_max_graph]), np.array([0, 0]), '-k', linewidth=0.5)
+        axs[num_line, num_col].plot(time_vector_without, qdot_without_deg[i_dof], color="tab:blue",
                                     label="Kinematic tucking constraints", alpha=0.75, linewidth=1)
-        axs[num_line, num_col].plot(time_CL, qdot_CL_deg[i_dof], color="tab:orange",
+        axs[num_line, num_col].plot(time_vector_CL, qdot_CL_deg[i_dof], color="tab:orange",
                                     label="Holonomic tucking constraints", alpha=0.75, linewidth=1)
-        for xline in range(len(time_end_phase_CL)):
-            axs[num_line, num_col].axvline(time_end_phase_without[xline], color="tab:blue", linestyle="--",
+        for xline in range(len(time_end_phase_CL)-1):
+            axs[num_line, num_col].axvline(time_end_phase_without[xline], color="tab:blue", linestyle=phase_delimiter[xline],
                                            linewidth=0.7)
-            axs[num_line, num_col].axvline(time_end_phase_CL[xline], color="tab:orange", linestyle="--",
+            axs[num_line, num_col].axvline(time_end_phase_CL[xline], color="tab:orange", linestyle=phase_delimiter[xline],
                                            linewidth=0.7)
         axs[num_line, num_col].set_title(dof_names[i_dof], fontsize=8)
 
@@ -216,7 +227,7 @@ def graph_all_comparaison(data_CL, data_without, format_graph="svg"):
             axs[num_line, num_col].set_ylim(-y_max_2 + (-y_max_2 * 0.1), y_max_2 + (y_max_2 * 0.1))
         elif num_line == 2:
             axs[num_line, num_col].set_ylim(-y_max_3 + (-y_max_3 * 0.1), y_max_3 + (y_max_3 * 0.1))
-        axs[num_line, num_col].set_xlim(0, 100)
+        axs[num_line, num_col].set_xlim(time_min_graph, time_max_graph)
         axs[num_line, num_col].grid(True, linewidth=0.4)
         # Réduire la taille des labels des xticks et yticks
         axs[num_line, num_col].tick_params(axis='both', which='major', labelsize=6)
@@ -247,7 +258,7 @@ def graph_all_comparaison(data_CL, data_without, format_graph="svg"):
         axs[0, 2].legend(handles, labels, loc='center', fontsize=7)
         axs[0, 2].axis('off')
     plt.tight_layout()
-    plt.subplots_adjust(wspace=0.4, hspace=0.8)
+    plt.subplots_adjust(wspace=0.15, hspace=0.4)
     fig.savefig("qdot"+ "." + format_graph, format=format_graph)
 
 
@@ -306,22 +317,22 @@ def graph_all_comparaison(data_CL, data_without, format_graph="svg"):
         tau_without_max_bound[i_dof, :] = actuator_function(actuators[key].tau_max_plus, actuators[key].theta_opt_plus, actuators[key].r_plus, q_without_rad_without_last_node[i_dof+3])
     
     # Figure tau
-    fig, axs = plt.subplots(2, 3, figsize=(10, 5))
+    fig, axs = plt.subplots(2, 3, figsize=(10, 4))
     num_col = 1 
     num_line = 0
 
     y_max_1 = np.max([abs(tau_without[0:2, :]), abs(tau_CL[0:2, :])])
     y_max_2 = np.max([abs(tau_without[2:, :]), abs(tau_CL[2:, :])])
 
-    axs[0, 0].plot([], [], color="tab:orange", label="Holonomic tucking contraints (HTC)")
-    axs[0, 0].plot([], [], color="tab:blue", label="Kinematic tucking constraints (KTC)")
-    axs[0, 0].fill_between([], [], [], color="tab:orange", alpha=0.1, label="$max_{\tau}$ HTC", linewidth=0.5)
-    axs[0, 0].fill_between([], [], [], color="tab:blue", alpha=0.1, label="$max_{\tau}$ KTC", linewidth=0.5)
-    axs[0, 0].legend(loc='center right', bbox_to_anchor=(0.6, 0.5), fontsize=8)
+    axs[0, 0].plot([], [], color="tab:orange", label="Holonomic tucking contraints")
+    axs[0, 0].plot([], [], color="tab:blue", label="Kinematic tucking constraints")
+    axs[0, 0].fill_between([], [], [], color="tab:orange", alpha=0.1, label=r"$max_{\tau}$ Holonomic tucking contraints", linewidth=0.5)
+    axs[0, 0].fill_between([], [], [], color="tab:blue", alpha=0.1, label=r"$max_{\tau}$ Kinematic tucking constraints", linewidth=0.5)
+    axs[0, 0].legend(loc='center right', bbox_to_anchor=(0.9, 0.5), fontsize=8)
     axs[0, 0].axis('off')
 
     for i_dof in range(tau_CL.shape[0]):
-        axs[num_line, num_col].plot(np.array([0, 100]), np.array([0, 0]), '-k', linewidth=0.5)
+        axs[num_line, num_col].plot(np.array([time_min_graph, time_max_graph]), np.array([0, 0]), '-k', linewidth=0.5)
 
         # axs[num_line, num_col].step(range(len(tau_without[i_dof])), tau_without_max_bound[i_dof], color="tab:blue", alpha=0.5, linewidth=0.5)
         axs[num_line, num_col].fill_between(time_tau_without, tau_without_max_bound[i_dof], np.ones(tau_without_max_bound[i_dof].shape) * 1000, color="tab:blue", alpha=0.1, step='pre', linewidth=0.5)
@@ -335,13 +346,13 @@ def graph_all_comparaison(data_CL, data_without, format_graph="svg"):
         axs[num_line, num_col].step(time_tau_without, tau_without[i_dof], color="tab:blue", alpha=0.75, linewidth=1, label="Kinematic tucking constraints", where='mid')
         axs[num_line, num_col].step(time_tau_CL, tau_CL[i_dof], color="tab:orange", alpha=0.75, linewidth=1, label="Holonomic tucking constraints", where='mid')
 
-        for xline in range(len(time_end_phase_CL)):
-            axs[num_line, num_col].axvline(time_end_phase_CL[xline], color="tab:orange", linestyle="--",
+        for xline in range(len(time_end_phase_CL)-1):
+            axs[num_line, num_col].axvline(time_end_phase_CL[xline], color="tab:orange", linestyle=phase_delimiter[xline],
                                            linewidth=0.7)
-            axs[num_line, num_col].axvline(time_end_phase_without[xline], color="tab:blue", linestyle="--",
+            axs[num_line, num_col].axvline(time_end_phase_without[xline], color="tab:blue", linestyle=phase_delimiter[xline],
                                            linewidth=0.7)
         axs[num_line, num_col].set_title(dof_names_tau[i_dof], fontsize=8)
-        axs[num_line, num_col].set_xlim(0, 100)
+        axs[num_line, num_col].set_xlim(time_min_graph, time_max_graph)
         axs[num_line, num_col].grid(True, linewidth=0.4)
         # Réduire la taille des labels des xticks et yticks
         axs[num_line, num_col].tick_params(axis='both', which='major', labelsize=6)
@@ -364,7 +375,7 @@ def graph_all_comparaison(data_CL, data_without, format_graph="svg"):
     # axs[1, 1].set_yticklabels([])
     # axs[1, 2].set_yticklabels([])
     plt.tight_layout()
-    plt.subplots_adjust(wspace=0.3, hspace=0.4)
+    plt.subplots_adjust(wspace=0.15, hspace=0.4)
     fig.savefig("tau"+ "." + format_graph, format=format_graph)
 
     # # Figure lambdas
@@ -424,10 +435,10 @@ def graph_all_comparaison(data_CL, data_without, format_graph="svg"):
     # axs[0, 1].set_xticks([0, 1], ["with", "without"])
     # axs[1, 1].set_xticks([0, 1], ["with", "without"])
     #
-    # axs[1, 1].plot([], [], color="tab:orange", label=r"$\lvert \tau \rvert$ Holonomic tucking constraints")
-    # axs[1, 1].plot([], [], color="tab:blue", label=r"$\lvert \tau \rvert$ Kinematic tucking constraints")
-    # axs[1, 1].fill_between([], [], [], color="tab:orange", label=r"$\sum \lvert \tau \rvert$ Holonomic tucking constraints")
-    # axs[1, 1].fill_between([], [], [], color="tab:blue", label=r"$\sum \lvert \tau \rvert$ Kinematic tucking constraints")
+    # axs[1, 1].plot([], [], color="tab:orange", label=r"$| \tau |$ Holonomic tucking constraints")
+    # axs[1, 1].plot([], [], color="tab:blue", label=r"$| \tau |$ Kinematic tucking constraints")
+    # axs[1, 1].fill_between([], [], [], color="tab:orange", label=r"$\sum | \tau |$ Holonomic tucking constraints")
+    # axs[1, 1].fill_between([], [], [], color="tab:blue", label=r"$\sum | \tau |$ Kinematic tucking constraints")
     # axs[1, 1].legend(loc='center right', bbox_to_anchor=(1.85, 1.5), fontsize=8)
     # plt.subplots_adjust(right=0.75, hspace=0.25, wspace=0.4)
     # plt.savefig("tau_ratio_tucked_phase"+ "." + format_graph, format=format_graph)
@@ -447,24 +458,24 @@ def graph_all_comparaison(data_CL, data_without, format_graph="svg"):
     tau_CL_ratio_all = np.zeros(tau_CL.shape)
     tau_without_ratio_all = np.zeros(tau_without.shape)
 
-    fig, axs = plt.subplots(2, 2, figsize=(8, 5))
+    fig, axs = plt.subplots(2, 2, figsize=(10, 4))
     axs[0, 0].step(time_tau_CL, np.sum(np.abs(tau_CL), axis=0), color="tab:orange", label="Holonomic tucking constraints",
                    alpha=0.75, linewidth=1)
     axs[0, 0].step(time_tau_without, np.sum(np.abs(tau_without), axis=0), color="tab:blue", label="Kinematic tucking constraints",
                    alpha=0.75, linewidth=1)
 
-    for xline in range(len(time_end_phase_CL)):
-        axs[0, 0].axvline(time_end_phase_CL[xline], color="tab:orange", linestyle="--",
+    for xline in range(len(time_end_phase_CL)-1):
+        axs[0, 0].axvline(time_end_phase_CL[xline], color="tab:orange", linestyle=phase_delimiter[xline],
                           linewidth=0.7)
-        axs[0, 0].axvline(time_end_phase_without[xline], color="tab:blue", linestyle="--",
+        axs[0, 0].axvline(time_end_phase_without[xline], color="tab:blue", linestyle=phase_delimiter[xline],
                           linewidth=0.7)
     #for i_dof in range(5):
     #    axs[0, 0].step(time_tau_CL, tau_CL[i_dof, :], color="tab:orange", label="Holonomic tucking constraints", alpha=0.75, linewidth=1)
     #    axs[0, 0].step(time_tau_without, tau_without[i_dof, :], color="tab:blue", label="Kinematic tucking constraints", alpha=0.75, linewidth=1)
-    #    for xline in range(len(time_end_phase_CL)):
-    #        axs[0, 0].axvline(time_end_phase_CL[xline], color="tab:orange", linestyle="--",
+    #    for xline in range(len(time_end_phase_CL)-1):
+    #        axs[0, 0].axvline(time_end_phase_CL[xline], color="tab:orange", linestyle=phase_delimiter[xline],
     #                                       linewidth=0.7)
-    #        axs[0, 0].axvline(time_end_phase_without[xline], color="tab:blue", linestyle="--",
+    #        axs[0, 0].axvline(time_end_phase_without[xline], color="tab:blue", linestyle=phase_delimiter[xline],
     #                                       linewidth=0.7)
     for i_dof in range(5):
         for i_node in range(tau_CL.shape[1]):
@@ -484,10 +495,10 @@ def graph_all_comparaison(data_CL, data_without, format_graph="svg"):
                    label="Holonomic tucking constraints", alpha=0.75, linewidth=1)
     axs[1, 0].step(time_tau_without, np.sum(np.abs(tau_without_ratio_all), axis=0), color="tab:blue",
                    label="Kinematic tucking constraints", alpha=0.75, linewidth=1)
-    for xline in range(len(time_end_phase_CL)):
-        axs[1, 0].axvline(time_end_phase_CL[xline], color="tab:orange", linestyle="--",
+    for xline in range(len(time_end_phase_CL)-1):
+        axs[1, 0].axvline(time_end_phase_CL[xline], color="tab:orange", linestyle=phase_delimiter[xline],
                                        linewidth=0.7)
-        axs[1, 0].axvline(time_end_phase_without[xline], color="tab:blue", linestyle="--",
+        axs[1, 0].axvline(time_end_phase_without[xline], color="tab:blue", linestyle=phase_delimiter[xline],
                                        linewidth=0.7)
 
     # sum_tau_all_CL = np.sum(np.abs(np.concatenate(data_CL["tau"], axis=1)))
@@ -503,19 +514,21 @@ def graph_all_comparaison(data_CL, data_without, format_graph="svg"):
     axs[1, 1].bar([0, 1], [sum_tau_all_ratio_CL, sum_tau_all_ratio_without], color=["tab:orange", "tab:blue"])
     # axs[1, 1].get_xaxis().set_visible(False)
 
-    axs[0, 0].set_xlabel("Time [s]")
+    # axs[0, 0].set_xlabel("Time [s]")
     axs[0, 0].set_ylabel("Joint torque [Nm]")
     axs[1, 0].set_xlabel("Time [s]")
     axs[1, 0].set_ylabel("Physiological joint torque ratio")
     axs[0, 1].set_xticks([0, 1], ["HTC", "KTC"])
     axs[1, 1].set_xticks([0, 1], ["HTC", "KTC"])
+    axs[0, 0].set_xticks([0.0, 0.5, 1.0, 1.5], ["0.0", "0.5", "1.0", "1.5"])
+    axs[1, 0].set_xticks([0.0, 0.5, 1.0, 1.5], ["0.0", "0.5", "1.0", "1.5"])
 
-    axs[1, 1].plot([], [], color="tab:orange", label=r"\lvert \tau / max_{\tau} \rvert$ Holonomic tucking constraints")
-    axs[1, 1].plot([], [], color="tab:blue", label=r"$\lvert \tau / max_{\tau} \rvert$ Kinematic tucking constraints")
-    axs[1, 1].fill_between([], [], [], color="tab:orange", label=r"$\int{\lvert \tau / max_{\tau} \rvert dt}$ Holonomic tucking constraints")
-    axs[1, 1].fill_between([], [], [], color="tab:blue", label=r"$\int{\lvert \tau / max_{\tau} \rvert dt}$ Kinematic tucking constraints")
-    axs[1, 1].legend(loc='center right', bbox_to_anchor=(1.85, 1.5), fontsize=8)
-    plt.subplots_adjust(right=0.75, hspace=0.25, wspace=0.4)
+    axs[1, 1].plot([], [], color="tab:orange", label=r"$| \tau / max_{\tau} |$ HTC")
+    axs[1, 1].plot([], [], color="tab:blue", label=r"$| \tau / max_{\tau} |$ KTC")
+    axs[1, 1].fill_between([], [], [], color="tab:orange", label=r"$\int{| \tau / max_{\tau} | dt}$ HTC")
+    axs[1, 1].fill_between([], [], [], color="tab:blue", label=r"$\int{| \tau / max_{\tau} | dt}$ KTC")
+    axs[1, 1].legend(loc='center right', bbox_to_anchor=(1.5, 1.75), fontsize=8)
+    plt.subplots_adjust(right=0.82, hspace=0.25, wspace=0.2, top=0.95)
 
     plt.savefig("tau_ratio_all"+ "." + format_graph, format=format_graph)
     #plt.show()

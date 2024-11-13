@@ -3,25 +3,38 @@ Created on Thu Aug 29 14:31:08 2024
 
 @author: anais
 """
-
+import os
 import numpy as np
 import pandas as pd
 import biorbd
 import matplotlib.pyplot as plt
+
+from data_analysis.graph_multi_start import num_col
 from graph_simu import graph_all_comparaison # , get_created_data_from_pickle, time_to_percentage
 
 # Solution with and without holonomic constraints
 path_sol = "/home/mickaelbegon/Documents/Anais/Results_simu"
-#path_sol = "../holonomic_research/"
+pathwithout = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/holonomic_research/solutions/Salto_5phases_VEve_final/"
+# pathCL = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/holonomic_research/solutions_CL/Salto_close_loop_landing_5phases_VEve_final/"
 sol_CL = path_sol + "/" + "Salto_close_loop_landing_5phases_VEve12.pkl"
-sol_without = path_sol + "/" + "Salto_5phases_VEve14.pkl"
+# sol_without = path_sol + "/" + "Salto_5phases_VEve14.pkl"
 path_model = "../Model/Model2D_7Dof_2C_5M_CL_V3.bioMod"
 model = biorbd.Model(path_model)
 
-PLOT_TAU_FLAG = True
+min_cost_without = np.inf
+for file in os.listdir(pathwithout):
+    if file.endswith("CVG.pkl"):
+        data = pd.read_pickle(pathwithout + file)
+        if data["cost"] < min_cost_without:
+            min_cost_without = data["cost"]
+            sol_without = pathwithout + file
+print("Min cost without: ", min_cost_without)
+
+PLOT_TAU_FLAG = False
 PLOT_INERTIA_FLAG = True
 PLOT_ENERY_FLAG = True
 format_graph = "svg"
+phase_delimiter = ["-", "--", ":", "-.", "-"]
 
 data_CL = pd.read_pickle(sol_CL)
 data_without = pd.read_pickle(sol_without)
@@ -39,52 +52,115 @@ for i in range(len(data_without["time"])):
 dof_names_tau = ["Shoulder", "Elbow",
                  "Hip", "Knee", "Ankle"]
 
-time_CL = np.vstack(data_CL["time"])
+time_CL = data_CL["time"]
 # time_pourcentage_CL = time_to_percentage(time_CL)
-time_without = np.vstack(data_without["time"])
+time_vector_CL = np.vstack(data_CL["time"]).reshape(-1, ) - time_CL[0][-1]
+time_end_phase_CL = np.array(time_end_phase_CL) - time_CL[0][-1]
+
+time_without = data_without["time"]
 # time_pourcentage_without = time_to_percentage(time_without)
+time_vector_without = np.vstack(data_without["time"]).reshape(-1, ) - time_without[0][-1]
+time_end_phase_without = np.array(time_end_phase_without) - time_without[0][-1]
+
+time_max_graph = max(time_vector_without[-1], time_vector_CL[-1])
+time_min_graph = min(time_vector_without[0], time_vector_CL[0])
 
 # Duree phase solutions with and without holonomic constraints
-time_phase_sol_CL = []
-time_phase_sol_without = []
+time_phaseCL = []
+time_phasewithout = []
 
 for i in range(len(data_CL["time"])):
-    time_phase_sol_CL.append(data_CL["time"][i][-1] - data_CL["time"][i][1])
-    time_phase_sol_without.append(data_without["time"][i][-1] - data_without["time"][i][1])
+    time_phaseCL.append(data_CL["time"][i][-1] - data_CL["time"][i][0])
+    time_phasewithout.append(data_without["time"][i][-1] - data_without["time"][i][0])
 
-print("*** Phase_time *** \nCL :", time_phase_sol_CL, "\nwithout : ", time_phase_sol_without)
-print("Total CL :", np.sum(time_phase_sol_CL), "\nTotal without : ", np.sum(time_phase_sol_without))
+print("*** Phase_time *** \nCL :", time_phaseCL, "\nwithout : ", time_phasewithout)
+print("Total CL :", np.sum(time_phaseCL), "\nTotal without : ", np.sum(time_phasewithout))
 
 # Graphique
 if PLOT_TAU_FLAG:
     graph_all_comparaison(data_CL, data_without, format_graph)
 
-# Inertie
-inertia_sol_CL = np.zeros((data_CL["q_all"].shape[1], 3))
-inertie_sol_without = np.zeros((data_without["q_all"].shape[1], 3))
-for i in range(data_CL["q_all"].shape[1]):
-    inertia_sol_CL[i, :] = np.diagonal(model.bodyInertia(data_CL["q_all"][:, i]).to_array()).T
-    inertie_sol_without[i, :] = np.diagonal(model.bodyInertia(data_without["q_all"][:, i]).to_array()).T
 
 if PLOT_INERTIA_FLAG:
-    fig, ax = plt.subplots(1, 1, figsize=(10, 5))
-    ax.plot(time_without, inertie_sol_without[:, 0], color="tab:blue", label="without \nconstraints", alpha=0.75, linewidth=1)#time_pourcentage_without.flatten(),
-    ax.plot(inertia_sol_CL[:, 0], color="tab:orange", label="with holonomics \nconstraints", alpha=0.75, linewidth=1)#time_pourcentage_CL,
-    for xline in range(len(time_end_phase_CL)):
-        ax.axvline(time_end_phase_without[xline], color="tab:blue", linestyle="--", linewidth=0.7)
-        ax.axvline(time_end_phase_CL[xline], color="tab:orange", linestyle="--", linewidth=0.7)
-    ax.set_title("Inertia X-axis", fontsize=10)
-    ax.set_xlim(0, 100)
-    ax.grid(True, linewidth=0.4)
-    ax.set_ylabel("Inertia", fontsize=7)
-    ax.set_xlabel("Time [s]", fontsize=7)
-    ax.legend(bbox_to_anchor=(1.05, 0.5))
-    plt.subplots_adjust(right=0.8)
+    # Inertia
+    inertia_CL = np.zeros((data_CL["q_all"].shape[1], 3))
+    inertia_without = np.zeros((data_without["q_all"].shape[1], 3))
+    for i in range(data_CL["q_all"].shape[1]):
+        inertia_CL[i, :] = np.diagonal(model.bodyInertia(data_CL["q_all"][:, i]).to_array()).T
+        inertia_without[i, :] = np.diagonal(model.bodyInertia(data_without["q_all"][:, i]).to_array()).T
+        
+    fig, ax = plt.subplots(4, 1, figsize=(8, 9))
+    ax[0].plot(time_vector_without, inertia_without[:, 0], color="tab:blue", label="Kinematic tucking constraints", alpha=0.75, linewidth=1)#time_pourcentage_without.flatten(),
+    ax[0].plot(time_vector_CL, inertia_CL[:, 0], color="tab:orange", label="Holonomic tucking constraints", alpha=0.75, linewidth=1)#time_pourcentage_CL,
+    for xline in range(len(time_end_phase_CL) - 1):
+        ax[0].axvline(time_end_phase_without[xline], color="tab:blue", linestyle=phase_delimiter[xline], linewidth=0.7)
+        ax[0].axvline(time_end_phase_CL[xline], color="tab:orange", linestyle=phase_delimiter[xline], linewidth=0.7)
+    ax[0].set_ylabel("Moment of inertia\n" + r"[$kg.m^2$]")
+    ax[0].set_xlim(time_min_graph, time_max_graph)
+    ax[0].grid(True, linewidth=0.4)
+    ax[0].legend(bbox_to_anchor=(0.95, 1.45), ncol=2)
+
+
+    # Angular momentum
+    ang_mom_CL = np.zeros((data_CL["q_all"].shape[1], 3))
+    ang_mom_without = np.zeros((data_without["q_all"].shape[1], 3))
+    for i in range(data_CL["q_all"].shape[1]):
+        ang_mom_CL[i, :] = model.angularMomentum(data_CL["q_all"][:, i], data_CL["qdot_all"][:, i]).to_array()
+        ang_mom_without[i, :] = model.angularMomentum(data_without["q_all"][:, i], data_without["qdot_all"][:, i]).to_array()
+
+    ax[1].plot(time_vector_without, ang_mom_without[:, 0], color="tab:blue", label="Kinematic tucking constraints",
+               alpha=0.75, linewidth=1)
+    ax[1].plot(time_vector_CL, ang_mom_CL[:, 0], color="tab:orange", label="Holonomic tucking constraints",
+               alpha=0.75, linewidth=1)
+    for xline in range(len(time_end_phase_CL) - 1):
+        ax[1].axvline(time_end_phase_without[xline], color="tab:blue", linestyle=phase_delimiter[xline], linewidth=0.7)
+        ax[1].axvline(time_end_phase_CL[xline], color="tab:orange", linestyle=phase_delimiter[xline], linewidth=0.7)
+    ax[1].set_ylabel("Angular momentum\n" + r"[$kg.m^2/s$]")
+    ax[1].set_xlim(time_min_graph, time_max_graph)
+    ax[1].grid(True, linewidth=0.4)
+
+
+    # Body velocity
+    body_velo_CL = np.zeros((data_CL["q_all"].shape[1], 3))
+    body_velo_without = np.zeros((data_without["q_all"].shape[1], 3))
+    for i in range(data_CL["q_all"].shape[1]):
+        body_velo_CL[i, :] = model.bodyAngularVelocity(data_CL["q_all"][:, i], data_CL["qdot_all"][:, i]).to_array()
+        body_velo_without[i, :] = model.bodyAngularVelocity(data_without["q_all"][:, i], data_without["qdot_all"][:, i]).to_array()
+
+    ax[2].plot(time_vector_without, body_velo_without[:, 0], color="tab:blue", label="Kinematic tucking constraints",
+               alpha=0.75, linewidth=1)
+    ax[2].plot(time_vector_CL, body_velo_CL[:, 0], color="tab:orange", label="Holonomic tucking constraints",
+               alpha=0.75, linewidth=1)
+    for xline in range(len(time_end_phase_CL) - 1):
+        ax[2].axvline(time_end_phase_without[xline], color="tab:blue", linestyle=phase_delimiter[xline], linewidth=0.7)
+        ax[2].axvline(time_end_phase_CL[xline], color="tab:orange", linestyle=phase_delimiter[xline], linewidth=0.7)
+    ax[2].set_ylabel("Somersault velocity\n" + r"[$rad/s$]")
+    ax[2].set_xlim(time_min_graph, time_max_graph)
+    ax[2].grid(True, linewidth=0.4)
+
+
+    # Centrifugal effect
+    centricugal_CL = np.sqrt(model.mass()) * ang_mom_CL[:, 0]**2 / (inertia_CL[:, 0] ** (3/2))
+    centricugal_without = np.sqrt(model.mass()) * ang_mom_without[:, 0]**2 / (inertia_without[:, 0] ** (3/2))
+
+    ax[3].plot(time_vector_without, centricugal_without, color="tab:blue", label="Kinematic tucking constraints",
+               alpha=0.75, linewidth=1)
+    ax[3].plot(time_vector_CL, centricugal_CL, color="tab:orange", label="Holonomic tucking constraints",
+               alpha=0.75, linewidth=1)
+    for xline in range(len(time_end_phase_CL) - 1):
+        ax[3].axvline(time_end_phase_without[xline], color="tab:blue", linestyle=phase_delimiter[xline], linewidth=0.7)
+        ax[3].axvline(time_end_phase_CL[xline], color="tab:orange", linestyle=phase_delimiter[xline], linewidth=0.7)
+    ax[3].set_ylabel("Centrifugal effect\n" + r"[$N$]")
+    ax[3].set_xlim(time_min_graph, time_max_graph)
+    ax[3].grid(True, linewidth=0.4)
+    ax[3].set_xlabel("Time [s]")
+
+
+    fig.subplots_adjust()
     plt.savefig("Inertia" + "." + format_graph, format = format_graph)
     #plt.show()
 
 # Energy expenditure (intégrale de la somme de la valeur absolue de tau multiplier par la vitesse angulaire le tout multiplier par dt)
-    # Sol Holo
 time_CL = np.vstack([array[:-1,:] for array in data_CL["time"]])
 intervalle_temps_CL = time_CL[1:] - time_CL[:-1]
 intervalle_temps_CL = intervalle_temps_CL[intervalle_temps_CL!=0]
@@ -95,17 +171,21 @@ energy_CL = np.trapz(np.abs(tau_CL*qdot_CL[3:, :]), time_CL.T)
 energy_CL_all = np.abs(tau_CL[:, :]*qdot_CL[3:, :])
 energy_CL_total = energy_CL_all.sum(axis=0)
 
-    # Sol 2
 time_without = np.vstack([array[:-1,:] for array in data_without["time"]])
 tau_without = np.hstack(data_without["tau"])
 qdot_without = np.hstack([array[:,:-1] for array in data_without["qdot"]])
 
-energy_sol_without = np.trapz(np.abs(tau_without*qdot_without[3:, :]), time_without.T)
-energy_sol_without_all = np.abs(tau_without[:, :]*qdot_without[3:, :])
-energy_sol_without_total = energy_sol_without_all.sum(axis=0)
+energy_without = np.trapz(np.abs(tau_without*qdot_without[3:, :]), time_without.T)
+energy_without_all = np.abs(tau_without[:, :]*qdot_without[3:, :])
+energy_without_total = energy_without_all.sum(axis=0)
 
 #Diff energy
-energy_diff = energy_CL - energy_sol_without
+print("Energy expanditure CL: ", energy_CL_total)
+print("Energy expanditure without: ", energy_without_total)
+print("Energy expanditure CL (tucked phase) : ", energy_CL[2])
+print("Energy expanditure without (tucked phase) : ", energy_without[2])
+print("Energy difference : ", (energy_without_total - energy_CL_total) / energy_CL_total * 100, " %")
+
 
 # Figure Energy expenditure
 time_tau_CL = np.vstack((time_CL[:20],
@@ -133,26 +213,26 @@ fig, axs = plt.subplots(2, 3)
 num_col = 1
 num_line = 0
 
-y_max_1 = np.max([abs(energy_sol_without_all[0:2]), abs(energy_CL_all[0:2])])
-y_max_2 = np.max([abs(energy_sol_without_all[2:]), abs(energy_CL_all[2:])])
+y_max_1 = np.max([abs(energy_without_all[0:2]), abs(energy_CL_all[0:2])])
+y_max_2 = np.max([abs(energy_without_all[2:]), abs(energy_CL_all[2:])])
 
-axs[0, 0].plot([], [], color="tab:orange", label="with holonomics \nconstraints")
-axs[0, 0].plot([], [], color="tab:blue", label="without \nconstraints")
+axs[0, 0].plot([], [], color="tab:orange", label="Holonomic tucking constraints")
+axs[0, 0].plot([], [], color="tab:blue", label="Kinematic tucking constraints")
 axs[0, 0].legend(loc='center right', bbox_to_anchor=(0.6, 0.5), fontsize=8)
 axs[0, 0].axis('off')
 
 for nb_seg in range(energy_CL_all.shape[0]):
-    axs[num_line, num_col].plot(time_tau_without, energy_sol_without_all[nb_seg], color="tab:blue", alpha=0.75,
-                                linewidth=1, label="without \nconstraints")
+    axs[num_line, num_col].plot(time_tau_without, energy_without_all[nb_seg], color="tab:blue", alpha=0.75,
+                                linewidth=1, label="Kinematic tucking constraints")
     axs[num_line, num_col].plot(time_tau_CL, energy_CL_all[nb_seg], color="tab:orange", alpha=0.75,
-                                linewidth=1, label="with holonomics \nconstraints")
-    for xline in range(len(time_end_phase_CL)):
-        axs[num_line, num_col].axvline(time_end_phase_without[xline], color="tab:blue", linestyle="--",
+                                linewidth=1, label="Holonomic tucking constraints")
+    for xline in range(len(time_end_phase_CL) - 1):
+        axs[num_line, num_col].axvline(time_end_phase_without[xline], color="tab:blue", linestyle=phase_delimiter[xline],
                                        linewidth=0.7)
-        axs[num_line, num_col].axvline(time_end_phase_CL[xline], color="tab:orange", linestyle="--",
+        axs[num_line, num_col].axvline(time_end_phase_CL[xline], color="tab:orange", linestyle=phase_delimiter[xline],
                                        linewidth=0.7)
     axs[num_line, num_col].set_title(dof_names_tau[nb_seg], fontsize=8)
-    axs[num_line, num_col].set_xlim(0, 100)
+    axs[num_line, num_col].set_xlim(time_min_graph, time_max_graph)
     axs[num_line, num_col].grid(True, linewidth=0.4)
 
     # Réduire la taille des labels des xticks et yticks
@@ -180,16 +260,16 @@ plt.subplots_adjust(wspace=0.3, hspace=0.4)
 fig.savefig("Power"+ "." + format_graph, format=format_graph)
 
 # Power total
-plt.plot(time_tau_without, energy_sol_without_total, color="tab:blue", alpha=0.75,
-         linewidth=1, label="without \nconstraints")
+plt.plot(time_tau_without, energy_without_total, color="tab:blue", alpha=0.75,
+         linewidth=1, label="Kinematic tucking constraints")
 plt.plot(time_tau_CL, energy_CL_total, color="tab:orange", alpha=0.75,
-         linewidth=1, label="with holonomics \nconstraints")
+         linewidth=1, label="Holonomic tucking constraints")
 
 # Ajouter des lignes verticales
-for xline in range(len(time_end_phase_CL)):
-    plt.axvline(time_end_phase_without[xline], color="tab:blue", linestyle="--",
+for xline in range(len(time_end_phase_CL) - 1):
+    plt.axvline(time_end_phase_without[xline], color="tab:blue", linestyle=phase_delimiter[xline],
                 linewidth=0.7)
-    plt.axvline(time_end_phase_CL[xline], color="tab:orange", linestyle="--",
+    plt.axvline(time_end_phase_CL[xline], color="tab:orange", linestyle=phase_delimiter[xline],
                 linewidth=0.7)
 
 plt.xlabel('Time [%]', fontsize=8)
@@ -197,7 +277,7 @@ plt.ylabel("Power [W]", fontsize=8)
 plt.xticks(fontsize=6)
 plt.yticks(fontsize=6)
 plt.grid(True, linewidth=0.4)
-plt.xlim(0, 100)
+plt.xlim(time_min_graph, time_max_graph)
 plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), fontsize=8)
 plt.tight_layout()
 fig.savefig("Power_total"+ "." + format_graph, format=format_graph)
@@ -205,27 +285,27 @@ fig.savefig("Power_total"+ "." + format_graph, format=format_graph)
 
 # Calcul energie moyenne par phase et moyenne totale
 
-table_energy_sol_without = np.zeros((5, len(data_without["time"])+1))
+table_energy_without = np.zeros((5, len(data_without["time"])+1))
 table_energy_CL = np.zeros((5, len(data_CL["time"])+1))
 for j in range(0,5):
-    frame_start_sol_without = 0
-    frame_end_sol_without = 0
+    frame_startwithout = 0
+    frame_endwithout = 0
     frame_start_CL = 0
     frame_end_CL = 0
     for i in range(len(data_CL["time"])+1):
         if i < len(data_CL["time"]):
-            frame_end_sol_without = frame_end_sol_without + data_without["time"][i].shape[0]
-            table_energy_sol_without[j, i] = np.mean(energy_sol_without_all[j, frame_start_sol_without:frame_end_sol_without])
-            frame_start_sol_without = frame_start_sol_without + data_without["time"][i].shape[0]
+            frame_endwithout = frame_endwithout + data_without["time"][i].shape[0]
+            table_energy_without[j, i] = np.mean(energy_without_all[j, frame_startwithout:frame_endwithout])
+            frame_startwithout = frame_startwithout + data_without["time"][i].shape[0]
             frame_end_CL = frame_end_CL + data_CL["time"][i].shape[0]
             table_energy_CL[j, i] = np.mean(energy_CL_all[j, frame_start_CL:frame_end_CL])
             frame_start_CL = frame_start_CL + data_CL["time"][i].shape[0]
         else:
-            table_energy_sol_without[j, i] = np.mean(energy_sol_without_all[j, :])
+            table_energy_without[j, i] = np.mean(energy_without_all[j, :])
             table_energy_CL[j, i] = np.mean(energy_CL_all[j, :])
 
 #Diff energy
-energy_diff = energy_CL - energy_sol_without
+energy_diff = energy_CL - energy_without
 
 # Figure tau
 if PLOT_ENERY_FLAG:
@@ -233,26 +313,26 @@ if PLOT_ENERY_FLAG:
     num_col = 1
     num_line = 0
 
-    y_max_1 = np.max([abs(energy_sol_without_all[0:2]), abs(energy_CL_all[0:2])])
-    y_max_2 = np.max([abs(energy_sol_without_all[2:]), abs(energy_CL_all[2:])])
+    y_max_1 = np.max([abs(energy_without_all[0:2]), abs(energy_CL_all[0:2])])
+    y_max_2 = np.max([abs(energy_without_all[2:]), abs(energy_CL_all[2:])])
 
-    axs[0, 0].plot([], [], color="tab:orange", label="with holonomics \nconstraints")
-    axs[0, 0].plot([], [], color="tab:blue", label="without \nconstraints")
+    axs[0, 0].plot([], [], color="tab:orange", label="Holonomic tucking constraints")
+    axs[0, 0].plot([], [], color="tab:blue", label="Kinematic tucking constraints")
     axs[0, 0].legend(loc='center right', bbox_to_anchor=(0.6, 0.5), fontsize=8)
     axs[0, 0].axis('off')
 
     for nb_seg in range(energy_CL_all.shape[0]):
-        axs[num_line, num_col].step(range(len(energy_sol_without_all[nb_seg])), energy_sol_without_all[nb_seg], color="tab:blue", alpha=0.75,
-                                    linewidth=1, label="without \nconstraints", where='mid')
+        axs[num_line, num_col].step(range(len(energy_without_all[nb_seg])), energy_without_all[nb_seg], color="tab:blue", alpha=0.75,
+                                    linewidth=1, label="Kinematic tucking constraints", where='mid')
         axs[num_line, num_col].step(range(len(energy_CL_all[nb_seg])), energy_CL_all[nb_seg], color="tab:orange", alpha=0.75,
-                                    linewidth=1, label="with holonomics \nconstraints", where='mid')
-        for xline in range(len(time_end_phase_CL)):
-            axs[num_line, num_col].axvline(time_end_phase_CL[xline], color="tab:orange", linestyle="--",
+                                    linewidth=1, label="Holonomic tucking constraints", where='mid')
+        for xline in range(len(time_end_phase_CL) - 1):
+            axs[num_line, num_col].axvline(time_end_phase_CL[xline], color="tab:orange", linestyle=phase_delimiter[xline],
                                            linewidth=0.7)
-            axs[num_line, num_col].axvline(time_end_phase_without[xline], color="tab:blue", linestyle="--",
+            axs[num_line, num_col].axvline(time_end_phase_without[xline], color="tab:blue", linestyle=phase_delimiter[xline],
                                            linewidth=0.7)
         axs[num_line, num_col].set_title(dof_names_tau[nb_seg], fontsize=8)
-        axs[num_line, num_col].set_xlim(0, 100)
+        axs[num_line, num_col].set_xlim(time_min_graph, time_max_graph)
         axs[num_line, num_col].grid(True, linewidth=0.4)
 
         # Réduire la taille des labels des xticks et yticks
@@ -280,19 +360,10 @@ if PLOT_ENERY_FLAG:
     fig.savefig("Energy_expenditure"+ "." + format_graph, format=format_graph)
 
     fig = plt.figure()
-    plt.plot(time_CL, tau_CL[0, :]*qdot_CL[4, :], color='r', label="with holonomics \nconstraints")
-    plt.plot(time_without, tau_without[0,:]*qdot_without[4, :], color='g', label="without \nconstraints")
+    plt.plot(time_CL, tau_CL[0, :]*qdot_CL[4, :], color='r', label="Holonomic tucking constraints")
+    plt.plot(time_without, tau_without[0,:]*qdot_without[4, :], color='g', label="Kinematic tucking constraints")
     plt.ylabel("Energy expenditure")
     plt.xlabel("Time [s]")
     plt.legend()
     plt.savefig("Energy"+ "." + format_graph, format=format_graph)
-    #plt.show()
-
-    #fig = plt.figure()
-    #plt.plot(time_CL, inertia_sol_CL[:,0]*np.sum(qdot_CL, axis=0), color='r', label=["Holo"])
-    #plt.plot(time_without, inertie_sol_without[:,0]*np.sum(qdot_without, axis=0), color='g', label=["Sol 2"])
-    #plt.ylabel("Moment cinétique")
-    #plt.xlabel("Time [s]")
-    #plt.legend()
-    #plt.savefig("Moment_cinetique.png", format="png")
     #plt.show()

@@ -62,7 +62,7 @@ from bioptim import (
 from casadi import MX, vertcat
 from holonomic_research.biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
 from Save import get_created_data_from_pickle
-from Salto_5phases_with_pelvis_landing import add_objectives, add_constraints, actuator_function, initialize_tau, add_x_bounds, add_u_bounds, save_results
+from Salto_5phases_with_pelvis_landing import add_objectives, add_constraints, actuator_function, initialize_tau, add_x_bounds, add_u_bounds
 from plot_actuators import Joint
 
 # --- Save results --- #
@@ -645,7 +645,7 @@ def prepare_multi_start(
     return MultiStart(
         combinatorial_parameters=combinatorial_parameters,
         prepare_ocp_callback=prepare_ocp,
-        post_optimization_callback=(save_results, {"save_folder": save_folder}),
+        post_optimization_callback=(save_results_holonomic, {"save_folder": save_folder}),
         should_solve_callback=(should_solve, {"save_folder": save_folder}),
         n_pools=n_pools,
         solver=solver,
@@ -680,6 +680,7 @@ def main():
     solver.set_bound_frac(1e-8)
     solver.set_bound_push(1e-8)
     solver.set_tol(1e-6)
+    solver.set_maximum_iterations(0)
 
     biorbd_model_path = [(model_path_1contact,
                          model_path,
