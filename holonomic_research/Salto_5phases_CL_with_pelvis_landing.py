@@ -80,7 +80,7 @@ def save_results_holonomic(sol,
     """
     biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, seed = combinatorial_parameters
     index_holo = 2
-    biomedel_holo = BiorbdModelCustomHolonomic(biorbd_model_path[index_holo])
+    biomedel_holo =  sol.ocp.nlp[index_holo].model
 
     # Save path
     save_folder = extra_parameters["save_folder"]
@@ -680,7 +680,6 @@ def main():
     solver.set_bound_frac(1e-8)
     solver.set_bound_push(1e-8)
     solver.set_tol(1e-6)
-    solver.set_maximum_iterations(0)
 
     biorbd_model_path = [(model_path_1contact,
                          model_path,
