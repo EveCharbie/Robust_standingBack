@@ -13,21 +13,29 @@ from graph_simu import graph_all_comparaison, plot_vertical_time_lines
 
 # Solution with and without holonomic constraints
 path_sol = "/home/mickaelbegon/Documents/Anais/Results_simu"
-pathwithout = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/holonomic_research/solutions/Salto_5phases_VEve_final/"
-# pathCL = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/holonomic_research/solutions_CL/Salto_close_loop_landing_5phases_VEve_final/"
-sol_CL = path_sol + "/" + "Salto_close_loop_landing_5phases_VEve12.pkl"
-# sol_without = path_sol + "/" + "Salto_5phases_VEve14.pkl"
+path_without = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/holonomic_research/solutions/Salto_5phases_VEve_final/"
+path_CL = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/holonomic_research/solutions_CL/Salto_close_loop_landing_5phases_VEve_final/"
 path_model = "../Model/Model2D_7Dof_2C_5M_CL_V3.bioMod"
 model = biorbd.Model(path_model)
 
 min_cost_without = np.inf
-for file in os.listdir(pathwithout):
+for file in os.listdir(path_without):
     if file.endswith("CVG.pkl"):
-        data = pd.read_pickle(pathwithout + file)
+        data = pd.read_pickle(path_without + file)
         if data["cost"] < min_cost_without:
             min_cost_without = data["cost"]
-            sol_without = pathwithout + file
+            sol_without = path_without + file
 print("Min cost without: ", min_cost_without)
+
+min_cost_CL = np.inf
+for file in os.listdir(path_CL):
+    if file.endswith("CVG.pkl"):
+        data = pd.read_pickle(path_CL + file)
+        if data["cost"] < min_cost_CL:
+            min_cost_CL = data["cost"]
+            sol_CL = path_CL + file
+print("Min cost CL: ", min_cost_CL)
+
 
 PLOT_TAU_FLAG = True
 PLOT_INERTIA_FLAG = True
