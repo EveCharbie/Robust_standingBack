@@ -283,6 +283,26 @@ def add_constraints(constraints):
     )
 
     constraints.add(
+        ConstraintFcn.TRACK_MARKERS_VELOCITY,
+        marker_index="Foot_Toe_marker",
+        axes=Axis.Z,
+        max_bound=0,
+        min_bound=0,
+        node=Node.START,
+        phase=0,
+    )
+
+    constraints.add(
+        ConstraintFcn.TRACK_MARKERS_VELOCITY,
+        marker_index="Foot_Toe_marker",
+        axes=Axis.Y,
+        max_bound=0.1,
+        min_bound=-0.1,
+        node=Node.START,
+        phase=0,
+    )
+
+    constraints.add(
         CoM_over_toes,
         node=Node.START,
         phase=0,
@@ -330,7 +350,7 @@ def add_constraints(constraints):
         axes=Axis.Z,
         max_bound=0,
         min_bound=0,
-        node=Node.END,
+        node=Node.START,
         phase=4,
     )
 
@@ -338,9 +358,29 @@ def add_constraints(constraints):
         ConstraintFcn.TRACK_MARKERS,
         marker_index="Foot_Toe_marker",
         axes=Axis.Y,
-        max_bound=0.1,
-        min_bound=-0.1,
-        node=Node.END,
+        max_bound=0.2,
+        min_bound=-0.2,
+        node=Node.START,
+        phase=4,
+    )
+
+    constraints.add(
+        ConstraintFcn.TRACK_MARKERS_VELOCITY,
+        marker_index="Foot_Toe_marker",
+        axes=Axis.Z,
+        max_bound=0,
+        min_bound=0,
+        node=Node.START,
+        phase=4,
+    )
+
+    constraints.add(
+        ConstraintFcn.TRACK_MARKERS_VELOCITY,
+        marker_index="Foot_Toe_marker",
+        axes=Axis.Y,
+        max_bound=0,
+        min_bound=0,
+        node=Node.START,
         phase=4,
     )
 
