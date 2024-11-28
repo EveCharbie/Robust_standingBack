@@ -13,8 +13,8 @@ from graph_simu import graph_all_comparaison, plot_vertical_time_lines
 
 # Solution with and without holonomic constraints
 path_sol = "/home/mickaelbegon/Documents/Anais/Results_simu"
-path_without = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/holonomic_research/solutions/Salto_5phases_VEve_final/"
-path_CL = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/holonomic_research/solutions_CL/Salto_close_loop_landing_5phases_VEve_final/"
+path_without = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/holonomic_research/solutions/Salto_5phases_VEve_final2/"
+path_CL = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/holonomic_research/solutions_CL/Salto_close_loop_landing_5phases_VEve_final2/"
 path_model = "../Model/Model2D_7Dof_2C_5M_CL_V3.bioMod"
 model = biorbd.Model(path_model)
 
@@ -82,6 +82,14 @@ for i in range(len(data_CL["time"])):
 
 print("*** Phase_time *** \nCL :", time_phaseCL, "\nwithout : ", time_phasewithout)
 print("Total CL :", np.sum(time_phaseCL), "\nTotal without : ", np.sum(time_phasewithout))
+
+
+plt.figure()
+plt.plot(data_CL["lambda"][0, :], 'b')
+plt.plot(data_CL["lambda"][1, :], 'r')
+plt.savefig("lambda_tempo.png")
+plt.show()
+
 
 # Graphique
 if PLOT_TAU_FLAG:

@@ -474,7 +474,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
         quadratic=False,
-        weight=0.1,
+        weight=1,
         phase=2,
     )
 
@@ -657,7 +657,7 @@ def should_solve(*combinatorial_parameters, **extra_parameters):
 
 # --- Parameters --- #
 movement = "Salto_close_loop_landing"
-version = "Eve_final"
+version = "Eve_final3"
 nb_phase = 5
 name_folder_model = "../Model"
 # pickle_sol_init = "init/Salto_close_loop_landing_5phases_VEve12.pkl"
@@ -695,7 +695,7 @@ def main():
         "phase_time": phase_time,
         "n_shooting": n_shooting,
         "WITH_MULTI_START": [True],
-        "seed": seed,
+        "seed": (seed if WITH_MULTI_START else [100]),
     }
 
     if WITH_MULTI_START:
@@ -718,8 +718,8 @@ def main():
         # --- Save results --- #
 
         save_results_holonomic(sol, combinatorial_parameters)
-        sol.graphs(show_bounds=True, save_name=str(movement) + "_" + str(nb_phase) + "phases_V" + version)
-        sol.animate()
+        # sol.graphs(show_bounds=True, save_name=str(movement) + "_" + str(nb_phase) + "phases_V" + version)
+        # sol.animate()
 
 if __name__ == "__main__":
     main()

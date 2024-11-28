@@ -193,7 +193,7 @@ def add_objectives(objective_functions, actuators):
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
         quadratic=False,
-        weight=0.01,
+        weight=0.1,
         phase=0,
     )
     objective_functions.add(
@@ -221,7 +221,7 @@ def add_objectives(objective_functions, actuators):
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
         quadratic=False,
-        weight=0.1,
+        weight=1,
         phase=1,
     )
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=100, phase=1)
@@ -239,7 +239,7 @@ def add_objectives(objective_functions, actuators):
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
         quadratic=False,
-        weight=0.1,
+        weight=1,
         phase=3,
     )
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=100, phase=3)
@@ -254,7 +254,7 @@ def add_objectives(objective_functions, actuators):
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
         quadratic=False,
-        weight=0.01,
+        weight=0.1,
         phase=4,
     )
     objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=100, phase=4)
@@ -370,7 +370,7 @@ def initialize_tau():
     tau_max_total = [0, 0, 0, 325.531, 138, 981.1876, 735.3286, 343.9806]
     tau_min = [i * 0.7 for i in tau_min_total]
     tau_max = [i * 0.7 for i in tau_max_total]
-    tau_init = 1
+    tau_init = 0
     return tau_min, tau_max, tau_init
 
 def add_x_bounds(bio_model):
@@ -544,7 +544,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
         quadratic=False,
-        weight=0.1,
+        weight=1,
         phase=2,
     )
 
@@ -685,7 +685,7 @@ def should_solve(*combinatorial_parameters, **extra_parameters):
 
 # --- Parameters --- #
 movement = "Salto"
-version = "Eve_final"
+version = "Eve_final3"
 nb_phase = 5
 name_folder_model = "../Model"
 pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Jump_4phases_V22.pkl"

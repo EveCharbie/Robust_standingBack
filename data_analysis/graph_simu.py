@@ -338,8 +338,8 @@ def graph_all_comparaison(data_CL, data_without, format_graph="svg"):
 
     axs[0, 0].plot([], [], color="tab:orange", label="Holonomic tucking contraints")
     axs[0, 0].plot([], [], color="tab:blue", label="Kinematic tucking constraints")
-    axs[0, 0].fill_between([], [], [], color="tab:orange", alpha=0.1, label=r"$max_{\tau}$ Holonomic tucking contraints", linewidth=0.5)
-    axs[0, 0].fill_between([], [], [], color="tab:blue", alpha=0.1, label=r"$max_{\tau}$ Kinematic tucking constraints", linewidth=0.5)
+    axs[0, 0].fill_between([], [], [], color="tab:orange", alpha=0.1, label=r"$\tilde{\tau}_J$ Holonomic tucking contraints", linewidth=0.5)
+    axs[0, 0].fill_between([], [], [], color="tab:blue", alpha=0.1, label=r"$\tilde{\tau}_J$ Kinematic tucking constraints", linewidth=0.5)
     axs[0, 0].legend(loc='center right', bbox_to_anchor=(0.9, 0.5), fontsize=8)
     axs[0, 0].axis('off')
 
@@ -469,8 +469,8 @@ def graph_all_comparaison(data_CL, data_without, format_graph="svg"):
 
     axs[1, 1].plot([], [], color="tab:orange", label="Holonomic tucking constraints")
     axs[1, 1].plot([], [], color="tab:blue", label="Kinematic tucking constraints")
-    # axs[1, 1].fill_between([], [], [], color="tab:orange", label=r"$\int{| \tau / max_{\tau} | dt}$ HTC")
-    # axs[1, 1].fill_between([], [], [], color="tab:blue", label=r"$\int{| \tau / max_{\tau} | dt}$ KTC")
+    # axs[1, 1].fill_between([], [], [], color="tab:orange", label=r"$\int{| \tau / \tilde{\tau}_J | dt}$ HTC")
+    # axs[1, 1].fill_between([], [], [], color="tab:blue", label=r"$\int{| \tau / \tilde{\tau}_J | dt}$ KTC")
     axs[1, 1].legend(loc='center right', bbox_to_anchor=(0.5, 3.1), ncol=2)
 
     axs[1, 1].set_ylabel(r"$\int{ | \tau/{max_\tau} | dt}$" + "\n[s]")
