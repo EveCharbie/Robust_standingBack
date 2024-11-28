@@ -473,7 +473,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
         minimize_actuator_torques_CL,
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
-        quadratic=False,
+        quadratic=True,
         weight=1,
         phase=2,
     )
