@@ -474,7 +474,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
         quadratic=True,
-        weight=1,
+        weight=0.1,
         phase=2,
     )
 

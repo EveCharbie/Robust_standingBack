@@ -13,14 +13,21 @@ from graph_simu import graph_all_comparaison, plot_vertical_time_lines
 
 # Solution with and without holonomic constraints
 path_sol = "/home/mickaelbegon/Documents/Anais/Results_simu"
-path_without = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/holonomic_research/solutions/Salto_5phases_VEve_final2/"
+# path_without = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/holonomic_research/solutions/Salto_5phases_VEve_final2/"
+path_without = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/holonomic_research/solutions/Salto_5phases_VEve_taudot1/"
 path_CL = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/holonomic_research/solutions_CL/Salto_close_loop_landing_5phases_VEve_final2/"
 path_model = "../Model/Model2D_7Dof_2C_5M_CL_V3.bioMod"
 model = biorbd.Model(path_model)
 
+CONSIDER_ONLY_CONVERGED = False
+if CONSIDER_ONLY_CONVERGED:
+    end_file = "CVG.pkl"
+else:
+    end_file = ".pkl"
+
 min_cost_without = np.inf
 for file in os.listdir(path_without):
-    if file.endswith("CVG.pkl"):
+    if file.endswith(end_file):
         data = pd.read_pickle(path_without + file)
         if data["cost"] < min_cost_without:
             min_cost_without = data["cost"]
@@ -29,7 +36,7 @@ print("Min cost without: ", min_cost_without)
 
 min_cost_CL = np.inf
 for file in os.listdir(path_CL):
-    if file.endswith("CVG.pkl"):
+    if file.endswith(end_file):
         data = pd.read_pickle(path_CL + file)
         if data["cost"] < min_cost_CL:
             min_cost_CL = data["cost"]
@@ -200,8 +207,8 @@ if PLOT_INERTIA_FLAG:
 
 
     fig.subplots_adjust()
-    plt.savefig("Inertia" + "." + format_graph, format = format_graph)
-    #plt.show()
+    # plt.savefig("Inertia" + "." + format_graph, format = format_graph)
+    plt.show()
 
 """
 # Energy expenditure (intégrale de la somme de la valeur absolue de tau multiplier par la vitesse angulaire le tout multiplier par dt)
@@ -282,5 +289,5 @@ if PLOT_ENERY_FLAG:
     axs[1].set_xticks([0, 1], ["HTC", "KTC"])
 
     plt.subplots_adjust(wspace=0.4, bottom=0.2, top=0.8)
-    plt.savefig("Energy"+ "." + format_graph, format=format_graph)
-    #plt.show()
+    # plt.savefig("Energy"+ "." + format_graph, format=format_graph)
+    plt.show()
