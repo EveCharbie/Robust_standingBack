@@ -265,6 +265,14 @@ def add_constraints(constraints):
         phase=0,
     )
 
+    #  PIERRE THIS IS MISSING RIGHT ?
+    constraints.add(
+        ConstraintFcn.TRACK_MARKERS_VELOCITY,
+        marker_index="Foot_Toe_marker",
+        node=Node.START,
+        phase=0,
+    )
+
     constraints.add(
         CoM_over_toes,
         node=Node.START,
@@ -314,6 +322,14 @@ def add_constraints(constraints):
         max_bound=0,
         min_bound=0,
         node=Node.END,
+        phase=4,
+    )
+
+    #  PIERRE THIS IS MISSING RIGHT ?
+    constraints.add(
+        ConstraintFcn.TRACK_MARKERS_VELOCITY,
+        marker_index="Foot_Toe_marker",
+        node=Node.START,
         phase=4,
     )
 
