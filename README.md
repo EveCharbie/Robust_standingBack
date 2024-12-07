@@ -25,7 +25,7 @@ After this, we want a code who produce two different techniques of backward some
 one in 6 phases and an other with a waiting phase (i.e. phase 2) between the propulsion phase and the take-of phase.
 These two methods have the same results for the preparation of propulsion and the propulsion phase.
 
-![Robustness](figures/Dedoublement_phase.png "Method for inducing robustness")
+![Robustness](docs/Dedoublement_phase.png "Method for inducing robustness")
 
 ### Closed-loop during the tucked phase
 We also tried to simulate a backward salto with a closed-loop during the tucked phase, 

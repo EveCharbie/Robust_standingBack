@@ -63,8 +63,6 @@ Phase 10: Landing
 
 
 import numpy as np
-from save import save_results
-import biorbd_casadi as biorbd
 from bioptim import (
     BiorbdModel,
     Node,
@@ -85,7 +83,6 @@ from bioptim import (
     Solver,
     BinodeConstraintList,
     BinodeConstraintFcn,
-    BinodeConstraint,
 )
 
 
@@ -95,7 +92,7 @@ version = 20
 nb_phase_ocp1 = 7
 nb_phase_ocp2 = 6
 nb_phase_total = nb_phase_ocp1 + nb_phase_ocp2 - 2
-name_folder_model = "/home/mickael/Documents/Anais/Robust_standingBack-main/Model"
+name_folder_model = "../models"
 
 
 # --- Prepare ocp --- #

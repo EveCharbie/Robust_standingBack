@@ -24,7 +24,7 @@ def plot_range(ax, min_q, max_q, tau_max_plus, tau_max_minus):
 
 
 if __name__ == "__main__":
-    model = biorbd.Model("../Model/Pyomecaman_original.bioMod")
+    model = biorbd.Model("../models/Pyomecaman_original.bioMod")
 
     fig, axs = plt.subplots(2, 3, figsize=(10, 10))
     axs = axs.ravel()

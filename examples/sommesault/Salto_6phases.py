@@ -152,7 +152,7 @@ def custom_multinode_states_equality(
 nb_phase = 6
 movement = "Salto"
 version = 16
-name_folder_model = "/home/mickael/Documents/Anais/Robust_standingBack/Model"
+name_folder_model = "/home/mickael/Documents/Anais/Robust_standingBack/models"
 pickle_sol_init = "/home/mickael/Documents/Anais/Robust_standingBack/holonomic_research/Salto_6phases_V10.pkl"
 q_init, qdot_init, tau_init, time_init = get_created_data_from_pickle(pickle_sol_init)
 phase_time_init = []

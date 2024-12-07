@@ -135,7 +135,7 @@ def visualisation_closed_loop_5phases(bio_model, sol, model_path):
     Parameters
     ----------
     bio_model:
-        Model of the simulation
+        models of the simulation
     sol:
         The solution to the ocp at the current pool
     model_path:
@@ -169,7 +169,7 @@ def visualisation_closed_loop_6phases(bio_model, sol, model_path):
     Parameters
     ----------
     bio_model:
-        Model of the simulation
+        models of the simulation
     sol:
         The solution to the ocp at the current pool
     model_path:
@@ -252,7 +252,7 @@ def visualisation_closed_loop_4phases_propulsion(bio_model, sol, model_path):
     Parameters
     ----------
     bio_model:
-        Model of the simulation
+        models of the simulation
     sol:
         The solution to the ocp at the current pool
     model_path:
@@ -285,7 +285,7 @@ def visualisation_closed_loop_4phases_reception(bio_model, sol, model_path):
     Parameters
     ----------
     bio_model:
-        Model of the simulation
+        models of the simulation
     sol:
         The solution to the ocp at the current pool
     model_path:
@@ -318,7 +318,7 @@ def visualisation_closed_loop_5phases_reception(bio_model, sol, model_path):
     Parameters
     ----------
     bio_model:
-        Model of the simulation
+        models of the simulation
     sol:
         The solution to the ocp at the current pool
     model_path:
@@ -350,7 +350,7 @@ def visualisation_closed_loop_3phases(bio_model, sol, model_path):
     Parameters
     ----------
     bio_model:
-        Model of the simulation
+        models of the simulation
     sol:
         The solution to the ocp at the current pool
     model_path:
@@ -380,7 +380,7 @@ def visualisation_closed_loop_1phase(bio_model, sol, model_path):
     Parameters
     ----------
     bio_model:
-        Model of the simulation
+        models of the simulation
     sol:
         The solution to the ocp at the current pool
     model_path:
@@ -408,7 +408,7 @@ def visualisation_closed_loop_2phases(bio_model, sol, model_path):
     Parameters
     ----------
     bio_model:
-        Model of the simulation
+        models of the simulation
     sol:
         The solution to the ocp at the current pool
     model_path:
@@ -437,7 +437,7 @@ def visualisation_closed_loop_2phases_post(bio_model, sol, model_path):
     Parameters
     ----------
     bio_model:
-        Model of the simulation
+        models of the simulation
     sol:
         The solution to the ocp at the current pool
     model_path:

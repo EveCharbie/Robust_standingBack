@@ -300,11 +300,11 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 def main():
     ocp = prepare_ocp(
         biorbd_model_path=(
-            "/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_8Dof_2C_5M.bioMod",
-            "/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_8Dof_0C_5M.bioMod",
-            "/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_8Dof_0C_5M.bioMod",
-            "/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_8Dof_0C_5M.bioMod",
-            "/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_8Dof_2C_5M.bioMod",
+            "../models/Model2D_8Dof_2C_5M.bioMod",
+            "../models/Model2D_8Dof_0C_5M.bioMod",
+            "../models/Model2D_8Dof_0C_5M.bioMod",
+            "../models/Model2D_8Dof_0C_5M.bioMod",
+            "../models/Model2D_8Dof_2C_5M.bioMod",
         ),
         phase_time=(0.5, 0.3, 1, 0.2, 0.2),
         n_shooting=(50, 30, 100, 20, 20),
