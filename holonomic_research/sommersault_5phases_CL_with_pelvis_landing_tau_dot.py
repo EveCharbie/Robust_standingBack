@@ -22,17 +22,24 @@ from bioptim import (
     Solver,
     PhaseTransitionFcn,
     MagnitudeType,
+    HolonomicConstraintsList,
+    HolonomicConstraintsFcn,
+    Bounds,
 )
-from holonomic_research.constants import POSE_TUCKING_START, POSE_TUCKING_END, POSE_LANDING_START
-from save_load_helpers import get_created_data_from_pickle
-from bounds_x import add_x_bounds
-from save_results import save_results_taudot
-from objectives import add_objectives, minimize_actuator_torques, add_taudot_objectives
-from constraints import add_constraints
-from constants import JUMP_INIT_PATH
 from actuator_constants import ACTUATORS
+from biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
+from bounds_x import add_x_bounds
+from constraints import add_constraints, add_constraint_tucking_friction_cone
+from constants import JUMP_INIT_PATH, POSE_TUCKING_START, POSE_TUCKING_END, POSE_LANDING_START
+from holonomic_torque_derivative_dynamics import (
+    configure_holonomic_torque_derivative_driven,
+    holonomic_torque_derivative_driven,
+)
+from objectives import add_objectives, minimize_actuator_torques_CL, add_taudot_objectives
 from multistart import prepare_multi_start
-from phase_transitions import custom_takeoff
+from phase_transitions import custom_takeoff, custom_phase_transition_pre, custom_phase_transition_post
+from save_load_helpers import get_created_data_from_pickle
+from save_results import save_results_taudot
 
 
 def initialize_tau():
@@ -49,9 +56,27 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     bio_model = (
         BiorbdModel(biorbd_model_path[0]),
         BiorbdModel(biorbd_model_path[1]),
-        BiorbdModel(biorbd_model_path[2]),
+        BiorbdModelCustomHolonomic(biorbd_model_path[2]),
         BiorbdModel(biorbd_model_path[3]),
         BiorbdModel(biorbd_model_path[4]),
+    )
+    holonomic_constraints = HolonomicConstraintsList()
+
+    # Phase 2 (Tucked phase):
+    holonomic_constraints.add(
+        "holonomic_constraints",
+        HolonomicConstraintsFcn.superimpose_markers,
+        biorbd_model=bio_model[2],
+        marker_1="BELOW_KNEE",
+        marker_2="CENTER_HAND",
+        index=slice(1, 3),
+        local_frame_index=11,
+    )
+
+    bio_model[2].set_holonomic_configuration(
+        constraints_list=holonomic_constraints,
+        independent_joint_index=[0, 1, 2, 5, 6, 7],
+        dependent_joint_index=[3, 4],
     )
 
     n_q = bio_model[0].nb_q
@@ -65,13 +90,17 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     dof_mapping.add("tau", to_second=[None, None, None, 0, 1, 2, 3, 4], to_first=[3, 4, 5, 6, 7])
     dof_mapping.add("taudot", to_second=[None, None, None, 0, 1, 2, 3, 4], to_first=[3, 4, 5, 6, 7])
 
+    variable_bimapping = BiMappingList()
+    variable_bimapping.add("q", to_second=[0, 1, 2, None, None, 3, 4, 5], to_first=[0, 1, 2, 5, 6, 7])
+    variable_bimapping.add("qdot", to_second=[0, 1, 2, None, None, 3, 4, 5], to_first=[0, 1, 2, 5, 6, 7])
+
     # --- Objectives functions ---#
     # Add objective functions
     objective_functions = ObjectiveList()
     objective_functions = add_objectives(objective_functions, actuators)
     objective_functions = add_taudot_objectives(objective_functions)
     objective_functions.add(
-        minimize_actuator_torques,
+        minimize_actuator_torques_CL,
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
         quadratic=True,
@@ -85,7 +114,13 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
         DynamicsFcn.TORQUE_DERIVATIVE_DRIVEN, expand_dynamics=True, expand_continuity=False, with_contact=True, phase=0
     )
     dynamics.add(DynamicsFcn.TORQUE_DERIVATIVE_DRIVEN, expand_dynamics=True, expand_continuity=False, phase=1)
-    dynamics.add(DynamicsFcn.HOLONOMIC_TORQUE_DRIVEN, expand_dynamics=True, expand_continuity=False, phase=2)
+    dynamics.add(
+        configure_holonomic_torque_derivative_driven,
+        dynamic_function=holonomic_torque_derivative_driven,
+        expand_dynamics=True,
+        expand_continuity=False,
+        phase=2,
+    )
     dynamics.add(DynamicsFcn.TORQUE_DERIVATIVE_DRIVEN, expand_dynamics=True, expand_continuity=False, phase=3)
     dynamics.add(
         DynamicsFcn.TORQUE_DERIVATIVE_DRIVEN, expand_dynamics=True, expand_continuity=False, with_contact=True, phase=4
@@ -94,24 +129,35 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     # Transition de phase
     phase_transitions = PhaseTransitionList()
     phase_transitions.add(custom_takeoff, phase_pre_idx=0)
+    phase_transitions.add(custom_phase_transition_pre, phase_pre_idx=1)
+    phase_transitions.add(custom_phase_transition_post, phase_pre_idx=2)
     phase_transitions.add(PhaseTransitionFcn.IMPACT, phase_pre_idx=3)
 
     # --- Constraints ---#
     constraints = ConstraintList()
     constraints = add_constraints(constraints)
+    constraints = add_constraint_tucking_friction_cone(bio_model[2], constraints)
 
     # --- Bounds ---#
     x_bounds = BoundsList()
     q_bounds, qdot_bounds = add_x_bounds(bio_model)
-    for i_phase in range(len(bio_model)):
-        x_bounds.add("q", bounds=q_bounds[i_phase], phase=i_phase)
-        x_bounds.add("qdot", bounds=qdot_bounds[i_phase], phase=i_phase)
-        x_bounds.add(
-            "tau",
-            min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
-            max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]],
-            phase=i_phase,
-        )
+    for i_phase, _ in enumerate(bio_model):
+        if i_phase == 2:
+            qu_bounds = Bounds(
+                "q_u",
+                min_bound=variable_bimapping["q"].to_first.map(q_bounds[i_phase].min),
+                max_bound=variable_bimapping["q"].to_first.map(q_bounds[i_phase].max),
+            )
+            qdotu_bounds = Bounds(
+                "qdot_u",
+                min_bound=variable_bimapping["qdot"].to_first.map(qdot_bounds[i_phase].min),
+                max_bound=variable_bimapping["qdot"].to_first.map(qdot_bounds[i_phase].max),
+            )
+            x_bounds.add("q_u", bounds=qu_bounds, phase=i_phase)
+            x_bounds.add("qdot_u", bounds=qdotu_bounds, phase=i_phase)
+        else:
+            x_bounds.add("q", bounds=q_bounds[i_phase], phase=i_phase)
+            x_bounds.add("qdot", bounds=qdot_bounds[i_phase], phase=i_phase)
 
     # Initial guess
     x_init = InitialGuessList()
@@ -120,8 +166,13 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     x_init.add("qdot", sol_salto["qdot"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
     x_init.add("q", sol_salto["q"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
     x_init.add("qdot", sol_salto["qdot"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    x_init.add("q", np.array([POSE_TUCKING_START, POSE_TUCKING_END]).T, interpolation=InterpolationType.LINEAR, phase=2)
-    x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=2)
+
+    q_2_linear = variable_bimapping["q"].to_first.map(
+        np.linspace(POSE_TUCKING_START, POSE_TUCKING_END, n_shooting[2] + 1).T
+    )
+    x_init.add("q_u", q_2_linear, interpolation=InterpolationType.EACH_FRAME, phase=2)
+    x_init.add("qdot_u", [0] * 6, interpolation=InterpolationType.CONSTANT, phase=2)
+
     x_init.add("q", np.array([POSE_TUCKING_END, POSE_LANDING_START]).T, interpolation=InterpolationType.LINEAR, phase=3)
     x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=3)
     x_init.add("q", POSE_LANDING_START, interpolation=InterpolationType.CONSTANT, phase=4)
@@ -145,23 +196,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     x_init.add(
         "tau", np.hstack((sol_salto["tau"][3], np.zeros((5, 1)))), interpolation=InterpolationType.EACH_FRAME, phase=4
     )
-
-    # # Initial guess from somersault
-    # x_init.add("q", sol_salto["q"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
-    # x_init.add("qdot", sol_salto["qdot"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
-    # x_init.add("q", sol_salto["q"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    # x_init.add("qdot", sol_salto["qdot"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    # x_init.add("q", sol_salto["q"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
-    # x_init.add("qdot", sol_salto["qdot"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
-    # x_init.add("q", sol_salto["q"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
-    # x_init.add("qdot", sol_salto["qdot"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
-    # x_init.add("q", sol_salto["q"][4], interpolation=InterpolationType.EACH_FRAME, phase=4)
-    # x_init.add("qdot", sol_salto["qdot"][4], interpolation=InterpolationType.EACH_FRAME, phase=4)
-    # x_init.add("tau", sol_salto["tau"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
-    # x_init.add("tau", sol_salto["tau"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    # x_init.add("tau", sol_salto["tau"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
-    # x_init.add("tau", sol_salto["tau"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
-    # x_init.add("tau", sol_salto["tau"][4], interpolation=InterpolationType.EACH_FRAME, phase=4)
 
     # Define control path constraint
     u_bounds = BoundsList()
@@ -216,7 +250,7 @@ sol_salto = get_created_data_from_pickle(JUMP_INIT_PATH)
 # --- Load model --- #
 def main():
 
-    WITH_MULTI_START = True
+    WITH_MULTI_START = False
 
     model_path = str(name_folder_model) + "/" + "Model2D_7Dof_0C_5M_CL_V3.bioMod"
     model_path_1contact = str(name_folder_model) + "/" + "Model2D_7Dof_2C_5M_CL_V3.bioMod"
@@ -242,7 +276,7 @@ def main():
     }
 
     if WITH_MULTI_START:
-        save_folder = f"./solutions/{str(movement)}_{str(nb_phase)}phases_V{version}"
+        save_folder = f"./solutions_CL/{str(movement)}_{str(nb_phase)}phases_V{version}"
         multi_start = prepare_multi_start(
             prepare_ocp,
             save_results_taudot,
