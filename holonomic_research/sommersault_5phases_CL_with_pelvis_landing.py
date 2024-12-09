@@ -58,7 +58,7 @@ from bioptim import (
     MultiStart,
     MagnitudeType,
 )
-from holonomic_research.biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
+from biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
 from save_load_helpers import get_created_data_from_pickle
 from sommersault_5phases_with_pelvis_landing import (
     initialize_tau,
@@ -68,7 +68,7 @@ from sommersault_5phases_with_pelvis_landing import (
 from holonomic_research.objectives import add_tau_derivative_objectives
 from objectives import add_objectives, minimize_actuator_torques_CL
 from constants import POSE_TUCKING_START, POSE_TUCKING_END, POSE_LANDING_START
-from constraints import add_constraints, custom_contraint_lambdas_cisaillement, custom_contraint_lambdas_normal
+from constraints import add_constraints, add_constraint_tucking_friction_cone
 from phase_transitions import custom_phase_transition_pre, custom_phase_transition_post
 from multistart import prepare_multi_start
 from actuator_constants import ACTUATORS
@@ -84,6 +84,23 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
         BiorbdModel(biorbd_model_path[3]),
         BiorbdModel(biorbd_model_path[4]),
     )
+    holonomic_constraints = HolonomicConstraintsList()
+    # Phase 2 (Tucked phase):
+    holonomic_constraints.add(
+        "holonomic_constraints",
+        HolonomicConstraintsFcn.superimpose_markers,
+        biorbd_model=bio_model[2],
+        marker_1="BELOW_KNEE",
+        marker_2="CENTER_HAND",
+        index=slice(1, 3),
+        local_frame_index=11,
+    )
+
+    bio_model[2].set_holonomic_configuration(
+        constraints_list=holonomic_constraints,
+        independent_joint_index=[0, 1, 2, 5, 6, 7],
+        dependent_joint_index=[3, 4],
+    )
 
     n_q = bio_model[0].nb_q
     n_qdot = n_q
@@ -92,10 +109,12 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     actuators = ACTUATORS
 
     tau_min, tau_max, tau_init = initialize_tau()
+
     variable_bimapping = BiMappingList()
-    dof_mapping = BiMappingList()
     variable_bimapping.add("q", to_second=[0, 1, 2, None, None, 3, 4, 5], to_first=[0, 1, 2, 5, 6, 7])
     variable_bimapping.add("qdot", to_second=[0, 1, 2, None, None, 3, 4, 5], to_first=[0, 1, 2, 5, 6, 7])
+
+    dof_mapping = BiMappingList()
     dof_mapping.add("tau", to_second=[None, None, None, 0, 1, 2, 3, 4], to_first=[3, 4, 5, 6, 7])
 
     # --- Objectives functions ---#
@@ -130,43 +149,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     # Constraints
     constraints = ConstraintList()
     constraints = add_constraints(constraints)
-
-    # "relaxed friction cone"
-    constraints.add(
-        custom_contraint_lambdas_cisaillement,
-        node=Node.ALL_SHOOTING,
-        bio_model=bio_model[2],
-        max_bound=np.inf,
-        min_bound=0,
-        phase=2,
-    )
-    # The model can only pull on the legs, not push
-    constraints.add(
-        custom_contraint_lambdas_normal,
-        node=Node.ALL_SHOOTING,
-        bio_model=bio_model[2],
-        max_bound=-0.1,
-        min_bound=-np.inf,
-        phase=2,
-    )
-
-    holonomic_constraints = HolonomicConstraintsList()
-    # Phase 2 (Tucked phase):
-    holonomic_constraints.add(
-        "holonomic_constraints",
-        HolonomicConstraintsFcn.superimpose_markers,
-        biorbd_model=bio_model[2],
-        marker_1="BELOW_KNEE",
-        marker_2="CENTER_HAND",
-        index=slice(1, 3),
-        local_frame_index=11,
-    )
-
-    bio_model[2].set_holonomic_configuration(
-        constraints_list=holonomic_constraints,
-        independent_joint_index=[0, 1, 2, 5, 6, 7],
-        dependent_joint_index=[3, 4],
-    )
+    constraints = add_constraint_tucking_friction_cone(bio_model[2], constraints)
 
     # --- Bounds ---#
     x_bounds = BoundsList()
@@ -205,18 +188,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     x_init.add("q", sol_salto["q"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
     x_init.add("qdot", sol_salto["qdot"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
 
-    # Initial guess from somersault
-    # x_init.add("q", sol_salto["q"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
-    # x_init.add("qdot", sol_salto["qdot"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
-    # x_init.add("q", sol_salto["q"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    # x_init.add("qdot", sol_salto["qdot"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    # x_init.add("q_u", sol_salto["q_u"], interpolation=InterpolationType.EACH_FRAME, phase=2)
-    # x_init.add("qdot_u", sol_salto["qdot_u"], interpolation=InterpolationType.EACH_FRAME, phase=2)
-    # x_init.add("q", sol_salto["q"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
-    # x_init.add("qdot", sol_salto["qdot"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
-    # x_init.add("q", sol_salto["q"][4], interpolation=InterpolationType.EACH_FRAME, phase=4)
-    # x_init.add("qdot", sol_salto["qdot"][4], interpolation=InterpolationType.EACH_FRAME, phase=4)
-
     # Define control path constraint
     u_bounds = BoundsList()
     u_bounds = add_u_bounds(u_bounds, tau_min, tau_max)
@@ -228,13 +199,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=2)
     u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=3)
     u_init.add("tau", sol_salto["tau"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
-
-    # Initial guess from somersault
-    # u_init.add("tau", sol_salto["tau"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
-    # u_init.add("tau", sol_salto["tau"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    # u_init.add("tau", sol_salto["tau"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
-    # u_init.add("tau", sol_salto["tau"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
-    # u_init.add("tau", sol_salto["tau"][4], interpolation=InterpolationType.EACH_FRAME, phase=4)
 
     if WITH_MULTI_START:
         x_init.add_noise(
