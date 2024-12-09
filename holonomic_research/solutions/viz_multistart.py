@@ -4,7 +4,7 @@ from plotly.colors import DEFAULT_PLOTLY_COLORS
 from pyorerun import PhaseRerun, BiorbdModel
 from pyorerun.multi_frame_rate_phase_rerun import MultiFrameRatePhaseRerun
 
-folder = "Salto_5phases_VPierre_taudot1"
+folder = "Salto_5phases_VPierre_taudot2_force_constrained"
 model_path = "../../models/Model2D_7Dof_2C_5M_CL_V3.bioMod"
 
 # remove "rgb(" and ")" and split by ","
@@ -14,8 +14,8 @@ colors = colors + colors + colors  # duplicate the colors to have enough for all
 
 # Charger les données
 phase_reruns = []
-for i in range(0, 1):
-    data = pickle.load(open(folder + f"/sol_{i}_DVG.pkl", "rb"))
+for i in range(0, 19):
+    data = pickle.load(open(folder + f"/sol_{i}_CVG.pkl", "rb"))
     time = np.concatenate([np.array(time) for time in data["time"]], axis=0).squeeze()
     q = np.concatenate([np.array(q) for q in data["q"]], axis=1)
 

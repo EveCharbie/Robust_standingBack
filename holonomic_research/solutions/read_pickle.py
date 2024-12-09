@@ -13,7 +13,7 @@ model = BiorbdModel("../../models/Model2D_7Dof_2C_5M_CL_V3.bioMod")
 
 data = pickle.load(
     open(
-        "/home/pierre/Projets_Python/Robust_standingBack/holonomic_research/solutions/Salto_5phases_VPierre_taudot1/sol_0_DVG.pkl",
+        "/home/pierre/Projets_Python/Robust_standingBack/holonomic_research/solutions/Salto_5phases_VPierre_taudot1/sol_0_CVG.pkl",
         "rb",
     )
 )
@@ -23,6 +23,7 @@ constraints = np.array(data["constraints"]).squeeze()
 
 # Bar chart des contraintes
 fig = px.bar(x=np.arange(len(constraints)), y=constraints)
+fig.show()
 
 
 # Fonction pour étendre les bornes
