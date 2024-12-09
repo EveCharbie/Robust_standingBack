@@ -33,6 +33,7 @@ from bioptim import (
     HolonomicConstraintsFcn,
     MagnitudeType,
     MultiStart,
+    OnlineOptim,
 )
 from Save import get_created_data_from_pickle
 from plot_actuators import Joint, actuator_function
@@ -61,10 +62,10 @@ def save_results(sol,
     controls = sol.decision_controls(to_merge=SolutionMerge.NODES)
     list_time = sol.decision_time(to_merge=SolutionMerge.NODES)
 
-    # TODO: Charbie
     q = []
     qdot = []
     tau = []
+    taudot = []
     time = []
     min_bounds_q = []
     max_bounds_q = []
@@ -72,29 +73,37 @@ def save_results(sol,
     max_bounds_qdot = []
     min_bounds_tau = []
     max_bounds_tau = []
+    min_bounds_taudot = []
+    max_bounds_taudot = []
 
     for i in range(len(states)):
         q.append(states[i]["q"])
         qdot.append(states[i]["qdot"])
-        tau.append(controls[i]["tau"])
+        tau.append(states[i]["tau"])
+        taudot.append(controls[i]["taudot"])
         time.append(list_time[i])
         min_bounds_q.append(sol.ocp.nlp[i].x_bounds['q'].min)
         max_bounds_q.append(sol.ocp.nlp[i].x_bounds['q'].max)
         min_bounds_qdot.append(sol.ocp.nlp[i].x_bounds['qdot'].min)
         max_bounds_qdot.append(sol.ocp.nlp[i].x_bounds['qdot'].max)
-        min_bounds_tau.append(sol.ocp.nlp[i].u_bounds["tau"].min)
-        max_bounds_tau.append(sol.ocp.nlp[i].u_bounds["tau"].max)
+        min_bounds_tau.append(sol.ocp.nlp[i].x_bounds["tau"].min)
+        max_bounds_tau.append(sol.ocp.nlp[i].x_bounds["tau"].max)
+        min_bounds_taudot.append(sol.ocp.nlp[i].u_bounds["taudot"].min)
+        max_bounds_taudot.append(sol.ocp.nlp[i].u_bounds["taudot"].max)
 
     data["q"] = q
     data["qdot"] = qdot
     data["tau"] = tau
+    data["taudot"] = taudot
     data["time"] = time
     data["min_bounds_q"] = min_bounds_q
     data["max_bounds_q"] = max_bounds_q
     data["min_bounds_qdot"] = min_bounds_qdot
     data["max_bounds_qdot"] = max_bounds_qdot
-    data["min_bounds_tau"] = min_bounds_q
-    data["max_bounds_tau"] = max_bounds_q
+    data["min_bounds_tau"] = min_bounds_tau
+    data["max_bounds_tau"] = max_bounds_tau
+    data["min_bounds_taudot"] = min_bounds_taudot
+    data["max_bounds_taudot"] = max_bounds_taudot
     data["cost"] = sol.cost
     data["iterations"] = sol.iterations
     # data["detailed_cost"] = sol.add_detailed_cost
@@ -160,13 +169,13 @@ def add_objectives(objective_functions, actuators):
     # Phase 0 (Propulsion):
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_COM_VELOCITY, node=Node.END, weight=-1, axes=Axis.Z, phase=0)
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=1000, min_bound=0.1, max_bound=0.4, phase=0)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="taudot", weight=100, phase=0)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="taudot", weight=1, phase=0)
     objective_functions.add(
         minimize_actuator_torques,
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
         quadratic=True,
-        weight=0.1,
+        weight=0.01,
         phase=0,
     )
     objective_functions.add(
@@ -193,14 +202,14 @@ def add_objectives(objective_functions, actuators):
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
         quadratic=True,
-        weight=1,
+        weight=0.1,
         phase=1,
     )
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="taudot", weight=100, phase=1)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="taudot", weight=1, phase=1)
 
     # Phase 2 (Tucked phase):
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=-10, min_bound=0.1, max_bound=0.4, phase=2)
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="taudot", weight=100, phase=2)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="taudot", weight=1, phase=2)
 
     # Phase 3 (Preparation landing):
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=10, min_bound=0.1, max_bound=0.3, phase=3)
@@ -209,10 +218,10 @@ def add_objectives(objective_functions, actuators):
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
         quadratic=True,
-        weight=1,
+        weight=0.1,
         phase=3,
     )
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="taudot", weight=100, phase=3)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="taudot", weight=1, phase=3)
 
     # Phase 4 (Landing):
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_STATE, key="qdot", node=Node.END, weight=100, phase=4)
@@ -223,10 +232,10 @@ def add_objectives(objective_functions, actuators):
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
         quadratic=True,
-        weight=0.1,
+        weight=0.01,
         phase=4,
     )
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="taudot", weight=100, phase=4)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="taudot", weight=1, phase=4)
     objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_COM_POSITION, node=Node.END, weight=100, axes=Axis.Y,
                             phase=4)
 
@@ -252,6 +261,14 @@ def add_constraints(constraints):
         axes=Axis.Y,
         max_bound=0.1,
         min_bound=-0.1,
+        node=Node.START,
+        phase=0,
+    )
+
+    #  PIERRE THIS IS MISSING RIGHT ?
+    constraints.add(
+        ConstraintFcn.TRACK_MARKERS_VELOCITY,
+        marker_index="Foot_Toe_marker",
         node=Node.START,
         phase=0,
     )
@@ -305,6 +322,14 @@ def add_constraints(constraints):
         max_bound=0,
         min_bound=0,
         node=Node.END,
+        phase=4,
+    )
+
+    #  PIERRE THIS IS MISSING RIGHT ?
+    constraints.add(
+        ConstraintFcn.TRACK_MARKERS_VELOCITY,
+        marker_index="Foot_Toe_marker",
+        node=Node.START,
         phase=4,
     )
 
@@ -501,7 +526,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
         quadratic=True,
-        weight=1,
+        weight=0.01,
         phase=2,
     )
 
@@ -515,6 +540,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
 
     # Transition de phase
     phase_transitions = PhaseTransitionList()
+    phase_transitions.add(PhaseTransitionFcn.TAKEOFF, phase_pre_idx=0)
     phase_transitions.add(PhaseTransitionFcn.IMPACT, phase_pre_idx=3)
 
     # --- Constraints ---#
@@ -550,11 +576,11 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=3)
     x_init.add("q", sol_salto["q"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
     x_init.add("qdot", sol_salto["qdot"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
-    x_init.add("tau", np.vstack((sol_salto["tau"][0], 0)), interpolation=InterpolationType.EACH_FRAME, phase=0)
-    x_init.add("tau", sol_salto["tau"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
+    x_init.add("tau", np.hstack((sol_salto["tau"][0], np.zeros((5, 1)))), interpolation=InterpolationType.EACH_FRAME, phase=0)
+    x_init.add("tau", np.hstack((sol_salto["tau"][1], np.zeros((5, 1)))), interpolation=InterpolationType.EACH_FRAME, phase=1)
     x_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=2)
     x_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=3)
-    x_init.add("tau", sol_salto["tau"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
+    x_init.add("tau", np.hstack((sol_salto["tau"][3], np.zeros((5, 1)))), interpolation=InterpolationType.EACH_FRAME, phase=4)
 
     # # Initial guess from somersault
     # x_init.add("q", sol_salto["q"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
@@ -577,7 +603,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     u_bounds = BoundsList()
     u_init = InitialGuessList()
     for i_phase in range(len(bio_model)):
-        u_bounds.add("taudot", min_bound=[-1000]*5, max_bound=[1000]*5, phase=i_phase)
+        u_bounds.add("taudot", min_bound=[-10000]*5, max_bound=[10000]*5, phase=i_phase)
         u_init.add("taudot", [0]*5, phase=i_phase)
 
 
@@ -641,7 +667,7 @@ def should_solve(*combinatorial_parameters, **extra_parameters):
 
 # --- Parameters --- #
 movement = "Salto"
-version = "Eve_final3"
+version = "Eve_taudot1"
 nb_phase = 5
 name_folder_model = "../Model"
 pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Jump_4phases_V22.pkl"
@@ -695,6 +721,13 @@ def main():
         multi_start.solve()
     else:
         ocp = prepare_ocp(biorbd_model_path[0], phase_time[0], n_shooting[0], WITH_MULTI_START=False)
+        ocp.add_plot_penalty()
+
+        solver = Solver.IPOPT(show_options=dict(show_bounds=True), _linear_solver="MA57")  # online_optim=OnlineOptim.DEFAULT
+        solver.set_maximum_iterations(50000)
+        solver.set_bound_frac(1e-8)
+        solver.set_bound_push(1e-8)
+        solver.set_tol(1e-6)
 
         sol = ocp.solve(solver)
         sol.print_cost()
@@ -702,7 +735,7 @@ def main():
         # --- Save results --- #
         save_results(sol, combinatorial_parameters)
         sol.graphs(show_bounds=True, save_name=str(movement) + "_" + str(nb_phase) + "phases_V" + version)
-        sol.animate()
+        # sol.animate()
 
 
 if __name__ == "__main__":
