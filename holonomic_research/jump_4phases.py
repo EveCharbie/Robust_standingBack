@@ -24,7 +24,6 @@ Phase 3: Landing
 
 # --- Import package --- #
 import numpy as np
-import casadi as cas
 import pickle
 from bioptim import (
     BiorbdModel,
@@ -44,11 +43,7 @@ from bioptim import (
     Solver,
     Axis,
     SolutionMerge,
-    PenaltyController,
     PhaseTransitionFcn,
-    DynamicsFunctions,
-    HolonomicConstraintsList,
-    HolonomicConstraintsFcn,
 )
 from holonomic_research.save_load_helpers import get_created_data_from_pickle
 from constraints import CoM_over_toes
@@ -247,26 +242,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         node=Node.START,
         phase=0,
     )
-
-    # constraints.add(
-    #    ConstraintFcn.TRACK_MARKERS,
-    #    marker_index="Shoulder_marker",
-    #    axes=[Axis.X, Axis.Y, Axis.Z],
-    #    max_bound=[0 + 0.10, 0.019 + 0.10, 1.149 + 0.10],
-    #    min_bound=[0 - 0.10, 0.019 - 0.10, 1.149 - 0.10],
-    #    node=Node.START,
-    #    phase=0,
-    # )
-
-    # constraints.add(
-    #    ConstraintFcn.TRACK_MARKERS,
-    #    marker_index="KNEE_marker",
-    #    axes=[Axis.X, Axis.Y, Axis.Z],
-    #    max_bound=[0 + 0.10, 0.254 + 0.10, 0.413 + 0.10],
-    #    min_bound=[0 - 0.10, 0.254 - 0.10, 0.413 - 0.10],
-    #    node=Node.START,
-    #    phase=0,
-    # )
 
     constraints.add(
         CoM_over_toes,
