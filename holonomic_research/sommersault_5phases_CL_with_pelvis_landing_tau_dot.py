@@ -270,7 +270,7 @@ def main():
 
         multi_start = prepare_multi_start(
             prepare_ocp,
-            save_results_taudot,
+            save_results_holonomic_taudot,
             combinatorial_parameters=combinatorial_parameters,
             save_folder=save_folder,
             solver=solver,
