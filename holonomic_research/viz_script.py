@@ -1,11 +1,6 @@
 # Packages
 from visualisation import visualisation_movement, graph_all
-import tkinter
-from tkinter import filedialog
 import os
-
-root = tkinter.Tk()
-root.withdraw() #use to hide tkinter window
 
 
 # Function
@@ -20,6 +15,12 @@ def search_file(message: str):
     -------
 
     """
+    import tkinter
+    from tkinter import filedialog
+
+    root = tkinter.Tk()
+    root.withdraw()  # use to hide tkinter window
+
     currdir = os.getcwd()
     tempdir = filedialog.askopenfilename(parent=root, initialdir=currdir, title=message)
     return tempdir
