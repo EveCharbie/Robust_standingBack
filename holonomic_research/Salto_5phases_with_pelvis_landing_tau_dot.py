@@ -28,9 +28,6 @@ from bioptim import (
     SolutionMerge,
     PenaltyController,
     PhaseTransitionFcn,
-    DynamicsFunctions,
-    HolonomicConstraintsList,
-    HolonomicConstraintsFcn,
     MagnitudeType,
     MultiStart,
     OnlineOptim,
@@ -51,6 +48,15 @@ def save_results(sol,
     if not os.path.exists(folder_path):
         os.mkdir(folder_path)
     file_path = f"{folder_path}/sol_{seed}"
+
+    suffix = "_CVG" if sol.status == 0 else "_DVG"
+
+    try:
+        sol.print_cost()
+        sol.graphs(save_folder=file_path + suffix)
+    except:
+        pass
+
     if sol.status == 0:
         file_path += "_CVG.pkl"
     else:
@@ -120,6 +126,7 @@ def save_results(sol,
     data["q_all"] = np.hstack(data["q"])
     data["qdot_all"] = np.hstack(data["qdot"])
     data["tau_all"] = np.hstack(data["tau"])
+    data["taudot_all"] = np.hstack(data["taudot"])
     time_end_phase = []
     time_total = 0
     time_all = []
@@ -130,11 +137,6 @@ def save_results(sol,
     data["time_all"] = np.vstack(time_all)
     data["time_total"] = time_total
     data["time_end_phase"] = time_end_phase
-
-    if sol.status == 1:
-        data["status"] = "Optimal Control Solution Found"
-    else:
-        data["status"] = "Restoration Failed !"
 
     with open(file_path, "wb") as file:
         pickle.dump(data, file)
@@ -357,6 +359,7 @@ def add_constraints(constraints):
         static_friction_coefficient=0.5,
         phase=4,
     )
+
     return constraints
 
 def initialize_tau():
@@ -671,7 +674,6 @@ version = "Eve_taudot1"
 nb_phase = 5
 name_folder_model = "../Model"
 pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Jump_4phases_V22.pkl"
-# pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_close_loop_landing_5phases_VEve12.pkl"
 sol_salto = get_created_data_from_pickle(pickle_sol_init)
 
 
@@ -679,7 +681,7 @@ sol_salto = get_created_data_from_pickle(pickle_sol_init)
 # --- Load model --- #
 def main():
 
-    WITH_MULTI_START = False
+    WITH_MULTI_START = True
 
     model_path = str(name_folder_model) + "/" + "Model2D_7Dof_0C_5M_CL_V3.bioMod"
     model_path_1contact = str(name_folder_model) + "/" + "Model2D_7Dof_2C_5M_CL_V3.bioMod"
