@@ -162,6 +162,23 @@ def add_constraints(constraints):
         phase=0,
     )
 
+    constraints.add(
+        ConstraintFcn.TRACK_CONTACT_FORCES,
+        node=Node.PENULTIMATE,
+        contact_index=0,
+        phase=0,
+        min_bound=0.01,
+        max_bound=250,
+    )
+    constraints.add(
+        ConstraintFcn.TRACK_CONTACT_FORCES,
+        node=Node.PENULTIMATE,
+        contact_index=1,
+        phase=0,
+        min_bound=0.01,
+        max_bound=250,
+    )
+
     # Phase 4 (Landing):
     constraints.add(
         ConstraintFcn.TRACK_CONTACT_FORCES,
