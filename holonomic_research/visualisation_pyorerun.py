@@ -1,13 +1,7 @@
+import os
 from pyorerun import BiorbdModel, PhaseRerun
 import numpy as np
 from save_load_helpers import get_created_data_from_pickle
-import tkinter
-from tkinter import filedialog
-import os
-import biorbd
-
-root = tkinter.Tk()
-root.withdraw()  # use to hide tkinter window
 
 
 def search_file(message: str):
@@ -21,6 +15,12 @@ def search_file(message: str):
     -------
 
     """
+    import tkinter
+    from tkinter import filedialog
+
+    root = tkinter.Tk()
+    root.withdraw()  # use to hide tkinter window
+
     currdir = os.getcwd()
     tempdir = filedialog.askopenfilename(parent=root, initialdir=currdir, title=message)
     return tempdir
