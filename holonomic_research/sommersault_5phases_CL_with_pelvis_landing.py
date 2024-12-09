@@ -61,7 +61,6 @@ from bioptim import (
 from biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
 from save_load_helpers import get_created_data_from_pickle
 from sommersault_5phases_with_pelvis_landing import (
-    initialize_tau,
     add_x_bounds,
     add_u_bounds,
 )
@@ -71,7 +70,7 @@ from constants import POSE_TUCKING_START, POSE_TUCKING_END, POSE_LANDING_START
 from constraints import add_constraints, add_constraint_tucking_friction_cone
 from phase_transitions import custom_phase_transition_pre, custom_phase_transition_post
 from multistart import prepare_multi_start
-from actuator_constants import ACTUATORS
+from actuator_constants import ACTUATORS, initialize_tau
 from save_results import save_results_holonomic
 
 

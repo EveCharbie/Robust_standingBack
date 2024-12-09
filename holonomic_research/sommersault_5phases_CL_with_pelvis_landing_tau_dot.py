@@ -26,7 +26,7 @@ from bioptim import (
     HolonomicConstraintsFcn,
     Bounds,
 )
-from actuator_constants import ACTUATORS
+from actuator_constants import ACTUATORS, initialize_tau
 from biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
 from bounds_x import add_x_bounds
 from constraints import add_constraints, add_constraint_tucking_friction_cone
@@ -40,15 +40,6 @@ from multistart import prepare_multi_start
 from phase_transitions import custom_takeoff, custom_phase_transition_pre, custom_phase_transition_post
 from save_load_helpers import get_created_data_from_pickle
 from save_results import save_results_taudot
-
-
-def initialize_tau():
-    tau_min_total = [0, 0, 0, -325.531, -138, -981.1876, -735.3286, -343.9806]
-    tau_max_total = [0, 0, 0, 325.531, 138, 981.1876, 735.3286, 343.9806]
-    tau_min = [i * 0.7 for i in tau_min_total]
-    tau_max = [i * 0.7 for i in tau_max_total]
-    tau_init = 0
-    return tau_min, tau_max, tau_init
 
 
 # --- Prepare ocp --- #
