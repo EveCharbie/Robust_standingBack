@@ -204,7 +204,7 @@ sol_salto = get_created_data_from_pickle(JUMP_INIT_PATH)
 # --- Load model --- #
 def main():
 
-    WITH_MULTI_START = True
+    WITH_MULTI_START = False
 
     biorbd_model_path = (PATH_MODEL_1_CONTACT, PATH_MODEL, PATH_MODEL, PATH_MODEL, PATH_MODEL_1_CONTACT)
     phase_time = (0.2, 0.2, 0.3, 0.3, 0.3)
@@ -239,7 +239,7 @@ def main():
 
         multi_start.solve()
     else:
-        ocp = prepare_ocp(biorbd_model_path[0], phase_time[0], n_shooting[0], WITH_MULTI_START=False)
+        ocp = prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START=False)
         ocp.add_plot_penalty()
 
         solver.show_online_optim = False
