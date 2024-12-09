@@ -18,13 +18,13 @@ def custom_phase_transition_pre(controllers: list[PenaltyController, PenaltyCont
     """
 
     # Take the values of q of the BioMod without holonomics constraints
-    states_pre = controllers[0].states.cx
+    states_pre = vertcat(controllers[0].states["q"].cx, controllers[0].states["qdot"].cx)
 
     nb_independent = controllers[1].model.nb_independent_joints
     u_post = controllers[1].states.cx[:nb_independent]
-    udot_post = controllers[1].states.cx[nb_independent:]
+    udot_post = controllers[1].states.cx[nb_independent : nb_independent * 2]
 
-    # Take the q of the indepente joint and calculate the q of dependent joint
+    # Take the q of the independent joint and calculate the q of dependent joint
     v_post = controllers[1].model.compute_v_from_u_explicit_symbolic(u_post)
     q_post = controllers[1].model.state_from_partition(u_post, v_post)
 
@@ -54,7 +54,7 @@ def custom_phase_transition_post(controllers: list[PenaltyController, PenaltyCon
     # Take the values of q of the BioMod without holonomics constraints
     nb_independent = controllers[0].model.nb_independent_joints
     u_pre = controllers[0].states.cx[:nb_independent]
-    udot_pre = controllers[0].states.cx[nb_independent:]
+    udot_pre = controllers[0].states.cx[nb_independent : nb_independent * 2]
 
     # Take the q of the indepente joint and calculate the q of dependent joint
     v_pre = controllers[0].model.compute_v_from_u_explicit_symbolic(u_pre)
@@ -64,7 +64,7 @@ def custom_phase_transition_post(controllers: list[PenaltyController, PenaltyCon
     qdot_pre = controllers[0].model.state_from_partition(udot_pre, vdot_pre)
 
     states_pre = vertcat(q_pre, qdot_pre)
-    states_post = controllers[1].states.cx
+    states_post = vertcat(controllers[1].states["q"].cx, controllers[1].states["qdot"].cx)
 
     return states_pre - states_post
 
