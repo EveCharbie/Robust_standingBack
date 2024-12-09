@@ -1,13 +1,19 @@
+from typing import Callable
+
 from bioptim import (
     DynamicsFcn,
     DynamicsFunctions,
     DynamicsEvaluation,
     ConfigureProblem,
+    BiMapping,
+    CustomPlot,
+    PlotType,
 )
-from casadi import MX, vertcat
+from casadi import MX, vertcat, Function
+import numpy as np
 
 
-def holonomic_torque_derivative_driven(ocp, nlp, numerical_data_timeseries: dict[str, np.ndarray] = None):
+def configure_holonomic_torque_derivative_driven(ocp, nlp, numerical_data_timeseries: dict[str, np.ndarray] = None):
     """
     Tell the program which variables are states and controls.
 
@@ -57,9 +63,79 @@ def holonomic_torque_derivative_driven(ocp, nlp, numerical_data_timeseries: dict
     # extra plots
     ConfigureProblem.configure_qv(ocp, nlp, nlp.model.compute_q_v)
     ConfigureProblem.configure_qdotv(ocp, nlp, nlp.model._compute_qdot_v)
-    ConfigureProblem.configure_lagrange_multipliers_function(ocp, nlp, nlp.model.compute_the_lagrangian_multipliers)
+    configure_lagrange_multipliers_function(ocp, nlp, nlp.model.compute_the_lagrangian_multipliers)
 
-    ConfigureProblem.configure_dynamics_function(ocp, nlp, DynamicsFunctions.holonomic_torque_derivative_driven)
+    ConfigureProblem.configure_dynamics_function(ocp, nlp, holonomic_torque_derivative_driven)
+
+
+def configure_lagrange_multipliers_function(ocp, nlp, dyn_func: Callable, **extra_params):
+    """
+    Configure the contact points
+
+    Parameters
+    ----------
+    ocp: OptimalControlProgram
+        A reference to the ocp
+    nlp: NonLinearProgram
+        A reference to the phase
+    dyn_func: Callable[time, states, controls, param, algebraic_states, numerical_timeseries]
+        The function to get the values of contact forces from the dynamics
+    """
+
+    time_span_sym = vertcat(nlp.time_mx, nlp.dt_mx)
+    nlp.lagrange_multipliers_function = Function(
+        "lagrange_multipliers_function",
+        [
+            time_span_sym,
+            nlp.states.scaled.mx_reduced,
+            nlp.controls.scaled.mx_reduced,
+            nlp.parameters.scaled.mx_reduced,
+            nlp.algebraic_states.scaled.mx_reduced,
+            nlp.numerical_timeseries.mx,
+        ],
+        [
+            dyn_func(
+                nlp.get_var_from_states_or_controls(
+                    "q_u", nlp.states.scaled.mx_reduced, nlp.controls.scaled.mx_reduced
+                ),
+                nlp.get_var_from_states_or_controls(
+                    "qdot_u", nlp.states.scaled.mx_reduced, nlp.controls.scaled.mx_reduced
+                ),
+                nlp.get_var_from_states_or_controls(
+                    "tau", nlp.states.scaled.mx_reduced, nlp.controls.scaled.mx_reduced
+                ),
+            )
+        ],
+        ["t_span", "x", "u", "p", "a", "d"],
+        ["lagrange_multipliers"],
+    )
+
+    all_multipliers_names = []
+    for nlp_i in ocp.nlp:
+        if hasattr(nlp_i.model, "has_holonomic_constraints"):  # making sure we have a HolonomicBiorbdModel
+            nlp_i_multipliers_names = [nlp_i.model.name_dof[i] for i in nlp_i.model.dependent_joint_index]
+            all_multipliers_names.extend(
+                [name for name in nlp_i_multipliers_names if name not in all_multipliers_names]
+            )
+
+    all_multipliers_names = [f"lagrange_multiplier_{name}" for name in all_multipliers_names]
+    all_multipliers_names_in_phase = [
+        f"lagrange_multiplier_{nlp.model.name_dof[i]}" for i in nlp.model.dependent_joint_index
+    ]
+
+    axes_idx = BiMapping(
+        to_first=[i for i, c in enumerate(all_multipliers_names) if c in all_multipliers_names_in_phase],
+        to_second=[i for i, c in enumerate(all_multipliers_names) if c in all_multipliers_names_in_phase],
+    )
+
+    nlp.plot["lagrange_multipliers"] = CustomPlot(
+        lambda t0, phases_dt, node_idx, x, u, p, a, d: nlp.lagrange_multipliers_function(
+            np.concatenate([t0, t0 + phases_dt[nlp.phase_idx]]), x, u, p, a, d
+        ),
+        plot_type=PlotType.INTEGRATED,
+        axes_idx=axes_idx,
+        legend=all_multipliers_names,
+    )
 
 
 def holonomic_torque_derivative_driven(
