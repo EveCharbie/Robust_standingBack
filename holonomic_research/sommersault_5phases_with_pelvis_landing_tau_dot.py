@@ -21,6 +21,7 @@ from bioptim import (
     InitialGuessList,
     Solver,
     PhaseTransitionFcn,
+    MagnitudeType,
 )
 from holonomic_research.constants import POSE_TUCKING_START, POSE_TUCKING_END, POSE_LANDING_START
 from save_load_helpers import get_created_data_from_pickle
@@ -169,23 +170,23 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
         u_bounds.add("taudot", min_bound=[-10000] * 5, max_bound=[10000] * 5, phase=i_phase)
         u_init.add("taudot", [0] * 5, phase=i_phase)
 
-    # if WITH_MULTI_START:
-    #     x_init.add_noise(
-    #         bounds=x_bounds,
-    #         # magnitude=0,
-    #         magnitude=0.2,
-    #         magnitude_type=MagnitudeType.RELATIVE,
-    #         n_shooting=[n_shooting[i] + 1 for i in range(len(n_shooting))],
-    #         seed=seed,
-    #     )
-    #     u_init.add_noise(
-    #         bounds=u_bounds,
-    #         magnitude=0,
-    #         # magnitude=0.1,
-    #         magnitude_type=MagnitudeType.RELATIVE,
-    #         n_shooting=[n_shooting[i] for i in range(len(n_shooting))],
-    #         seed=seed,
-    #     )
+    if WITH_MULTI_START:
+        x_init.add_noise(
+            bounds=x_bounds,
+            # magnitude=0,
+            magnitude=0.2,
+            magnitude_type=MagnitudeType.RELATIVE,
+            n_shooting=[n_shooting[i] + 1 for i in range(len(n_shooting))],
+            seed=seed,
+        )
+        u_init.add_noise(
+            bounds=u_bounds,
+            # magnitude=0,
+            magnitude=0.1,
+            magnitude_type=MagnitudeType.RELATIVE,
+            n_shooting=[n_shooting[i] for i in range(len(n_shooting))],
+            seed=seed,
+        )
 
     return OptimalControlProgram(
         bio_model=bio_model,
@@ -206,7 +207,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
 
 # --- Parameters --- #
 movement = "Salto"
-version = "Pierre_taudot1"
+version = "Pierre_taudot2_force_constrained"
 nb_phase = 5
 name_folder_model = "../models"
 sol_salto = get_created_data_from_pickle(JUMP_INIT_PATH)
@@ -256,7 +257,7 @@ def main():
         ocp = prepare_ocp(biorbd_model_path[0], phase_time[0], n_shooting[0], WITH_MULTI_START=False)
         ocp.add_plot_penalty()
 
-        solver = Solver.IPOPT(show_online_optim=True, show_options=dict(show_bounds=True), _linear_solver="MA57")
+        solver = Solver.IPOPT(show_online_optim=False, show_options=dict(show_bounds=True), _linear_solver="MA57")
         solver.set_maximum_iterations(50000)
         solver.set_bound_frac(1e-8)
         solver.set_bound_push(1e-8)
@@ -266,9 +267,9 @@ def main():
         sol.print_cost()
 
         # --- Save results --- #
-        save_results_taudot(sol, combinatorial_parameters)
+        # save_results_taudot(sol, combinatorial_parameters)
         sol.graphs(show_bounds=True, save_name=str(movement) + "_" + str(nb_phase) + "phases_V" + version)
-        # sol.animate()
+        sol.animate(viewer="pyorerun")
 
 
 if __name__ == "__main__":

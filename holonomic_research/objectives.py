@@ -76,7 +76,7 @@ def add_objectives(objective_functions, actuators):
     objective_functions.add(
         ObjectiveFcn.Mayer.MINIMIZE_CONTACT_FORCES_END_OF_INTERVAL,
         node=Node.PENULTIMATE,
-        weight=1,
+        weight=5,
         contact_index=1,
         quadratic=True,
         phase=0,
@@ -84,7 +84,7 @@ def add_objectives(objective_functions, actuators):
     objective_functions.add(
         ObjectiveFcn.Mayer.MINIMIZE_CONTACT_FORCES_END_OF_INTERVAL,
         node=Node.PENULTIMATE,
-        weight=1,
+        weight=5,
         contact_index=0,
         quadratic=True,
         phase=0,
