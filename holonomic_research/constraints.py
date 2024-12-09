@@ -1,5 +1,6 @@
 from bioptim import (
     ConstraintFcn,
+    ConstraintList,
     Node,
     Axis,
     PenaltyController,
@@ -20,57 +21,7 @@ def CoM_over_toes(controller: PenaltyController) -> MX:
     return constraint
 
 
-def custom_contraint_lambdas_cisaillement_min_bound(
-    controller: PenaltyController, bio_model: BiorbdModelCustomHolonomic
-) -> MX:
-    """
-    lagrange_1 < lagrange_0
-    """
-    # Recuperer les q
-    q_u = controller.states["q_u"].cx
-    qdot_u = controller.states["qdot_u"].cx
-    tau = controller.controls["tau"].cx if "tau" in controller.controls else controller.states["tau"].cx
-    pelvis_mx = MX.zeros(3)
-    new_tau = vertcat(pelvis_mx, tau)
-
-    # Calculer lambdas
-    lambdas = bio_model.compute_the_lagrangian_multipliers(q_u, qdot_u, new_tau)
-
-    # Contrainte lagrange_0 (min_bound = -1, max_bound = 1)
-    lagrange_0 = lambdas[0]
-
-    # Contrainte lagrange_1 (min_bound = L_1/L_0 = -0.2, max_bound = L_1/L_0 = 0.2)
-    lagrange_1 = lambdas[1]
-
-    return -(lagrange_1 - lagrange_0)
-
-
-def custom_contraint_lambdas_cisaillement_max_bound(
-    controller: PenaltyController, bio_model: BiorbdModelCustomHolonomic
-) -> MX:
-    """
-    0.01*lagrange_0 < lagrange_1
-    """
-    # Recuperer les q
-    q_u = controller.states["q_u"].cx
-    qdot_u = controller.states["qdot_u"].cx
-    tau = controller.controls["tau"].cx if "tau" in controller.controls else controller.states["tau"].cx
-    pelvis_mx = MX.zeros(3)
-    new_tau = vertcat(pelvis_mx, tau)
-
-    # Calculer lambdas
-    lambdas = bio_model.compute_the_lagrangian_multipliers(q_u, qdot_u, new_tau)
-
-    # Contrainte lagrange_0 (min_bound = -1, max_bound = 1)
-    lagrange_0 = lambdas[0]
-
-    # Contrainte lagrange_1 (min_bound = L_1/L_0 = -0.2, max_bound = L_1/L_0 = 0.2)
-    lagrange_1 = lambdas[1]
-
-    return -(lagrange_1 - 0.01 * lagrange_0)
-
-
-def add_constraints(constraints):
+def add_constraints(constraints) -> ConstraintList:
     """Phase 0 (Propulsion) and Phase 4 (Landing) constraints"""
     # Phase 0 (Propulsion):
     constraints.add(
