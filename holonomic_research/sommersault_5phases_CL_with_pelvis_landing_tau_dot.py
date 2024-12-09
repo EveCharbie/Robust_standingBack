@@ -83,7 +83,6 @@ def prepare_ocp(biorbd_model_path: tuple, phase_time: tuple, n_shooting: tuple, 
     # Actuators parameters
     actuators = ACTUATORS
 
-    tau_min, tau_max, tau_init = initialize_tau()
     dof_mapping = BiMappingList()
     dof_mapping.add("tau", to_second=[None, None, None, 0, 1, 2, 3, 4], to_first=[3, 4, 5, 6, 7])
     dof_mapping.add("taudot", to_second=[None, None, None, 0, 1, 2, 3, 4], to_first=[3, 4, 5, 6, 7])
@@ -137,9 +136,12 @@ def prepare_ocp(biorbd_model_path: tuple, phase_time: tuple, n_shooting: tuple, 
     constraints = add_constraint_tucking_friction_cone(bio_model[2], constraints)
 
     # --- Bounds ---#
+    tau_min, tau_max, tau_init = initialize_tau()
     x_bounds = BoundsList()
     q_bounds, qdot_bounds = add_x_bounds(bio_model)
     for i_phase, _ in enumerate(bio_model):
+        x_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
+                         max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=i_phase)
         if i_phase == 2:
             qu_bounds = Bounds(
                 "q_u",
@@ -239,7 +241,7 @@ def prepare_ocp(biorbd_model_path: tuple, phase_time: tuple, n_shooting: tuple, 
 
 # --- Parameters --- #
 movement = "Salto_CL"
-version = "Pierre_taudot2_force_constrained"
+version = "Pierre_taudot2_force_constrained_no_noise"
 nb_phase = 5
 sol_salto = get_created_data_from_pickle(JUMP_INIT_PATH)
 
@@ -247,7 +249,7 @@ sol_salto = get_created_data_from_pickle(JUMP_INIT_PATH)
 # --- Load model --- #
 def main():
 
-    WITH_MULTI_START = False
+    WITH_MULTI_START = True
 
     biorbd_model_path = (PATH_MODEL_1_CONTACT, PATH_MODEL, PATH_MODEL, PATH_MODEL, PATH_MODEL_1_CONTACT)
     phase_time = (0.2, 0.2, 0.3, 0.3, 0.3)
