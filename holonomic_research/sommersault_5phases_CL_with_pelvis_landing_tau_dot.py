@@ -30,7 +30,14 @@ from actuator_constants import ACTUATORS, initialize_tau
 from biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
 from bounds_x import add_x_bounds
 from constraints import add_constraints, add_constraint_tucking_friction_cone
-from constants import JUMP_INIT_PATH, POSE_TUCKING_START, POSE_TUCKING_END, POSE_LANDING_START
+from constants import (
+    JUMP_INIT_PATH,
+    POSE_TUCKING_START,
+    POSE_TUCKING_END,
+    POSE_LANDING_START,
+    PATH_MODEL_1_CONTACT,
+    PATH_MODEL,
+)
 from holonomic_torque_derivative_dynamics import (
     configure_holonomic_torque_derivative_driven,
     holonomic_torque_derivative_driven,
@@ -234,7 +241,6 @@ def prepare_ocp(biorbd_model_path: tuple, phase_time: tuple, n_shooting: tuple, 
 movement = "Salto_CL"
 version = "Pierre_taudot2_force_constrained"
 nb_phase = 5
-name_folder_model = "../models"
 sol_salto = get_created_data_from_pickle(JUMP_INIT_PATH)
 
 
@@ -243,10 +249,7 @@ def main():
 
     WITH_MULTI_START = False
 
-    model_path = str(name_folder_model) + "/" + "Model2D_7Dof_0C_5M_CL_V3.bioMod"
-    model_path_1contact = str(name_folder_model) + "/" + "Model2D_7Dof_2C_5M_CL_V3.bioMod"
-
-    biorbd_model_path = (model_path_1contact, model_path, model_path, model_path, model_path_1contact)
+    biorbd_model_path = (PATH_MODEL_1_CONTACT, PATH_MODEL, PATH_MODEL, PATH_MODEL, PATH_MODEL_1_CONTACT)
     phase_time = (0.2, 0.2, 0.3, 0.3, 0.3)
     n_shooting = (20, 20, 30, 30, 30)
 

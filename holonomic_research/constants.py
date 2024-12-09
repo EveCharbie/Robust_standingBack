@@ -7,3 +7,6 @@ POSE_LANDING_START = [0.013, 0.088, 5.804, -0.305, 8.258444956622276e-06, 1.014,
 POSE_LANDING_END = [0.053, 0.091, 6.08, 2.9, -0.17, 0.092, 0.17, 0.20]
 
 JUMP_INIT_PATH = "../Results_simu/Jump_4phases_V22.pkl"
+
+PATH_MODEL = "../models/Model2D_7Dof_0C_5M_CL_V3.bioMod"
+PATH_MODEL_1_CONTACT = "../models/Model2D_7Dof_2C_5M_CL_V3.bioMod"
