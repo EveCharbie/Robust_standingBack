@@ -7,10 +7,12 @@ This script is used to solve the somersault problem with 5 phases and a pelvis l
 # --- Import package --- #
 import numpy as np
 from bioptim import (
+    Axis,
     BiorbdModel,
     BiMappingList,
     BoundsList,
     ConstraintList,
+    ConstraintFcn,
     DynamicsFcn,
     DynamicsList,
     InterpolationType,
@@ -24,7 +26,6 @@ from bioptim import (
     PhaseTransitionFcn,
     Solver,
 )
-from build.lib.bioptim import ConstraintFcn
 from holonomic_research.constants import (
     POSE_TUCKING_START,
     POSE_TUCKING_END,
@@ -99,11 +100,12 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     constraints = ConstraintList()
     constraints = add_constraints(constraints)
     constraints.add(
-        ConstraintFcn.SUPERIMPOSE_MARKERS,
+        constraint=ConstraintFcn.SUPERIMPOSE_MARKERS,
+        node=Node.ALL,
         first_marker="BELOW_KNEE",
         second_marker="CENTER_HAND",
+        axes=[1, 2],
         phase=2,
-        node=Node.ALL,
     )
 
     # --- Bounds ---#
@@ -159,23 +161,23 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
         u_bounds.add("taudot", min_bound=[-10000] * 5, max_bound=[10000] * 5, phase=i_phase)
         u_init.add("taudot", [0] * 5, phase=i_phase)
 
-    if WITH_MULTI_START:
-        x_init.add_noise(
-            bounds=x_bounds,
-            # magnitude=0,
-            magnitude=0.2,
-            magnitude_type=MagnitudeType.RELATIVE,
-            n_shooting=[n_shooting[i] + 1 for i in range(len(n_shooting))],
-            seed=seed,
-        )
-        u_init.add_noise(
-            bounds=u_bounds,
-            # magnitude=0,
-            magnitude=0.1,
-            magnitude_type=MagnitudeType.RELATIVE,
-            n_shooting=[n_shooting[i] for i in range(len(n_shooting))],
-            seed=seed,
-        )
+    # if WITH_MULTI_START:
+    # x_init.add_noise(
+    #     bounds=x_bounds,
+    #     # magnitude=0,
+    #     magnitude=0.2,
+    #     magnitude_type=MagnitudeType.RELATIVE,
+    #     n_shooting=[n_shooting[i] + 1 for i in range(len(n_shooting))],
+    #     seed=seed,
+    # )
+    # u_init.add_noise(
+    #     bounds=u_bounds,
+    #     # magnitude=0,
+    #     magnitude=0.1,
+    #     magnitude_type=MagnitudeType.RELATIVE,
+    #     n_shooting=[n_shooting[i] for i in range(len(n_shooting))],
+    #     seed=seed,
+    # )
 
     return OptimalControlProgram(
         bio_model=bio_model,
@@ -204,7 +206,7 @@ sol_salto = get_created_data_from_pickle(JUMP_INIT_PATH)
 # --- Load model --- #
 def main():
 
-    WITH_MULTI_START = False
+    WITH_MULTI_START = True
 
     biorbd_model_path = (PATH_MODEL_1_CONTACT, PATH_MODEL, PATH_MODEL, PATH_MODEL, PATH_MODEL_1_CONTACT)
     phase_time = (0.2, 0.2, 0.3, 0.3, 0.3)
