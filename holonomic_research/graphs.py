@@ -1,6 +1,6 @@
 import numpy as np
 import pickle
-from Save import get_created_data_from_pickle
+from save_load_helpers import get_created_data_from_pickle
 import matplotlib.pyplot as plt
 from bioptim import BiorbdModel
 from biorbd import segment_index
@@ -22,16 +22,22 @@ def holonomics_constraints_graph(sol, index_holonomics_constraints: int, lambdas
     -------
 
     """
-    plt.plot(sol.time[index_holonomics_constraints], lambdas[0, :],
-             label="y",
-             marker="o",
-             markersize=5,
-             markerfacecolor="blue")
-    plt.plot(sol.time[index_holonomics_constraints], lambdas[1, :],
-             label="z",
-             marker="o",
-             markersize=5,
-             markerfacecolor="orange")
+    plt.plot(
+        sol.time[index_holonomics_constraints],
+        lambdas[0, :],
+        label="y",
+        marker="o",
+        markersize=5,
+        markerfacecolor="blue",
+    )
+    plt.plot(
+        sol.time[index_holonomics_constraints],
+        lambdas[1, :],
+        label="z",
+        marker="o",
+        markersize=5,
+        markerfacecolor="orange",
+    )
     plt.xlabel("Time (s)")
     plt.ylabel("Lagrange multipliers (N)")
     plt.title("Lagrange multipliers of the holonomic constraint")
@@ -83,10 +89,12 @@ def constraints_graphs(ocp, sol):
     ax[2].plot(sol.time, double_derivative_1, label="dd1")
     plt.show()
 
+
 # Info
 pickle_1 = "/home/mickael/Documents/Anais/Robust_standingBack/holonomic_research/Salto_6phases_V13.pkl"
 pickle_2 = "/home/mickael/Documents/Anais/Robust_standingBack/holonomic_research/Salto_6phases_V10.pkl"
-name_file_model = "/home/mickael/Documents/Anais/Robust_standingBack/Model/Model2D_7Dof_0C_3M.bioMod"
+name_file_model = "/home/mickael/Documents/Anais/Robust_standingBack/models/Model2D_7Dof_0C_3M.bioMod"
+
 
 def comparison_q_tau_CL(name_file_model: str, pickle_1: str, pickle_2: str, name_save_plot: str):
     """
@@ -120,7 +128,7 @@ def comparison_q_tau_CL(name_file_model: str, pickle_1: str, pickle_2: str, name
             time_by_phase_1[i] = time_by_phase_1[i]
             time_by_phase_2[i] = time_by_phase_2[i]
         else:
-            time_by_phase_1[i] = time_by_phase_1[i] + time_by_phase_1[i-1]
+            time_by_phase_1[i] = time_by_phase_1[i] + time_by_phase_1[i - 1]
             time_by_phase_2[i] = time_by_phase_2[i] + time_by_phase_2[i - 1]
 
     # concatate every "q", "tau", "time"
@@ -138,8 +146,8 @@ def comparison_q_tau_CL(name_file_model: str, pickle_1: str, pickle_2: str, name
     time_2 = np.concatenate(sol2["time"], axis=0)[:, np.newaxis]
 
     # Change q in degres
-    q_1 = q_1*180/np.pi
-    q_2 = q_2*180/np.pi
+    q_1 = q_1 * 180 / np.pi
+    q_2 = q_2 * 180 / np.pi
 
     # Changing the meaning of certain Dof to flexion/extension instead
     # of extension/flexion (Leg and Toe)
@@ -158,56 +166,68 @@ def comparison_q_tau_CL(name_file_model: str, pickle_1: str, pickle_2: str, name
     fig, axs = plt.subplots(nrows=len(dofs_CL), ncols=2, sharex="row")
     fig.suptitle("Comparison of q and tau of a backward salto with and without holonomic constraint")
     for dof in range(len(dofs_CL)):
-        axs[dof, 0].plot(time_1, q_1[dof].T, color='b')
-        axs[dof, 0].plot(time_2, q_2[dof].T, color='r')
-        axs[dof, 0].text(-0.15, 0.5, str(bio_model.name_dof[dof]),
-                horizontalalignment='right',
-                verticalalignment='center',
-                rotation='vertical',
-                transform=axs[dof, 0].transAxes,
-                fontsize=8)
+        axs[dof, 0].plot(time_1, q_1[dof].T, color="b")
+        axs[dof, 0].plot(time_2, q_2[dof].T, color="r")
+        axs[dof, 0].text(
+            -0.15,
+            0.5,
+            str(bio_model.name_dof[dof]),
+            horizontalalignment="right",
+            verticalalignment="center",
+            rotation="vertical",
+            transform=axs[dof, 0].transAxes,
+            fontsize=8,
+        )
 
         if dof < len(dofs_CL) - 1:
             axs[dof, 0].set_xticks([])
 
-        axs[dof, 1].step(time_1, tau_1[dof].T, color='b')
-        axs[dof, 1].step(time_2, tau_2[dof].T, color='r')
+        axs[dof, 1].step(time_1, tau_1[dof].T, color="b")
+        axs[dof, 1].step(time_2, tau_2[dof].T, color="r")
 
-        axs[0, 1].set_title('Tau')
-        axs[0, 0].set_title('Q')
+        axs[0, 1].set_title("Tau")
+        axs[0, 0].set_title("Q")
 
         # Add vertical line for phases
         for phase1 in range(len(time_by_phase_1)):
-            axs[dof, 0].axvline(x=time_by_phase_1[phase1], ymax=0.05, color='b', label='Phase ' + str(phase1))
+            axs[dof, 0].axvline(x=time_by_phase_1[phase1], ymax=0.05, color="b", label="Phase " + str(phase1))
             if dof > 3:
-                axs[dof, 1].axvline(x=time_by_phase_1[phase1], ymax=0.05, color='b', label='Phase ' + str(phase1))
+                axs[dof, 1].axvline(x=time_by_phase_1[phase1], ymax=0.05, color="b", label="Phase " + str(phase1))
         for phase2 in range(len(time_by_phase_2)):
-            axs[dof, 0].axvline(x=time_by_phase_2[phase2], ymax=0.05, color='r', label='Phase ' + str(phase2))
+            axs[dof, 0].axvline(x=time_by_phase_2[phase2], ymax=0.05, color="r", label="Phase " + str(phase2))
             if dof > 3:
-                axs[dof, 1].axvline(x=time_by_phase_2[phase2], ymax=0.05, color='r', label='Phase ' + str(phase2))
+                axs[dof, 1].axvline(x=time_by_phase_2[phase2], ymax=0.05, color="r", label="Phase " + str(phase2))
 
         if dof < len(dofs_CL) - 1:
             axs[dof, 1].set_xticks([])
 
-    axs[round(len(dofs_CL)/2), 0].text(-0.1, 1.5, "Flexion/extension (in degrees)",
-                         horizontalalignment='right',
-                         verticalalignment='center',
-                         rotation='vertical',
-                         transform=axs[round(len(dofs_CL)/2), 0].transAxes)
+    axs[round(len(dofs_CL) / 2), 0].text(
+        -0.1,
+        1.5,
+        "Flexion/extension (in degrees)",
+        horizontalalignment="right",
+        verticalalignment="center",
+        rotation="vertical",
+        transform=axs[round(len(dofs_CL) / 2), 0].transAxes,
+    )
 
-    axs[round(len(dofs_CL)/2), 1].text(-0.1, 1.5, "Torque (in N)",
-                         horizontalalignment='right',
-                         verticalalignment='center',
-                         rotation='vertical',
-                         transform=axs[round(len(dofs_CL)/2), 1].transAxes)
-    axs[len(dofs_CL)-1, 0].set_xlabel("Time (in s)", fontsize=10)
-    axs[len(dofs_CL)-1, 1].set_xlabel("Time (in s)", fontsize=10)
+    axs[round(len(dofs_CL) / 2), 1].text(
+        -0.1,
+        1.5,
+        "Torque (in N)",
+        horizontalalignment="right",
+        verticalalignment="center",
+        rotation="vertical",
+        transform=axs[round(len(dofs_CL) / 2), 1].transAxes,
+    )
+    axs[len(dofs_CL) - 1, 0].set_xlabel("Time (in s)", fontsize=10)
+    axs[len(dofs_CL) - 1, 1].set_xlabel("Time (in s)", fontsize=10)
     plt.show()
     plt.savefig(str(name_save_plot) + ".svg")
     plt.clf()
 
 
-def recap_comparison_CL (name_file_model: str, pickle_1: str, pickle_2: str):
+def recap_comparison_CL(name_file_model: str, pickle_1: str, pickle_2: str):
     # Useless function
     """
     Recap the mean values obtained for each phase for 2 simulations
@@ -244,8 +264,8 @@ def recap_comparison_CL (name_file_model: str, pickle_1: str, pickle_2: str):
             print("\t" + "sol1\t" + "sol2\n")
             for dof in range(len(dofs_CL)):
                 if key[i] == "tau":
-                    valeursol1 = np.nanmean(sol1[key[i]][nb_phase][index_dofs_CL[dof]-3])
-                    valeursol2 = np.nanmean(sol2[key[i]][nb_phase][index_dofs_CL[dof]-3])
+                    valeursol1 = np.nanmean(sol1[key[i]][nb_phase][index_dofs_CL[dof] - 3])
+                    valeursol2 = np.nanmean(sol2[key[i]][nb_phase][index_dofs_CL[dof] - 3])
                 else:
                     valeursol1 = np.nanmean(sol1[key[i]][nb_phase][index_dofs_CL[dof]])
                     valeursol2 = np.nanmean(sol2[key[i]][nb_phase][index_dofs_CL[dof]])

@@ -12,6 +12,7 @@ Phase 2: Tucked phase + Landing
 - Objective(s) function(s): maximize torque
 
 """
+
 # --- Import package --- #
 import numpy as np
 import pickle
@@ -163,8 +164,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
 def main():
     ocp = prepare_ocp(
         biorbd_model_path=(
-            "/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_1C_3M.bioMod",
-            "/home/lim/Documents/Anais/Robust_standingBack/Model/Model2D_0C_3M.bioMod",
+            "../models/Model2D_1C_3M.bioMod",
+            "../models/Model2D_0C_3M.bioMod",
         ),
         phase_time=(0.5, 2),
         n_shooting=(50, 200),

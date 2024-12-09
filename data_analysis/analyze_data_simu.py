@@ -18,8 +18,8 @@ path_sol = "/home/mickaelbegon/Documents/Anais/Results_simu"
 path_without = (
     "/home/mickaelbegon/Documents/Anais/Robust_standingBack/holonomic_research/solutions/Salto_5phases_VEve_taudot1/"
 )
-path_CL = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/holonomic_research/solutions_CL/Salto_close_loop_landing_5phases_VEve_taudot1/"
-path_model = "../Model/Model2D_7Dof_2C_5M_CL_V3.bioMod"
+path_CL = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/holonomic_research/solutions_CL/Salto_close_loop_landing_5phases_VEve_final2/"
+path_model = "../models/Model2D_7Dof_2C_5M_CL_V3.bioMod"
 model = biorbd.Model(path_model)
 
 CONSIDER_ONLY_CONVERGED = False

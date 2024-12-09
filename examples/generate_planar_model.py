@@ -119,7 +119,7 @@ class ActuatorGauss3P:
 
 
 # --- Load the 3D model --- #
-model3D = biorbd.Model("/home/lim/Documents/Anais/Robust_standingBack/Model/Pyomecaman_original.bioMod")
+model3D = biorbd.Model("../models/Pyomecaman_original.bioMod")
 
 # --- Create a txt file --- #
 Model2D = open("Model2D_2C_3M_RotX_elbow.bioMod", "w")

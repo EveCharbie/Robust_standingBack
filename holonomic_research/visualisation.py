@@ -2,7 +2,7 @@ import bioviz
 from scipy.interpolate import interp1d
 import numpy as np
 from biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
-from Save import get_created_data_from_pickle
+from save_load_helpers import get_created_data_from_pickle
 from bioptim import (
     HolonomicConstraintsList,
     HolonomicConstraintsFcn,
@@ -88,9 +88,7 @@ def visualisation_dedoublement_phase(name_file_movement: str, name_file_model: s
         for i in range(7, 11):
             time_node[i] = time_node[i] - (time_Q7 - ecart)
         Q_2 = np.concatenate((q[0], q[1], q[7], q[8], q[9], q[10]), axis=1)
-        time_Q2 = np.concatenate(
-            (time_node[0], time_node[1], time_node[7], time_node[8], time_node[9], time_node[10])
-        )
+        time_Q2 = np.concatenate((time_node[0], time_node[1], time_node[7], time_node[8], time_node[9], time_node[10]))
         duree_Q2 = [time_Q2[i + 1] - time_Q2[i] for i in range(0, len(time_Q2) - 1)]
 
         # Interpolation simulation salto with errors timing
@@ -108,17 +106,13 @@ def visualisation_dedoublement_phase(name_file_movement: str, name_file_model: s
             Q2_interpolate[nb_Dof] = newy
 
         if Q1_interpolate.shape[1] < Q2_interpolate.shape[1]:
-            Q_add = np.zeros(
-                shape=(Q_1.shape[0], int(Q2_interpolate.shape[1] - Q1_interpolate.shape[1])), dtype=float
-            )
+            Q_add = np.zeros(shape=(Q_1.shape[0], int(Q2_interpolate.shape[1] - Q1_interpolate.shape[1])), dtype=float)
             for i in range(Q2_interpolate.shape[1] - Q1_interpolate.shape[1]):
                 Q_add[:, i] = Q1_interpolate[:, -1]
             Q1_interpolate_new = np.concatenate((Q1_interpolate, Q_add), axis=1)
 
         if Q2_interpolate.shape[1] < Q1_interpolate.shape[1]:
-            Q_add = np.zeros(
-                shape=(Q_1.shape[0], int(Q2_interpolate.shape[1] - Q1_interpolate.shape[1])), dtype=float
-            )
+            Q_add = np.zeros(shape=(Q_1.shape[0], int(Q2_interpolate.shape[1] - Q1_interpolate.shape[1])), dtype=float)
             for i in range(Q2_interpolate.shape[1] - Q1_interpolate.shape[1]):
                 Q_add[:, i] = Q1_interpolate[:, -1]
             Q1_interpolate_new = np.concatenate((Q1_interpolate, Q_add), axis=1)
@@ -155,7 +149,7 @@ def graph_all(sol):
     time = data["time_all"]
 
     # Figure q
-    fig, axs = plt.subplots(2, math.ceil(q.shape[0]/2))
+    fig, axs = plt.subplots(2, math.ceil(q.shape[0] / 2))
     num_col = 0
     num_line = 0
     y_min = np.min(q)
@@ -167,14 +161,14 @@ def graph_all(sol):
         axs[num_line, num_col].set_title(dof_names[nb_seg])
         axs[num_line, num_col].set_ylim(y_min, y_max)
         num_col = num_col + 1
-        if nb_seg == math.ceil(q.shape[0]/2) - 1:
+        if nb_seg == math.ceil(q.shape[0] / 2) - 1:
             num_col = 0
             num_line = 1
     for ax in axs.flat:
-        ax.set(xlabel='Time [s]', ylabel='Positions [m]')
+        ax.set(xlabel="Time [s]", ylabel="Positions [m]")
     for ax in axs.flat:
         ax.label_outer()
-    #fig.suptitle("Evolution des Q")
+    # fig.suptitle("Evolution des Q")
 
     # Figure qdot
     fig, axs = plt.subplots(2, math.ceil(qdot.shape[0] / 2))
@@ -193,13 +187,13 @@ def graph_all(sol):
             num_col = 0
             num_line = 1
     for ax in axs.flat:
-        ax.set(xlabel='Time [s]', ylabel='Velocities [m/s]')
+        ax.set(xlabel="Time [s]", ylabel="Velocities [m/s]")
     for ax in axs.flat:
         ax.label_outer()
-    #fig.suptitle("Evolution des Qdot")
+    # fig.suptitle("Evolution des Qdot")
 
     # Figure tau
-    fig, axs = plt.subplots(2, math.ceil(tau.shape[0]/2))
+    fig, axs = plt.subplots(2, math.ceil(tau.shape[0] / 2))
     num_col = 0
     num_line = 0
     y_min = np.min(tau)
@@ -213,30 +207,30 @@ def graph_all(sol):
         axs[num_line, num_col].set_title(dof_names[nb_seg + 3])
         axs[num_line, num_col].set_ylim(y_min, y_max)
         num_col = num_col + 1
-        if nb_seg == math.ceil(tau.shape[0]/2) - 1:
+        if nb_seg == math.ceil(tau.shape[0] / 2) - 1:
             num_col = 0
             num_line = 1
     for ax in axs.flat:
-        ax.set(xlabel='Time [s]', ylabel='Tau')
+        ax.set(xlabel="Time [s]", ylabel="Tau")
     for ax in axs.flat:
         ax.label_outer()
-    #fig.suptitle("Evolution des Tau")
+    # fig.suptitle("Evolution des Tau")
 
     # Figure lambdas
-    #name_ylabel=["Effort normal au tibia [N]", "Effort de cisaillement au tibia [N]"]
-    #fig, axs = plt.subplots(2, math.ceil(lambdas.shape[0]/2))
-    #num_col = 0
-    #num_line = 0
-    #for nb_seg in range(lambdas.shape[0]):
+    # name_ylabel=["Effort normal au tibia [N]", "Effort de cisaillement au tibia [N]"]
+    # fig, axs = plt.subplots(2, math.ceil(lambdas.shape[0]/2))
+    # num_col = 0
+    # num_line = 0
+    # for nb_seg in range(lambdas.shape[0]):
     #    axs[num_col].plot(lambdas[nb_seg])
     #    axs[num_col].set_ylabel(name_ylabel[num_col])
     #    if num_line == 1:
     #        axs[num_line, num_col].set_xlabel('Time [s]')
     #    num_col = num_col + 1
-    #fig.suptitle("Evolution des Lambdas")
+    # fig.suptitle("Evolution des Lambdas")
     fig = plt.figure()
-    plt.plot(lambdas[0], color='r', label=["Normal force"])
-    plt.plot(lambdas[1], color='g', label=["Shear force"])
+    plt.plot(lambdas[0], color="r", label=["Normal force"])
+    plt.plot(lambdas[1], color="g", label=["Shear force"])
     plt.ylabel("Force on the tibia [N]")
     plt.xlabel("Shooting point")
     plt.legend()
@@ -268,7 +262,7 @@ def graph_all_comparaison(sol, sol2):
     time2 = data2["time_all"]
 
     # Figure q
-    fig, axs = plt.subplots(2, math.ceil(q.shape[0]/2))
+    fig, axs = plt.subplots(2, math.ceil(q.shape[0] / 2))
     num_col = 0
     num_line = 0
     y_min = np.min(q)
@@ -280,11 +274,11 @@ def graph_all_comparaison(sol, sol2):
         axs[num_line, num_col].set_title(dof_names[nb_seg])
         axs[num_line, num_col].set_ylim(y_min, y_max)
         num_col = num_col + 1
-        if nb_seg == math.ceil(q.shape[0]/2) - 1:
+        if nb_seg == math.ceil(q.shape[0] / 2) - 1:
             num_col = 0
             num_line = 1
     for ax in axs.flat:
-        ax.set(xlabel='Time [s]', ylabel='Positions [m]')
+        ax.set(xlabel="Time [s]", ylabel="Positions [m]")
     for ax in axs.flat:
         ax.label_outer()
 
@@ -305,12 +299,12 @@ def graph_all_comparaison(sol, sol2):
             num_col = 0
             num_line = 1
     for ax in axs.flat:
-        ax.set(xlabel='Time [s]', ylabel='Velocities [m/s]')
+        ax.set(xlabel="Time [s]", ylabel="Velocities [m/s]")
     for ax in axs.flat:
         ax.label_outer()
 
     # Figure tau
-    fig, axs = plt.subplots(2, math.ceil(tau.shape[0]/2))
+    fig, axs = plt.subplots(2, math.ceil(tau.shape[0] / 2))
     num_col = 0
     num_line = 0
     y_min = np.min(tau)
@@ -324,18 +318,18 @@ def graph_all_comparaison(sol, sol2):
         axs[num_line, num_col].set_title(dof_names[nb_seg + 3])
         axs[num_line, num_col].set_ylim(y_min, y_max)
         num_col = num_col + 1
-        if nb_seg == math.ceil(tau.shape[0]/2) - 1:
+        if nb_seg == math.ceil(tau.shape[0] / 2) - 1:
             num_col = 0
             num_line = 1
     for ax in axs.flat:
-        ax.set(xlabel='Time [s]', ylabel='Tau')
+        ax.set(xlabel="Time [s]", ylabel="Tau")
     for ax in axs.flat:
         ax.label_outer()
 
     # Figure lambdas
     fig = plt.figure()
-    plt.plot(lambdas[0], color='r', label=["Normal force"])
-    plt.plot(lambdas[1], color='g', label=["Shear force"])
+    plt.plot(lambdas[0], color="r", label=["Normal force"])
+    plt.plot(lambdas[1], color="g", label=["Shear force"])
     plt.ylabel("Force on the tibia [N]")
     plt.xlabel("Shooting point")
     plt.legend()

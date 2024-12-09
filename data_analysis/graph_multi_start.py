@@ -13,7 +13,7 @@ path_sol_CL = "/home/mickaelbegon/Documents/Anais/Results_simu"
 sol_CL = path_sol_CL + "/" + "Salto_close_loop_landing_5phases_VEve12.pkl"
 data_CL = pd.read_pickle(sol_CL)
 
-path_model = "../Model/Model2D_7Dof_2C_5M_CL_V3.bioMod"
+path_model = "../models/Model2D_7Dof_2C_5M_CL_V3.bioMod"
 model = biorbd.Model(path_model)
 
 
@@ -24,15 +24,22 @@ tau_CL = data_CL["tau_all"]
 num_col = 1
 num_line = 0
 for nb_seg in range(tau_CL.shape[0]):
-    axs[num_line, num_col].step(range(len(tau_CL[nb_seg])), tau_CL[nb_seg], color="k", alpha=0.75, linewidth=1,
-                                label="with holonomics \nconstraints", where='mid')
+    axs[num_line, num_col].step(
+        range(len(tau_CL[nb_seg])),
+        tau_CL[nb_seg],
+        color="k",
+        alpha=0.75,
+        linewidth=1,
+        label="with holonomics \nconstraints",
+        where="mid",
+    )
 
     num_col += 1
     if num_col == 3:
         num_col = 0
         num_line += 1
     if num_line == 1:
-        axs[num_line, num_col].set_xlabel('Time [%]', fontsize=7)
+        axs[num_line, num_col].set_xlabel("Time [%]", fontsize=7)
 
 
 i_colors = np.linspace(0.0, 1.0, 20)
@@ -46,14 +53,22 @@ for file in os.listdir(path_sol):
         tau_without = data_without["tau_all"]
 
         axs[0, 0].plot([], [], color=colors[i_trial], label="without \nconstraints")
-        axs[0, 0].legend(loc='center right', bbox_to_anchor=(0.6, 0.5), fontsize=8)
-        axs[0, 0].axis('off')
+        axs[0, 0].legend(loc="center right", bbox_to_anchor=(0.6, 0.5), fontsize=8)
+        axs[0, 0].axis("off")
 
         num_col = 1
         num_line = 0
         for nb_seg in range(tau_CL.shape[0]):
-            axs[num_line, num_col].plot(np.array([0, 100]), np.array([0, 0]), '-k', linewidth=0.5)
-            axs[num_line, num_col].step(range(len(tau_without[nb_seg])), tau_without[nb_seg], color=colors[i_trial], alpha=0.75, linewidth=1, label=f"without \nconstraints {i_trial}", where='mid')
+            axs[num_line, num_col].plot(np.array([0, 100]), np.array([0, 0]), "-k", linewidth=0.5)
+            axs[num_line, num_col].step(
+                range(len(tau_without[nb_seg])),
+                tau_without[nb_seg],
+                color=colors[i_trial],
+                alpha=0.75,
+                linewidth=1,
+                label=f"without \nconstraints {i_trial}",
+                where="mid",
+            )
 
             axs[num_line, num_col].grid(True, linewidth=0.4)
 
@@ -62,7 +77,7 @@ for file in os.listdir(path_sol):
                 num_col = 0
                 num_line += 1
             if num_line == 1:
-                axs[num_line, num_col].set_xlabel('Time [%]', fontsize=7)
+                axs[num_line, num_col].set_xlabel("Time [%]", fontsize=7)
 
         # Y_label
         axs[0, 1].set_ylabel("Joint torque [Nm]", fontsize=7)  # Arm Rotation

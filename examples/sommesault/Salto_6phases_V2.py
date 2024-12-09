@@ -129,7 +129,8 @@ def save_results(sol, c3d_file_path):
 nb_phase = 6
 movement = "Salto"
 version = 10
-name_folder_model = "/home/mickael/Documents/Anais/Robust_standingBack-main/Model"
+name_folder_model = "../models"
+
 
 # --- Prepare ocp --- #
 def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound):
@@ -275,7 +276,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
         first_marker="BELOW_KNEE",
         second_marker="CENTER_HAND",
         phase=3,
-        axes=[Axis.Z, Axis.Y]
+        axes=[Axis.Z, Axis.Y],
     )
 
     # Phase 5 (constraint contact with contact 2 (i.e. toe) and 1 (i.e heel) at the end of the phase 5)
@@ -311,13 +312,21 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     phase_transitions = PhaseTransitionList()
     phase_transitions.add(PhaseTransitionFcn.IMPACT, phase_pre_idx=4)
 
-     # Path constraint
+    # Path constraint
     n_q = bio_model[0].nb_q
     n_qdot = n_q
 
     # Position solution
-    pose_at_first_node = [0.0188, 0.1368, -0.1091, 1.78, 0.5437, 0.191, -0.1452,
-                          0.25]  # Position of segment during first position
+    pose_at_first_node = [
+        0.0188,
+        0.1368,
+        -0.1091,
+        1.78,
+        0.5437,
+        0.191,
+        -0.1452,
+        0.25,
+    ]  # Position of segment during first position
     pose_propulsion_start = [0.0195, -0.1714, -0.8568, -0.0782, 0.5437, 2.0522, -1.6462, 0.5296]
     pose_takeout_start = [-0.2777, 0.0399, 0.1930, 2.5896, 0.51, 0.5354, -0.8367, 0.1119]
     pose_salto_start = [-0.6369, 1.0356, 1.5062, 0.3411, 1.3528, 2.1667, -1.9179, 0.0393]
@@ -418,42 +427,42 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, min_bound, max_bound)
     # Initial guess
     x_init = InitialGuessList()
     # Phase 0 (prepa propulsion)
-    x_init.add("q", np.array([pose_at_first_node, pose_propulsion_start]).T, interpolation=InterpolationType.LINEAR,
-               phase=0)
+    x_init.add(
+        "q", np.array([pose_at_first_node, pose_propulsion_start]).T, interpolation=InterpolationType.LINEAR, phase=0
+    )
     x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=0)
 
     # Phase 1 (Propulsion)
-    x_init.add("q", np.array([pose_propulsion_start, pose_takeout_start]).T, interpolation=InterpolationType.LINEAR,
-               phase=1)
+    x_init.add(
+        "q", np.array([pose_propulsion_start, pose_takeout_start]).T, interpolation=InterpolationType.LINEAR, phase=1
+    )
     x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=1)
 
     # Phase 2 (take-off)
-    x_init.add("q", np.array([pose_takeout_start, pose_salto_start]).T, interpolation=InterpolationType.LINEAR,
-               phase=2)
+    x_init.add("q", np.array([pose_takeout_start, pose_salto_start]).T, interpolation=InterpolationType.LINEAR, phase=2)
     x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=2)
 
-
     # Phase 3 (salto)
-    x_init.add("q", np.array([pose_salto_start, pose_salto_end]).T, interpolation=InterpolationType.LINEAR,
-               phase=3)
+    x_init.add("q", np.array([pose_salto_start, pose_salto_end]).T, interpolation=InterpolationType.LINEAR, phase=3)
     x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=3)
 
     # Phase 4 (flight)
-    x_init.add("q", np.array([pose_salto_end, pose_landing_start]).T, interpolation=InterpolationType.LINEAR,
-               phase=4)
+    x_init.add("q", np.array([pose_salto_end, pose_landing_start]).T, interpolation=InterpolationType.LINEAR, phase=4)
     x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=4)
 
     # Phase 5 (landing)
-    x_init.add("q", np.array([pose_salto_start, pose_landing_end]).T, interpolation=InterpolationType.LINEAR,
-               phase=5)
+    x_init.add("q", np.array([pose_salto_start, pose_landing_end]).T, interpolation=InterpolationType.LINEAR, phase=5)
     x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=5)
-
 
     # Define control path constraint
     u_bounds = BoundsList()
     for j in range(0, nb_phase):
-        u_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
-                     max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=j)
+        u_bounds.add(
+            "tau",
+            min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
+            max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]],
+            phase=j,
+        )
 
     u_init = InitialGuessList()
     for j in range(0, nb_phase):

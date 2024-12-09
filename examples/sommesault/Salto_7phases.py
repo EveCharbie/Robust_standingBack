@@ -67,7 +67,7 @@ movement = "Salto_Test_with_elbow"
 version = 8
 nb_phase = 7
 Interpolation_lineaire = True
-name_folder_model = "/home/mickael/Documents/Anais/Robust_standingBack-main/Model"
+name_folder_model = "../models"
 
 
 # --- Save results --- #
