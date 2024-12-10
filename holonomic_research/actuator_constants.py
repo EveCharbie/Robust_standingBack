@@ -15,10 +15,10 @@ def initialize_tau(coef=0.7):
 ACTUATORS = {
     "Shoulders": Joint(
         tau_max_plus=112.8107 * 2,
-        theta_opt_plus=-41.0307 * np.pi / 180,
+        theta_opt_plus=41.0307 * np.pi / 180,
         r_plus=109.6679 * np.pi / 180,
         tau_max_minus=162.7655 * 2,
-        theta_opt_minus=-101.6627 * np.pi / 180,
+        theta_opt_minus=101.6627 * np.pi / 180,
         r_minus=103.9095 * np.pi / 180,
         min_q=-0.7,
         max_q=3.1,
