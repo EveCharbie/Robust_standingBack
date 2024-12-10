@@ -7,10 +7,12 @@ This script is used to solve the somersault problem with 5 phases and a pelvis l
 # --- Import package --- #
 import numpy as np
 from bioptim import (
+    Axis,
     BiorbdModel,
     BiMappingList,
     BoundsList,
     ConstraintList,
+    ConstraintFcn,
     DynamicsFcn,
     DynamicsList,
     InterpolationType,
@@ -24,8 +26,13 @@ from bioptim import (
     PhaseTransitionFcn,
     Solver,
 )
-from build.lib.bioptim import ConstraintFcn
-from holonomic_research.constants import POSE_TUCKING_START, POSE_TUCKING_END, POSE_LANDING_START
+from holonomic_research.constants import (
+    POSE_TUCKING_START,
+    POSE_TUCKING_END,
+    POSE_LANDING_START,
+    PATH_MODEL_1_CONTACT,
+    PATH_MODEL,
+)
 from save_load_helpers import get_created_data_from_pickle
 from bounds_x import add_x_bounds
 from save_results import save_results_taudot
@@ -93,11 +100,12 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     constraints = ConstraintList()
     constraints = add_constraints(constraints)
     constraints.add(
-        ConstraintFcn.SUPERIMPOSE_MARKERS,
+        constraint=ConstraintFcn.SUPERIMPOSE_MARKERS,
+        node=Node.ALL,
         first_marker="BELOW_KNEE",
         second_marker="CENTER_HAND",
+        axes=[1, 2],
         phase=2,
-        node=Node.ALL,
     )
 
     # --- Bounds ---#
@@ -153,23 +161,23 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
         u_bounds.add("taudot", min_bound=[-10000] * 5, max_bound=[10000] * 5, phase=i_phase)
         u_init.add("taudot", [0] * 5, phase=i_phase)
 
-    if WITH_MULTI_START:
-        x_init.add_noise(
-            bounds=x_bounds,
-            # magnitude=0,
-            magnitude=0.2,
-            magnitude_type=MagnitudeType.RELATIVE,
-            n_shooting=[n_shooting[i] + 1 for i in range(len(n_shooting))],
-            seed=seed,
-        )
-        u_init.add_noise(
-            bounds=u_bounds,
-            # magnitude=0,
-            magnitude=0.1,
-            magnitude_type=MagnitudeType.RELATIVE,
-            n_shooting=[n_shooting[i] for i in range(len(n_shooting))],
-            seed=seed,
-        )
+    # if WITH_MULTI_START:
+    # x_init.add_noise(
+    #     bounds=x_bounds,
+    #     # magnitude=0,
+    #     magnitude=0.2,
+    #     magnitude_type=MagnitudeType.RELATIVE,
+    #     n_shooting=[n_shooting[i] + 1 for i in range(len(n_shooting))],
+    #     seed=seed,
+    # )
+    # u_init.add_noise(
+    #     bounds=u_bounds,
+    #     # magnitude=0,
+    #     magnitude=0.1,
+    #     magnitude_type=MagnitudeType.RELATIVE,
+    #     n_shooting=[n_shooting[i] for i in range(len(n_shooting))],
+    #     seed=seed,
+    # )
 
     return OptimalControlProgram(
         bio_model=bio_model,
@@ -192,7 +200,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
 movement = "Salto"
 version = "Pierre_taudot2_force_constrained"
 nb_phase = 5
-name_folder_model = "../models"
 sol_salto = get_created_data_from_pickle(JUMP_INIT_PATH)
 
 
@@ -201,8 +208,9 @@ def main():
 
     WITH_MULTI_START = True
 
-    model_path = str(name_folder_model) + "/" + "Model2D_7Dof_0C_5M_CL_V3.bioMod"
-    model_path_1contact = str(name_folder_model) + "/" + "Model2D_7Dof_2C_5M_CL_V3.bioMod"
+    biorbd_model_path = (PATH_MODEL_1_CONTACT, PATH_MODEL, PATH_MODEL, PATH_MODEL, PATH_MODEL_1_CONTACT)
+    phase_time = (0.2, 0.2, 0.3, 0.3, 0.3)
+    n_shooting = (20, 20, 30, 30, 30)
 
     # Solver options
     solver = Solver.IPOPT(show_options=dict(show_bounds=True), _linear_solver="MA57", show_online_optim=False)
@@ -211,20 +219,16 @@ def main():
     solver.set_bound_push(1e-8)
     solver.set_tol(1e-6)
 
-    biorbd_model_path = [(model_path_1contact, model_path, model_path, model_path, model_path_1contact)]
-    phase_time = [(0.2, 0.2, 0.3, 0.3, 0.3)]
-    n_shooting = [(20, 20, 30, 30, 30)]
-
-    seed = list(range(0, 20))
-    combinatorial_parameters = {
-        "bio_model_path": biorbd_model_path,
-        "phase_time": phase_time,
-        "n_shooting": n_shooting,
-        "WITH_MULTI_START": [True],
-        "seed": seed,
-    }
-
     if WITH_MULTI_START:
+
+        combinatorial_parameters = {
+            "bio_model_path": [biorbd_model_path],
+            "phase_time": [phase_time],
+            "n_shooting": [n_shooting],
+            "WITH_MULTI_START": [True],
+            "seed": list(range(0, 20)),
+        }
+
         save_folder = f"./solutions/{str(movement)}_{str(nb_phase)}phases_V{version}"
         multi_start = prepare_multi_start(
             prepare_ocp,
@@ -237,15 +241,10 @@ def main():
 
         multi_start.solve()
     else:
-        ocp = prepare_ocp(biorbd_model_path[0], phase_time[0], n_shooting[0], WITH_MULTI_START=False)
+        ocp = prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START=False)
         ocp.add_plot_penalty()
 
-        solver = Solver.IPOPT(show_online_optim=False, show_options=dict(show_bounds=True), _linear_solver="MA57")
-        solver.set_maximum_iterations(50000)
-        solver.set_bound_frac(1e-8)
-        solver.set_bound_push(1e-8)
-        solver.set_tol(1e-6)
-
+        solver.show_online_optim = False
         sol = ocp.solve(solver)
         sol.print_cost()
 

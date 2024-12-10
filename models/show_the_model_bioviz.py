@@ -1,7 +1,7 @@
 """
 This file is to display the human model into bioviz
 """
-import os
+
 import bioviz
 
 

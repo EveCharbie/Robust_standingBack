@@ -64,7 +64,14 @@ from bioptim import (
 
 from actuator_constants import ACTUATORS, initialize_tau
 from bounds_x import add_x_bounds
-from constants import POSE_TUCKING_START, POSE_TUCKING_END, POSE_LANDING_START
+from constants import (
+    POSE_TUCKING_START,
+    POSE_TUCKING_END,
+    POSE_LANDING_START,
+    JUMP_INIT_PATH,
+    PATH_MODEL,
+    PATH_MODEL_1_CONTACT,
+)
 from constraints import add_constraints
 from multistart import prepare_multi_start
 from objectives import minimize_actuator_torques, add_objectives, add_tau_derivative_objectives
@@ -212,10 +219,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
 movement = "Salto"
 version = "Eve_final3"
 nb_phase = 5
-name_folder_model = "../models"
-pickle_sol_init = "../Results_simu/Jump_4phases_V22.pkl"
-# pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Results_simu/Salto_close_loop_landing_5phases_VEve12.pkl"
-sol_salto = get_created_data_from_pickle(pickle_sol_init)
+sol_salto = get_created_data_from_pickle(JUMP_INIT_PATH)
 
 
 # --- Load model --- #
@@ -223,8 +227,9 @@ def main():
 
     WITH_MULTI_START = False
 
-    model_path = str(name_folder_model) + "/" + "Model2D_7Dof_0C_5M_CL_V3.bioMod"
-    model_path_1contact = str(name_folder_model) + "/" + "Model2D_7Dof_2C_5M_CL_V3.bioMod"
+    biorbd_model_path = (PATH_MODEL_1_CONTACT, PATH_MODEL, PATH_MODEL, PATH_MODEL, PATH_MODEL_1_CONTACT)
+    phase_time = (0.2, 0.2, 0.3, 0.3, 0.3)
+    n_shooting = (20, 20, 30, 30, 30)
 
     # Solver options
     solver = Solver.IPOPT(show_options=dict(show_bounds=True), _linear_solver="MA57")  # show_online_optim=True,
@@ -233,21 +238,17 @@ def main():
     solver.set_bound_push(1e-8)
     solver.set_tol(1e-6)
 
-    biorbd_model_path = [(model_path_1contact, model_path, model_path, model_path, model_path_1contact)]
-    phase_time = [(0.2, 0.2, 0.3, 0.3, 0.3)]
-    n_shooting = [(20, 20, 30, 30, 30)]
-
-    seed = list(range(20))
-    combinatorial_parameters = {
-        "bio_model_path": biorbd_model_path,
-        "phase_time": phase_time,
-        "n_shooting": n_shooting,
-        "WITH_MULTI_START": [True],
-        "seed": seed,
-    }
-
     if WITH_MULTI_START:
         save_folder = f"./solutions/{str(movement)}_{str(nb_phase)}phases_V{version}"
+
+        combinatorial_parameters = {
+            "bio_model_path": [biorbd_model_path],
+            "phase_time": [phase_time],
+            "n_shooting": [n_shooting],
+            "WITH_MULTI_START": [True],
+            "seed": list(range(0, 20)),
+        }
+
         multi_start = prepare_multi_start(
             prepare_ocp,
             save_results=save_results,
@@ -265,7 +266,7 @@ def main():
         sol.print_cost()
 
         # --- Save results --- #
-        save_results(sol, combinatorial_parameters)
+        # save_results(sol, combinatorial_parameters)
         sol.graphs(show_bounds=True, save_name=str(movement) + "_" + str(nb_phase) + "phases_V" + version)
         sol.animate()
 
