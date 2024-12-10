@@ -1,6 +1,16 @@
 import numpy as np
 from actuators import Joint
 
+TAU_MAX = [0, 0, 0, 325.531, 138, 981.1876, 735.3286, 343.9806]
+TAU_MIN = [0, 0, 0, -325.531, -138, -981.1876, -735.3286, -343.9806]
+
+
+def initialize_tau(coef=0.7):
+    tau_min = [i * coef for i in TAU_MIN]
+    tau_max = [i * coef for i in TAU_MAX]
+    tau_init = 0
+    return tau_min, tau_max, tau_init
+
 
 ACTUATORS = {
     "Shoulders": Joint(

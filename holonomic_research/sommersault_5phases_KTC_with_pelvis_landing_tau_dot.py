@@ -8,21 +8,23 @@ This script is used to solve the somersault problem with 5 phases and a pelvis l
 import numpy as np
 from bioptim import (
     BiorbdModel,
-    InterpolationType,
-    OptimalControlProgram,
-    ConstraintList,
-    ObjectiveList,
-    ObjectiveFcn,
-    DynamicsList,
-    PhaseTransitionList,
-    DynamicsFcn,
     BiMappingList,
     BoundsList,
+    ConstraintList,
+    DynamicsFcn,
+    DynamicsList,
+    InterpolationType,
     InitialGuessList,
-    Solver,
-    PhaseTransitionFcn,
     MagnitudeType,
+    Node,
+    OptimalControlProgram,
+    ObjectiveList,
+    ObjectiveFcn,
+    PhaseTransitionList,
+    PhaseTransitionFcn,
+    Solver,
 )
+from build.lib.bioptim import ConstraintFcn
 from holonomic_research.constants import POSE_TUCKING_START, POSE_TUCKING_END, POSE_LANDING_START
 from save_load_helpers import get_created_data_from_pickle
 from bounds_x import add_x_bounds
@@ -90,6 +92,13 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     # --- Constraints ---#
     constraints = ConstraintList()
     constraints = add_constraints(constraints)
+    constraints.add(
+        ConstraintFcn.SUPERIMPOSE_MARKERS,
+        first_marker="BELOW_KNEE",
+        second_marker="CENTER_HAND",
+        phase=2,
+        node=Node.ALL,
+    )
 
     # --- Bounds ---#
     x_bounds = BoundsList()

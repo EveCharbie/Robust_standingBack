@@ -14,4 +14,4 @@ class Joint:
 
 
 def actuator_function(tau_max, theta_opt, r, x):
-    return tau_max * np.exp(-(theta_opt - x)**2 / (2*r**2))
+    return tau_max * np.exp(-((theta_opt - x) ** 2) / (2 * r**2))

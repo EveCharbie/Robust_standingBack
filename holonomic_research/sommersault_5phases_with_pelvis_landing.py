@@ -61,23 +61,15 @@ from bioptim import (
     MagnitudeType,
     MultiStart,
 )
-from save_load_helpers import get_created_data_from_pickle
-from actuator_constants import ACTUATORS
-from objectives import minimize_actuator_torques, add_objectives, add_tau_derivative_objectives
+
+from actuator_constants import ACTUATORS, initialize_tau
+from bounds_x import add_x_bounds
 from constants import POSE_TUCKING_START, POSE_TUCKING_END, POSE_LANDING_START
 from constraints import add_constraints
-from bounds_x import add_x_bounds
-from save_results import save_results
 from multistart import prepare_multi_start
-
-
-def initialize_tau():
-    tau_min_total = [0, 0, 0, -325.531, -138, -981.1876, -735.3286, -343.9806]
-    tau_max_total = [0, 0, 0, 325.531, 138, 981.1876, 735.3286, 343.9806]
-    tau_min = [i * 0.7 for i in tau_min_total]
-    tau_max = [i * 0.7 for i in tau_max_total]
-    tau_init = 0
-    return tau_min, tau_max, tau_init
+from objectives import minimize_actuator_torques, add_objectives, add_tau_derivative_objectives
+from save_results import save_results
+from save_load_helpers import get_created_data_from_pickle
 
 
 def add_u_bounds(u_bounds, tau_min, tau_max):
@@ -163,18 +155,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     x_init.add("qdot", np.array([[0] * n_qdot, [0] * n_qdot]).T, interpolation=InterpolationType.LINEAR, phase=3)
     x_init.add("q", sol_salto["q"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
     x_init.add("qdot", sol_salto["qdot"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
-
-    # # Initial guess from somersault
-    # x_init.add("q", sol_salto["q"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
-    # x_init.add("qdot", sol_salto["qdot"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
-    # x_init.add("q", sol_salto["q"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    # x_init.add("qdot", sol_salto["qdot"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    # x_init.add("q", sol_salto["q"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
-    # x_init.add("qdot", sol_salto["qdot"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
-    # x_init.add("q", sol_salto["q"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
-    # x_init.add("qdot", sol_salto["qdot"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
-    # x_init.add("q", sol_salto["q"][4], interpolation=InterpolationType.EACH_FRAME, phase=4)
-    # x_init.add("qdot", sol_salto["qdot"][4], interpolation=InterpolationType.EACH_FRAME, phase=4)
 
     # Define control path constraint
     u_bounds = BoundsList()
