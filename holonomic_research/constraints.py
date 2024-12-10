@@ -75,21 +75,24 @@ def add_constraints(constraints) -> ConstraintList:
         phase=0,
     )
 
+    MAX_TAKE_OFF_FORCE_THRESHOLD = 5
+    MIN_TAKE_OFF_FORCE_THRESHOLD = 0.01
+
     constraints.add(
         ConstraintFcn.TRACK_CONTACT_FORCES,
-        node=Node.PENULTIMATE,
+        node=Node.END,
         contact_index=0,
         phase=0,
-        min_bound=0.01,
-        max_bound=250,
+        min_bound=MIN_TAKE_OFF_FORCE_THRESHOLD,
+        max_bound=MAX_TAKE_OFF_FORCE_THRESHOLD,
     )
     constraints.add(
         ConstraintFcn.TRACK_CONTACT_FORCES,
-        node=Node.PENULTIMATE,
+        node=Node.END,
         contact_index=1,
         phase=0,
-        min_bound=0.01,
-        max_bound=250,
+        min_bound=MIN_TAKE_OFF_FORCE_THRESHOLD,
+        max_bound=MAX_TAKE_OFF_FORCE_THRESHOLD,
     )
 
     # Phase 4 (Landing):

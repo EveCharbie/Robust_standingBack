@@ -87,10 +87,12 @@ def add_x_bounds(bio_models) -> BoundsList:
 
     q_bounds[4].max[:, -1] = np.array(POSE_LANDING_END) + 0.2  # 0.5
     q_bounds[4].min[:, -1] = np.array(POSE_LANDING_END) - 0.2
+
     # large slack on arm angles
     q_bounds[4].max[4, -1] = np.pi / 2
-    q_bounds[4].min[4, -1] = -0.7
+    q_bounds[4].min[4, -1] = 0  # no hyper extension of elbow
     q_bounds[4].max[5, -1] = 2.9
     q_bounds[4].min[5, -1] = 0
+    q_bounds[4].min[6, -1] = 0  # no hyper extension of knee
 
     return q_bounds, qdot_bounds
