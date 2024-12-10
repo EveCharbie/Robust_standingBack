@@ -31,13 +31,6 @@ def get_created_data_from_pickle(file: str):
     return data_tmp
 
 
-# def time_to_percentage(time):
-#     time_pourcentage_CL = np.zeros(time.shape)
-#     for i in range(0, time.shape[0]):
-#        time_pourcentage_CL[i] = time[i] * 100 / time[time.shape[0]-1]
-#     return time_pourcentage_CL
-
-
 def plot_vertical_time_lines(time_end_phase_CL, time_end_phase_without, ax, color, linestyle, linewidth):
     color_CL = "tab:orange" if color is None else color
     color_without = "tab:blue" if color is None else color
