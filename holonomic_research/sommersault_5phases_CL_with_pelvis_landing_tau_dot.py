@@ -140,8 +140,12 @@ def prepare_ocp(biorbd_model_path: tuple, phase_time: tuple, n_shooting: tuple, 
     x_bounds = BoundsList()
     q_bounds, qdot_bounds = add_x_bounds(bio_model)
     for i_phase, _ in enumerate(bio_model):
-        x_bounds.add("tau", min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
-                         max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]], phase=i_phase)
+        x_bounds.add(
+            "tau",
+            min_bound=[tau_min[3], tau_min[4], tau_min[5], tau_min[6], tau_min[7]],
+            max_bound=[tau_max[3], tau_max[4], tau_max[5], tau_max[6], tau_max[7]],
+            phase=i_phase,
+        )
         if i_phase == 2:
             qu_bounds = Bounds(
                 "q_u",
@@ -207,7 +211,6 @@ def prepare_ocp(biorbd_model_path: tuple, phase_time: tuple, n_shooting: tuple, 
     if WITH_MULTI_START:
         x_init.add_noise(
             bounds=x_bounds,
-            # magnitude=0,
             magnitude=0.2,
             magnitude_type=MagnitudeType.RELATIVE,
             n_shooting=[n_shooting[i] + 1 for i in range(len(n_shooting))],
@@ -215,7 +218,6 @@ def prepare_ocp(biorbd_model_path: tuple, phase_time: tuple, n_shooting: tuple, 
         )
         u_init.add_noise(
             bounds=u_bounds,
-            # magnitude=0,
             magnitude=0.1,
             magnitude_type=MagnitudeType.RELATIVE,
             n_shooting=[n_shooting[i] for i in range(len(n_shooting))],
@@ -249,7 +251,7 @@ sol_salto = get_created_data_from_pickle(JUMP_INIT_PATH)
 # --- Load model --- #
 def main():
 
-    WITH_MULTI_START = True
+    WITH_MULTI_START = False
 
     biorbd_model_path = (PATH_MODEL_1_CONTACT, PATH_MODEL, PATH_MODEL, PATH_MODEL, PATH_MODEL_1_CONTACT)
     phase_time = (0.2, 0.2, 0.3, 0.3, 0.3)
