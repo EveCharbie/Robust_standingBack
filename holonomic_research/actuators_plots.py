@@ -23,6 +23,29 @@ def plot_range(ax, min_q, max_q, tau_max_plus, tau_max_minus):
     return
 
 
+def plot_gaussian_appendix():
+    r = 1.4
+    theta_opt = 5
+    tau_max = 10
+    
+    x_grid = np.linspace(0.1, 10, 100)
+    y_grid = actuator_function(tau_max, theta_opt, r, x_grid)
+    q_i = 4.1
+    tau_i = actuator_function(tau_max, theta_opt, r, q_i)
+
+    plt.figure()
+    plt.plot(np.array([theta_opt, theta_opt]), np.array([0, 13]), '--', color='tab:pink')
+    plt.plot(np.array([theta_opt-r, theta_opt-r]), np.array([0, 13]), '--', color='tab:green')
+    plt.plot(np.array([theta_opt+r, theta_opt+r]), np.array([0, 13]), '--', color='tab:green')
+    plt.plot(np.array([0, 10]), np.array([tau_max, tau_max]), '--', color='tab:cyan')
+    plt.plot(x_grid, y_grid, color='tab:red', linewidth=2)
+    plt.plot(q_i, tau_i, 'ok')
+    plt.plot(np.array([0, q_i]), np.array([tau_i, tau_i]), '-k', linewidth=2)
+    plt.plot(np.array([q_i, q_i]), np.array([0, tau_i]), '-k', linewidth=2)
+    plt.savefig("gaussian_appendix.svg", format="svg")
+    plt.show()
+    return
+
 if __name__ == "__main__":
     model = biorbd.Model("../models/Pyomecaman_original.bioMod")
 
@@ -48,3 +71,5 @@ if __name__ == "__main__":
         axs[i_ddl].set_title(ddl)
     axs[i_ddl].legend()
     plt.show()
+
+    plot_gaussian_appendix()
