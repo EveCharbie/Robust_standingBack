@@ -172,6 +172,12 @@ def save_results_holonomic(
     with open(file_path, "wb") as file:
         pickle.dump(data, file)
 
+    sol.print_cost()
+    file_path_sol = file_path.replace(".pkl", f"_sol.pkl")
+    with open(file_path_sol, "wb") as file:
+        del sol.ocp
+        pickle.dump(sol, file)
+
 
 def save_results_taudot(
     sol,
@@ -274,8 +280,10 @@ def save_results_taudot(
         pickle.dump(data, file)
 
     sol.print_cost()
-
-    return
+    file_path_sol = file_path.replace(".pkl", f"_sol.pkl")
+    with open(file_path_sol, "wb") as file:
+        del sol.ocp
+        pickle.dump(sol, file)
 
 
 # tau, no taudot, no close loop
@@ -370,11 +378,18 @@ def save_results(
     with open(file_path, "wb") as file:
         pickle.dump(data, file)
 
-    return
+    sol.print_cost()
+    file_path_sol = file_path.replace(".pkl", f"_sol.pkl")
+    with open(file_path_sol, "wb") as file:
+        del sol.ocp
+        pickle.dump(sol, file)
 
-def save_results_holonomic_taudot(sol,
-                 *combinatorial_parameters,
-                 **extra_parameters,):
+
+def save_results_holonomic_taudot(
+    sol,
+    *combinatorial_parameters,
+    **extra_parameters,
+):
     """
     Solving the ocp
     Parameters
@@ -386,7 +401,7 @@ def save_results_holonomic_taudot(sol,
     """
     biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, seed = combinatorial_parameters
     index_holo = 2
-    biomedel_holo =  sol.ocp.nlp[index_holo].model
+    biomedel_holo = sol.ocp.nlp[index_holo].model
 
     # Save path
     save_folder = extra_parameters["save_folder"]
@@ -429,7 +444,7 @@ def save_results_holonomic_taudot(sol,
 
     q = []
     qdot = []
-    qddot =[]
+    qddot = []
     tau = []
     taudot = []
     time = []
@@ -462,17 +477,19 @@ def save_results_holonomic_taudot(sol,
 
                 lambdas = np.zeros((2, tau_this_time.shape[1]))
                 for i_node in range(tau_this_time.shape[1]):
-                    lambdas[:, i_node] = np.reshape(lagrangian_multipliers_func(q_u[:, i_node], qdot_u[:, i_node], tau_this_time[:, i_node]), (2,))
+                    lambdas[:, i_node] = np.reshape(
+                        lagrangian_multipliers_func(q_u[:, i_node], qdot_u[:, i_node], tau_this_time[:, i_node]), (2,)
+                    )
 
                 q.append(q_holo)
                 qdot.append(qdot_holo)
                 tau.append(states[i]["tau"])
                 taudot.append(controls[i]["taudot"])
                 time.append(list_time[i])
-                min_bounds_q.append(sol.ocp.nlp[i].x_bounds['q_u'].min)
-                max_bounds_q.append(sol.ocp.nlp[i].x_bounds['q_u'].max)
-                min_bounds_qdot.append(sol.ocp.nlp[i].x_bounds['qdot_u'].min)
-                max_bounds_qdot.append(sol.ocp.nlp[i].x_bounds['qdot_u'].max)
+                min_bounds_q.append(sol.ocp.nlp[i].x_bounds["q_u"].min)
+                max_bounds_q.append(sol.ocp.nlp[i].x_bounds["q_u"].max)
+                min_bounds_qdot.append(sol.ocp.nlp[i].x_bounds["qdot_u"].min)
+                max_bounds_qdot.append(sol.ocp.nlp[i].x_bounds["qdot_u"].max)
                 min_bounds_tau.append(sol.ocp.nlp[i].x_bounds["tau"].min)
                 max_bounds_tau.append(sol.ocp.nlp[i].x_bounds["tau"].max)
                 min_bounds_taudot.append(sol.ocp.nlp[i].u_bounds["taudot"].min)
@@ -483,10 +500,10 @@ def save_results_holonomic_taudot(sol,
                 tau.append(states[i]["tau"])
                 taudot.append(controls[i]["taudot"])
                 time.append(list_time[i])
-                min_bounds_q.append(sol.ocp.nlp[i].x_bounds['q'].min)
-                max_bounds_q.append(sol.ocp.nlp[i].x_bounds['q'].max)
-                min_bounds_qdot.append(sol.ocp.nlp[i].x_bounds['qdot'].min)
-                max_bounds_qdot.append(sol.ocp.nlp[i].x_bounds['qdot'].max)
+                min_bounds_q.append(sol.ocp.nlp[i].x_bounds["q"].min)
+                max_bounds_q.append(sol.ocp.nlp[i].x_bounds["q"].max)
+                min_bounds_qdot.append(sol.ocp.nlp[i].x_bounds["qdot"].min)
+                max_bounds_qdot.append(sol.ocp.nlp[i].x_bounds["qdot"].max)
                 min_bounds_tau.append(sol.ocp.nlp[i].x_bounds["tau"].min)
                 max_bounds_tau.append(sol.ocp.nlp[i].x_bounds["tau"].max)
                 min_bounds_taudot.append(sol.ocp.nlp[i].u_bounds["taudot"].min)
@@ -543,4 +560,7 @@ def save_results_holonomic_taudot(sol,
         pickle.dump(data, file)
 
     sol.print_cost()
-    # sol.graphs(save_name=file_path[:-4])
+    file_path_sol = file_path.replace(".pkl", f"_sol.pkl")
+    with open(file_path_sol, "wb") as file:
+        del sol.ocp
+        pickle.dump(sol, file)
