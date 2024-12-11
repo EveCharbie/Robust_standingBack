@@ -466,47 +466,66 @@ if PLOT_TAU_FLAG:
     fig.savefig("qdot" + "." + format_graph, format=format_graph)
 
 
-    # Change the sign of the theta_opt for the knee
-    ACTUATORS["Knees"] = Joint(
-            tau_max_plus=367.6643 * 2,
-            theta_opt_plus=61.7303 * np.pi / 180,
-            r_plus=31.7218 * np.pi / 180,
-            tau_max_minus=177.9694 * 2,
-            theta_opt_minus=33.2908 * np.pi / 180,
-            r_minus=57.0370 * np.pi / 180,
-            min_q=-2.3,
-            max_q=0.02,
-        )
-
     tau_CL_min_bound = np.zeros((5, tau_CL.shape[1]))
     tau_CL_max_bound = np.zeros((5, tau_CL.shape[1]))
     tau_without_min_bound = np.zeros((5, tau_without.shape[1]))
     tau_without_max_bound = np.zeros((5, tau_without.shape[1]))
     for i_dof, key in enumerate(ACTUATORS.keys()):
-        tau_CL_min_bound[i_dof, :] = -actuator_function(
-            ACTUATORS[key].tau_max_minus,
-            ACTUATORS[key].theta_opt_minus,
-            ACTUATORS[key].r_minus,
-            q_CL_rad[i_dof + 3],
-        )
-        tau_CL_max_bound[i_dof, :] = actuator_function(
-            ACTUATORS[key].tau_max_plus,
-            ACTUATORS[key].theta_opt_plus,
-            ACTUATORS[key].r_plus,
-            q_CL_rad[i_dof + 3],
-        )
-        tau_without_min_bound[i_dof, :] = -actuator_function(
-            ACTUATORS[key].tau_max_minus,
-            ACTUATORS[key].theta_opt_minus,
-            ACTUATORS[key].r_minus,
-            q_without_rad[i_dof + 3],
-        )
-        tau_without_max_bound[i_dof, :] = actuator_function(
-            ACTUATORS[key].tau_max_plus,
-            ACTUATORS[key].theta_opt_plus,
-            ACTUATORS[key].r_plus,
-            q_without_rad[i_dof + 3],
-        )
+        # Change the sign of the theta_opt for the knee
+        if i_dof == 3:
+            true_min_CL = -actuator_function(
+                ACTUATORS[key].tau_max_minus,
+                ACTUATORS[key].theta_opt_minus,
+                ACTUATORS[key].r_minus,
+                -q_CL_rad[i_dof + 3],
+            )
+            true_max_CL = actuator_function(
+                ACTUATORS[key].tau_max_plus,
+                ACTUATORS[key].theta_opt_plus,
+                ACTUATORS[key].r_plus,
+                -q_CL_rad[i_dof + 3],
+            )
+            true_min_without = -actuator_function(
+                ACTUATORS[key].tau_max_minus,
+                ACTUATORS[key].theta_opt_minus,
+                ACTUATORS[key].r_minus,
+                -q_without_rad[i_dof + 3],
+            )
+            true_max_without = actuator_function(
+                ACTUATORS[key].tau_max_plus,
+                ACTUATORS[key].theta_opt_plus,
+                ACTUATORS[key].r_plus,
+                -q_without_rad[i_dof + 3],
+            )
+            tau_CL_min_bound[i_dof, :] = -true_max_CL
+            tau_CL_max_bound[i_dof, :] = -true_min_CL
+            tau_without_min_bound[i_dof, :] = -true_max_without
+            tau_without_max_bound[i_dof, :] = -true_min_without
+        else:
+            tau_CL_min_bound[i_dof, :] = -actuator_function(
+                ACTUATORS[key].tau_max_minus,
+                ACTUATORS[key].theta_opt_minus,
+                ACTUATORS[key].r_minus,
+                q_CL_rad[i_dof + 3],
+            )
+            tau_CL_max_bound[i_dof, :] = actuator_function(
+                ACTUATORS[key].tau_max_plus,
+                ACTUATORS[key].theta_opt_plus,
+                ACTUATORS[key].r_plus,
+                q_CL_rad[i_dof + 3],
+            )
+            tau_without_min_bound[i_dof, :] = -actuator_function(
+                ACTUATORS[key].tau_max_minus,
+                ACTUATORS[key].theta_opt_minus,
+                ACTUATORS[key].r_minus,
+                q_without_rad[i_dof + 3],
+            )
+            tau_without_max_bound[i_dof, :] = actuator_function(
+                ACTUATORS[key].tau_max_plus,
+                ACTUATORS[key].theta_opt_plus,
+                ACTUATORS[key].r_plus,
+                q_without_rad[i_dof + 3],
+            )
 
     # Figure tau
     fig, axs = plt.subplots(2, 3, figsize=(10, 4))
@@ -529,10 +548,7 @@ if PLOT_TAU_FLAG:
 
     for i_dof in range(tau_CL.shape[0]):
         axs[num_line, num_col].plot(np.array([time_min_graph, time_max_graph]), np.array([0, 0]), "-k", linewidth=0.5)
-
-        # axs[num_line, num_col].step(range(len(tau_without[i_dof])), tau_without_max_bound[i_dof], color="tab:blue", alpha=0.5, linewidth=0.5)
         axs[num_line, num_col].fill_between(
-            # time_control_without,
             time_vector_without,
             tau_without_max_bound[i_dof],
             np.ones(tau_without_max_bound[i_dof].shape) * 1000,
@@ -1050,8 +1066,8 @@ if PLOT_INERTIA_FLAG:
     ax[3].set_xlabel("Time [s]")
 
     fig.subplots_adjust()
-    # plt.savefig("Inertia" + "." + format_graph, format = format_graph)
-    plt.show()
+    plt.savefig("Inertia" + "." + format_graph, format = format_graph)
+    # plt.show()
 
 
 if PLOT_ENERY_FLAG:
@@ -1059,8 +1075,8 @@ if PLOT_ENERY_FLAG:
     power_CL = np.abs(tau_CL * qdot_CL_rad[3:, :])
     power_total_without = np.sum(power_without, axis=0)
     power_total_CL = np.sum(power_CL, axis=0)
-    energy_without = np.sum(np.trapz(power_without, time_vector_without))
-    energy_CL = np.sum(np.trapz(power_CL, time_vector_CL))
+    energy_without = np.trapz(power_total_without, time_vector_without)
+    energy_CL = np.trapz(power_total_CL, time_vector_CL)
 
     fig, axs = plt.subplots(1, 2, figsize=(10, 4))
     axs[0].plot(time_vector_CL, power_total_CL, color="tab:orange", label="Holonomic tucking constraints")
@@ -1106,5 +1122,5 @@ if PLOT_ENERY_FLAG:
     axs[1].set_xticks([0, 1], ["HTC", "KTC"])
 
     plt.subplots_adjust(wspace=0.4, bottom=0.2, top=0.8)
-    # plt.savefig("Energy"+ "." + format_graph, format=format_graph)
+    plt.savefig("Energy"+ "." + format_graph, format=format_graph)
     plt.show()
