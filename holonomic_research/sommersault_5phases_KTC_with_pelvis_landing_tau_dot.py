@@ -161,23 +161,21 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
         u_bounds.add("taudot", min_bound=[-10000] * 5, max_bound=[10000] * 5, phase=i_phase)
         u_init.add("taudot", [0] * 5, phase=i_phase)
 
-    # if WITH_MULTI_START:
-    # x_init.add_noise(
-    #     bounds=x_bounds,
-    #     # magnitude=0,
-    #     magnitude=0.2,
-    #     magnitude_type=MagnitudeType.RELATIVE,
-    #     n_shooting=[n_shooting[i] + 1 for i in range(len(n_shooting))],
-    #     seed=seed,
-    # )
-    # u_init.add_noise(
-    #     bounds=u_bounds,
-    #     # magnitude=0,
-    #     magnitude=0.1,
-    #     magnitude_type=MagnitudeType.RELATIVE,
-    #     n_shooting=[n_shooting[i] for i in range(len(n_shooting))],
-    #     seed=seed,
-    # )
+    if WITH_MULTI_START:
+        x_init.add_noise(
+            bounds=x_bounds,
+            magnitude=0.2,
+            magnitude_type=MagnitudeType.RELATIVE,
+            n_shooting=[n_shooting[i] + 1 for i in range(len(n_shooting))],
+            seed=seed,
+        )
+        u_init.add_noise(
+            bounds=u_bounds,
+            magnitude=0.1,
+            magnitude_type=MagnitudeType.RELATIVE,
+            n_shooting=[n_shooting[i] for i in range(len(n_shooting))],
+            seed=seed,
+        )
 
     return OptimalControlProgram(
         bio_model=bio_model,
@@ -198,7 +196,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
 
 # --- Parameters --- #
 movement = "Salto"
-version = "Pierre_taudot2_force_constrained"
+version = "Pierre_taudot2_KTC_force_constrained_with_noise"
 nb_phase = 5
 sol_salto = get_created_data_from_pickle(JUMP_INIT_PATH)
 

@@ -187,7 +187,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
 
 # --- Parameters --- #
 movement = "Salto"
-version = "Pierre_taudot2_force_constrained"
+version = "Pierre_taudot2_force_constrained_5N"
 nb_phase = 5
 sol_salto = get_created_data_from_pickle(JUMP_INIT_PATH)
 
