@@ -1,5 +1,6 @@
 from bioptim import Solution, SolutionMerge
 import casadi as cas
+from casadi import MX, Function, vertcat
 import numpy as np
 import pickle
 import os
@@ -74,6 +75,7 @@ def save_results_holonomic(
     max_bounds_qdot = []
     min_bounds_tau = []
     max_bounds_tau = []
+    contact_forces = []
 
     if len(sol.ocp.n_shooting) == 1:
         q = states["q_u"]
@@ -109,6 +111,8 @@ def save_results_holonomic(
                 max_bounds_qdot.append(sol.ocp.nlp[i].x_bounds["qdot_u"].max)
                 min_bounds_tau.append(sol.ocp.nlp[i].u_bounds["tau"].min)
                 max_bounds_tau.append(sol.ocp.nlp[i].u_bounds["tau"].max)
+
+                contact_forces.append(None)
             else:
                 q.append(states[i]["q"])
                 qdot.append(states[i]["qdot"])
@@ -121,6 +125,15 @@ def save_results_holonomic(
                 min_bounds_tau.append(sol.ocp.nlp[i].u_bounds["tau"].min)
                 max_bounds_tau.append(sol.ocp.nlp[i].u_bounds["tau"].max)
 
+                contact_forces.append(
+                    contact_force_recomputations(
+                        biomodel=sol.ocp.nlp[i].model,
+                        q=states[i]["q"],
+                        qdot=states[i]["qdot"],
+                        tau=controls[i]["tau"],
+                    )
+                )
+
     data["q"] = q
     data["qdot"] = qdot
     data["qddot"] = qddot
@@ -132,6 +145,8 @@ def save_results_holonomic(
     data["max_bounds_qdot"] = max_bounds_qdot
     data["min_bounds_tau"] = min_bounds_q
     data["max_bounds_tau"] = max_bounds_q
+    data["contact_forces"] = contact_forces
+
     data["cost"] = sol.cost
     data["iterations"] = sol.iterations
     # data["detailed_cost"] = sol.add_detailed_cost
@@ -215,6 +230,7 @@ def save_results_taudot(
     max_bounds_tau = []
     min_bounds_taudot = []
     max_bounds_taudot = []
+    contact_forces = []
 
     for i in range(len(states)):
         q.append(states[i]["q"])
@@ -231,6 +247,15 @@ def save_results_taudot(
         min_bounds_taudot.append(sol.ocp.nlp[i].u_bounds["taudot"].min)
         max_bounds_taudot.append(sol.ocp.nlp[i].u_bounds["taudot"].max)
 
+        contact_forces.append(
+            contact_force_recomputations(
+                biomodel=sol.ocp.nlp[i].model,
+                q=states[i]["q"],
+                qdot=states[i]["qdot"],
+                tau=states[i]["tau"],
+            )
+        )
+
     data["q"] = q
     data["qdot"] = qdot
     data["tau"] = tau
@@ -244,6 +269,8 @@ def save_results_taudot(
     data["max_bounds_tau"] = max_bounds_tau
     data["min_bounds_taudot"] = min_bounds_taudot
     data["max_bounds_taudot"] = max_bounds_taudot
+    data["contact_forces"] = contact_forces
+
     data["cost"] = sol.cost
     data["iterations"] = sol.iterations
     # data["detailed_cost"] = sol.add_detailed_cost
@@ -320,6 +347,7 @@ def save_results(
     max_bounds_qdot = []
     min_bounds_tau = []
     max_bounds_tau = []
+    contact_forces = []
 
     for i in range(len(states)):
         q.append(states[i]["q"])
@@ -333,6 +361,15 @@ def save_results(
         min_bounds_tau.append(sol.ocp.nlp[i].u_bounds["tau"].min)
         max_bounds_tau.append(sol.ocp.nlp[i].u_bounds["tau"].max)
 
+        contact_forces.append(
+            contact_force_recomputations(
+                biomodel=sol.ocp.nlp[i].model,
+                q=states[i]["q"],
+                qdot=states[i]["qdot"],
+                tau=controls[i]["tau"],
+            )
+        )
+
     data["q"] = q
     data["qdot"] = qdot
     data["tau"] = tau
@@ -341,8 +378,10 @@ def save_results(
     data["max_bounds_q"] = max_bounds_q
     data["min_bounds_qdot"] = min_bounds_qdot
     data["max_bounds_qdot"] = max_bounds_qdot
-    data["min_bounds_tau"] = min_bounds_q
-    data["max_bounds_tau"] = max_bounds_q
+    data["min_bounds_tau"] = min_bounds_tau
+    data["max_bounds_tau"] = max_bounds_tau
+    data["contact_forces"] = contact_forces
+
     data["cost"] = sol.cost
     data["iterations"] = sol.iterations
     # data["detailed_cost"] = sol.add_detailed_cost
@@ -456,6 +495,7 @@ def save_results_holonomic_taudot(
     max_bounds_tau = []
     min_bounds_taudot = []
     max_bounds_taudot = []
+    contact_forces = []
 
     if len(sol.ocp.n_shooting) == 1:
         q = states["q_u"]
@@ -494,6 +534,8 @@ def save_results_holonomic_taudot(
                 max_bounds_tau.append(sol.ocp.nlp[i].x_bounds["tau"].max)
                 min_bounds_taudot.append(sol.ocp.nlp[i].u_bounds["taudot"].min)
                 max_bounds_taudot.append(sol.ocp.nlp[i].u_bounds["taudot"].max)
+
+                contact_forces.append(None)
             else:
                 q.append(states[i]["q"])
                 qdot.append(states[i]["qdot"])
@@ -509,6 +551,15 @@ def save_results_holonomic_taudot(
                 min_bounds_taudot.append(sol.ocp.nlp[i].u_bounds["taudot"].min)
                 max_bounds_taudot.append(sol.ocp.nlp[i].u_bounds["taudot"].max)
 
+                contact_forces.append(
+                    contact_force_recomputations(
+                        biomodel=sol.ocp.nlp[i].model,
+                        q=states[i]["q"],
+                        qdot=states[i]["qdot"],
+                        tau=states[i]["tau"],
+                    )
+                )
+
     data["q"] = q
     data["qdot"] = qdot
     data["qddot"] = qddot
@@ -523,6 +574,8 @@ def save_results_holonomic_taudot(
     data["max_bounds_tau"] = max_bounds_tau
     data["min_bounds_taudot"] = min_bounds_taudot
     data["max_bounds_taudot"] = max_bounds_taudot
+    data["contact_forces"] = contact_forces
+
     data["cost"] = sol.cost
     data["iterations"] = sol.iterations
     # data["detailed_cost"] = sol.add_detailed_cost
@@ -564,3 +617,40 @@ def save_results_holonomic_taudot(
     with open(file_path_sol, "wb") as file:
         del sol.ocp
         pickle.dump(sol, file)
+
+
+def contact_force_recomputations(biomodel, q, qdot, tau):
+    """
+    Recompute the contact forces
+
+    Parameters
+    ----------
+    biomodel: biorbd.Model
+        The biorbd model
+    q: np.ndarray
+        The generalized coordinates
+    qdot: np.ndarray
+        The generalized velocities
+    tau: np.ndarray
+        The generalized forces
+    Returns
+    -------
+    np.ndarray
+        The contact forces
+    """
+    nb_frames = np.min((q.shape[1], qdot.shape[1], tau.shape[1]))
+
+    q_mx = MX.sym("q", biomodel.nb_q)
+    qdot_mx = MX.sym("qdot", biomodel.nb_q)
+    tau_mx = MX.sym("tau", biomodel.nb_q - 3)
+    tau_sym = vertcat(MX.zeros(3), tau_mx)
+    contact_force_sym = biomodel.contact_forces_from_constrained_forward_dynamics(q_mx, qdot_mx, tau_sym)
+    contact_forces_func = Function(
+        "contact_forces_func", [q_mx, qdot_mx, tau_mx], [contact_force_sym], ["q", "qdot", "tau"], ["contact_forces"]
+    )
+
+    contact_forces = np.zeros((biomodel.nb_contacts, nb_frames))
+    for i, (qi, qdoti, taui) in enumerate(zip(q.T, qdot.T, tau.T)):
+        contact_forces[:, i] = contact_forces_func(qi, qdoti, taui).full().T
+
+    return contact_forces
