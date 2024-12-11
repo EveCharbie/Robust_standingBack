@@ -113,6 +113,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
         )
 
     # Initial guess
+    sol_salto = get_created_data_from_pickle(JUMP_INIT_PATH)
     x_init = InitialGuessList()
     # Initial guess from Jump
     x_init.add("q", sol_salto["q"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
@@ -191,7 +192,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
 movement = "Salto"
 version = "Pierre_taudot2_force_constrained_5N"
 nb_phase = 5
-sol_salto = get_created_data_from_pickle(JUMP_INIT_PATH)
 
 
 # --- Load model --- #

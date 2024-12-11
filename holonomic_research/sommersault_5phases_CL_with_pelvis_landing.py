@@ -178,6 +178,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
             x_bounds.add("q", bounds=q_bounds[i_phase], phase=i_phase)
             x_bounds.add("qdot", bounds=qdot_bounds[i_phase], phase=i_phase)
 
+    # Initial guess
+    sol_salto = get_created_data_from_pickle(JUMP_INIT_PATH)
     x_init = InitialGuessList()
     # Initial guess from jump
     x_init.add("q", sol_salto["q"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
@@ -243,7 +245,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
 movement = "Salto_close_loop_landing"
 version = "Eve_final3"
 nb_phase = 5
-sol_salto = get_created_data_from_pickle(JUMP_INIT_PATH)
 
 
 # --- Load model --- #
