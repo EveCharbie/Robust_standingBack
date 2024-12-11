@@ -75,7 +75,7 @@ def add_constraints(constraints) -> ConstraintList:
         phase=0,
     )
 
-    MAX_TAKE_OFF_FORCE_THRESHOLD = 25
+    MAX_TAKE_OFF_FORCE_THRESHOLD = 50
     MIN_TAKE_OFF_FORCE_THRESHOLD = 0.01
 
     constraints.add(
