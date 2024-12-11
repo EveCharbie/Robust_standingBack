@@ -41,7 +41,7 @@ from constraints import add_constraints
 from constants import JUMP_INIT_PATH
 from actuator_constants import ACTUATORS, initialize_tau
 from multistart import prepare_multi_start
-from phase_transitions import custom_takeoff
+from phase_transitions import custom_takeoff, continuity_only_q_and_qdot
 
 
 # --- Prepare ocp --- #
@@ -94,6 +94,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     # Transition de phase
     phase_transitions = PhaseTransitionList()
     phase_transitions.add(custom_takeoff, phase_pre_idx=0)
+    phase_transitions.add(continuity_only_q_and_qdot, phase_pre_idx=1)
+    phase_transitions.add(continuity_only_q_and_qdot, phase_pre_idx=2)
     phase_transitions.add(PhaseTransitionFcn.IMPACT, phase_pre_idx=3)
 
     # --- Constraints ---#
@@ -196,7 +198,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
 
 # --- Parameters --- #
 movement = "Salto"
-version = "Pierre_taudot2_KTC_force_constrained_with_noise"
+version = "Pierre_taudot2_KTC_force_constrained_with_noise_50N"
 nb_phase = 5
 sol_salto = get_created_data_from_pickle(JUMP_INIT_PATH)
 
