@@ -94,7 +94,6 @@ def custom_takeoff(controllers: list[PenaltyController, PenaltyController]):
 
     q_pre = pre.states["q"].mx
     qdot_pre = pre.states["qdot"].mx
-    qdot_impact = pre.model.qdot_from_impact(q_pre, qdot_pre)
 
     val = []
     cx_start = []
@@ -103,8 +102,6 @@ def custom_takeoff(controllers: list[PenaltyController, PenaltyController]):
         cx_end = vertcat(cx_end, pre.states[key].mapping.to_second.map(pre.states[key].cx))
         cx_start = vertcat(cx_start, post.states[key].mapping.to_second.map(post.states[key].cx))
         post_mx = post.states[key].mx
-        # if key == "qdot":
-        #     continuity = post.states["qdot"].mapping.to_first.map(post_mx - qdot_impact)
         if key == "tau":
             continuity = 0  # skip tau continuity
         else:
