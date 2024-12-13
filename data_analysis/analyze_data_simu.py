@@ -42,10 +42,8 @@ def plot_vertical_time_lines(time_end_phase_CL, time_end_phase_without, ax, colo
 
 
 # Solution with and without holonomic constraints
-path_sol = "/home/mickaelbegon/Documents/Anais/Results_simu"
-
-path_without = "../holonomic_research/solutions/"
-path_CL = "../holonomic_research/solutions_CL/"
+path_without = "../holonomic_research/solutions/KTC/"
+path_CL = "../holonomic_research/solutions_CL/HTC/"
 
 path_model = "../models/Model2D_7Dof_2C_5M_CL_V3.bioMod"
 model = biorbd.Model(path_model)
@@ -773,11 +771,11 @@ if PLOT_TAU_FLAG:
         linewidth=None,
     )
 
-    integral_tau_all_CL = np.trapz(np.sum(np.abs(tau_CL), axis=0), x=time_vector_CL)
-    integral_tau_all_without = np.trapz(np.sum(np.abs(tau_without), axis=0), x=time_vector_without)
+    integral_tau_all_CL = np.trapezoid(np.sum(np.abs(tau_CL), axis=0), x=time_vector_CL)
+    integral_tau_all_without = np.trapezoid(np.sum(np.abs(tau_without), axis=0), x=time_vector_without)
     axs[0, 1].bar([0, 1], [integral_tau_all_CL, integral_tau_all_without], color=["tab:orange", "tab:blue"])
-    integral_tau_all_ratio_CL = np.trapz(np.sum(np.abs(tau_CL_ratio_all), axis=0), x=time_vector_CL)
-    integral_tau_all_ratio_without = np.trapz(np.sum(np.abs(tau_without_ratio_all), axis=0), x=time_vector_without)
+    integral_tau_all_ratio_CL = np.trapezoid(np.sum(np.abs(tau_CL_ratio_all), axis=0), x=time_vector_CL)
+    integral_tau_all_ratio_without = np.trapezoid(np.sum(np.abs(tau_without_ratio_all), axis=0), x=time_vector_without)
     axs[1, 1].bar([0, 1], [integral_tau_all_ratio_CL, integral_tau_all_ratio_without], color=["tab:orange", "tab:blue"])
 
     # axs[0, 0].set_xlabel("Time [s]")
@@ -944,9 +942,9 @@ if PLOT_INERTIA_FLAG:
     ang_mom_CL = np.zeros((data_CL["q_all"].shape[1], 3))
     ang_mom_without = np.zeros((data_without["q_all"].shape[1], 3))
     for i in range(data_CL["q_all"].shape[1]):
-        ang_mom_CL[i, :] = model.angularMomentum(data_CL["q_all"][:, i], data_CL["qdot_all"][:, i]).to_array()
+        ang_mom_CL[i, :] = model.angularMomentum(data_CL["q_all"][:, i], data_CL["qdot_all"][:, i], True).to_array()
         ang_mom_without[i, :] = model.angularMomentum(
-            data_without["q_all"][:, i], data_without["qdot_all"][:, i]
+            data_without["q_all"][:, i], data_without["qdot_all"][:, i], True
         ).to_array()
 
     ax[1].plot(
@@ -1069,14 +1067,87 @@ if PLOT_INERTIA_FLAG:
     plt.savefig("Inertia" + "." + format_graph, format = format_graph)
     # plt.show()
 
+    comddot_without = np.zeros((3, data_without["q_all"].shape[1]))
+    comddot_CL = np.zeros((3, data_CL["q_all"].shape[1]))
+    for i_frame in range(data_CL["q_all"].shape[1]):
+        Q_without = data_without["q_all"][:, i_frame]
+        Qdot_without = data_without["qdot_all"][:, i_frame]
+        Tau_without = tau_without[:, i_frame]
+        Qddot_without = model.ForwardDynamics(Q_without, Qdot_without, Tau_without).to_array()
+        comddot_without[:, i_frame] = model.CoMddot(Q_without, Qdot_without, Qddot_without).to_array()
+        Q_CL = data_CL["q_all"][:, i_frame]
+        Qdot_CL = data_CL["qdot_all"][:, i_frame]
+        Tau_CL = tau_CL[:, i_frame]
+        Qddot_CL = model.ForwardDynamics(Q_CL, Qdot_CL, Tau_CL).to_array()
+        comddot_CL[:, i_frame] = model.CoMddot(Q_CL, Qdot_CL, Qddot_CL).to_array()
+
+    plt.figure()
+    plot_vertical_time_lines(
+        time_end_phase_CL[0], time_end_phase_without[0], plt, color="k", linestyle="-", linewidth=0.5
+    )
+    plot_vertical_time_lines(
+        time_end_phase_CL[1], time_end_phase_without[1], plt, color=None, linestyle=phase_delimiter[1], linewidth=None
+    )
+    plot_vertical_time_lines(
+        time_end_phase_CL[2], time_end_phase_without[2], plt, color=None, linestyle=phase_delimiter[2], linewidth=None
+    )
+    plot_vertical_time_lines(
+        time_end_phase_CL[3], time_end_phase_without[3], plt, color=None, linestyle=phase_delimiter[3], linewidth=None
+    )
+    plt.plot(time_vector_without, comddot_without[0, :], ':', label="x KTC", color="tab:blue")
+    plt.plot(time_vector_without, comddot_without[1, :], '--', label="y KTC", color="tab:blue")
+    plt.plot(time_vector_without, comddot_without[2, :], '-.', label="z KTC", color="tab:blue")
+    plt.plot(time_vector_without, np.linalg.norm(comddot_without, axis=0), '-', label="norm KTC", color="tab:blue", linewidth=3)
+    plt.plot(time_vector_CL, comddot_CL[0, :], ":", label="x HTC", color="tab:orange")
+    plt.plot(time_vector_CL, comddot_CL[1, :], "--", label="y HTC", color="tab:orange")
+    plt.plot(time_vector_CL, comddot_CL[2, :], "-.", label="z HTC", color="tab:orange")
+    plt.plot(time_vector_CL, np.linalg.norm(comddot_CL, axis=0), '-', label="norm HTC", color="tab:orange", linewidth=3)
+    plt.title("CoM ddot")
+    plt.legend()
+    plt.show()
+
+    comdot_without = np.zeros((3, data_without["q_all"].shape[1]))
+    comdot_CL = np.zeros((3, data_CL["q_all"].shape[1]))
+    for i_frame in range(data_CL["q_all"].shape[1]):
+        Q_without = data_without["q_all"][:, i_frame]
+        Qdot_without = data_without["qdot_all"][:, i_frame]
+        comdot_without[:, i_frame] = model.CoMdot(Q_without, Qdot_without).to_array()
+        Q_CL = data_CL["q_all"][:, i_frame]
+        Qdot_CL = data_CL["qdot_all"][:, i_frame]
+        comdot_CL[:, i_frame] = model.CoMdot(Q_CL, Qdot_CL).to_array()
+
+    plt.figure()
+    plot_vertical_time_lines(
+        time_end_phase_CL[0], time_end_phase_without[0], plt, color="k", linestyle="-", linewidth=0.5
+    )
+    plot_vertical_time_lines(
+        time_end_phase_CL[1], time_end_phase_without[1], plt, color=None, linestyle=phase_delimiter[1], linewidth=None
+    )
+    plot_vertical_time_lines(
+        time_end_phase_CL[2], time_end_phase_without[2], plt, color=None, linestyle=phase_delimiter[2], linewidth=None
+    )
+    plot_vertical_time_lines(
+        time_end_phase_CL[3], time_end_phase_without[3], plt, color=None, linestyle=phase_delimiter[3], linewidth=None
+    )
+    plt.plot(time_vector_without, comdot_without[0, :], ':', label="x KTC", color="tab:blue")
+    plt.plot(time_vector_without, comdot_without[1, :], '--', label="y KTC", color="tab:blue")
+    plt.plot(time_vector_without, comdot_without[2, :], '-.', label="z KTC", color="tab:blue")
+    plt.plot(time_vector_without, np.linalg.norm(comdot_without, axis=0), '-', label="norm KTC", color="tab:blue", linewidth=3)
+    plt.plot(time_vector_CL, comdot_CL[0, :], ":", label="x HTC", color="tab:orange")
+    plt.plot(time_vector_CL, comdot_CL[1, :], "--", label="y HTC", color="tab:orange")
+    plt.plot(time_vector_CL, comdot_CL[2, :], "-.", label="z HTC", color="tab:orange")
+    plt.plot(time_vector_CL, np.linalg.norm(comdot_CL, axis=0), '-', label="norm HTC", color="tab:orange", linewidth=3)
+    plt.title("CoM dot")
+    plt.legend()
+    plt.show()
 
 if PLOT_ENERY_FLAG:
     power_without = np.abs(tau_without * qdot_without_rad[3:, :])
     power_CL = np.abs(tau_CL * qdot_CL_rad[3:, :])
     power_total_without = np.sum(power_without, axis=0)
     power_total_CL = np.sum(power_CL, axis=0)
-    energy_without = np.trapz(power_total_without, time_vector_without)
-    energy_CL = np.trapz(power_total_CL, time_vector_CL)
+    energy_without = np.trapezoid(power_total_without, time_vector_without)
+    energy_CL = np.trapezoid(power_total_CL, time_vector_CL)
 
     fig, axs = plt.subplots(1, 2, figsize=(10, 4))
     axs[0].plot(time_vector_CL, power_total_CL, color="tab:orange", label="Holonomic tucking constraints")
