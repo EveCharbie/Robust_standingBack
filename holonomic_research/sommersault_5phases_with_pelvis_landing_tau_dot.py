@@ -190,7 +190,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
 
 # --- Parameters --- #
 movement = "Salto"
-version = "Pierre_taudot2_force_constrained_5N"
+version = "Pierre_taudot2_FREE_force_constrained_50N"
 nb_phase = 5
 
 
@@ -232,7 +232,7 @@ def main():
 
         multi_start.solve()
     else:
-        ocp = prepare_ocp(biorbd_model_path[0], phase_time[0], n_shooting[0], WITH_MULTI_START=False)
+        ocp = prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START=False)
         # ocp.add_plot_penalty()
 
         solver.show_online_optim = False

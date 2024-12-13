@@ -1,12 +1,7 @@
 import bioviz
 from scipy.interpolate import interp1d
 import numpy as np
-from biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
 from save_load_helpers import get_created_data_from_pickle
-from bioptim import (
-    HolonomicConstraintsList,
-    HolonomicConstraintsFcn,
-)
 import matplotlib.pyplot as plt
 import math
 
