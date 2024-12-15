@@ -1,0 +1,18 @@
+cff-version: 1.1.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: Farr
+  given-names: Anaïs
+  orcid: https://orcid.org/0000-0003-4060-3386
+- family-names: Charbonneau
+  given-names: Eve
+  orcid: https://orcid.org/0000-0002-9215-3885
+- family-names: Begon
+  given-names: Mickael
+  orcid: https://orcid.org/0000-0002-4107-9160
+- family-names: Puchaud
+  given-names: Pierre
+  orcid: https://orcid.org/0000-0002-9335-630X
+title: tucked_backflip
+version: 0.1.0
+date-released: 

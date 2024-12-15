@@ -1,53 +1,42 @@
-# Robust_standingBack
-The purpose of this repo is to present all the work I've done on optima control backbend simulations during 
-my 6-month internship at the S2M laboratory of the Université de Montréal . 
-In particular, we worked on the robustness of the movement and on the implementation of a closed loop 
-of the kinematic chain during the tucked phase of a back somersault.
+# Introduction
+This repository contains the code generating the optimal control problems (OCP), the analyze of the data experimental and the results of the article entitled “Including limb-on-limb holonomic constraints in predictive simulation allows replicating athlete’s backflip technique”. The predictive simulation computes the optimal backflip techniques with and without a holonomic constraint. This holonomic constraint enables the avatar to use its hand to pull its shanks during the tuck phase. The goal is to compare the optimal kinematics in both scenarios and demonstrate that predictive simulations incorporating holonomic constraints produce more realistic and accurate representations of an athlete’s backflip technique.
 
-## Steps
-### 2D model
-Create model 2D from 3D model with the file `GeneratePlanarModel.py` in the folder ([`code_salto.py`](https://github.com/AnaisFarr/Robust_standingBack/blob/main/code_salto))
+# Cite this work
+```bibtex
+@article{Farr2025,
+title = {Including limb-on-limb holonomic constraints in predictive simulation allows replicating athlete’s backflip technique},
+journal = {},
+volume = {},
+pages = {},
+year = {2025},
+issn = {},
+doi = {},
+url = {},
+author = {A. Farr, E. Charbonneau, M. Begon and P. Puchaud},
+keywords = {Holonomic constraint, Constraint dynamics, Predictive simulation, Optimal control, Biomechanics, Gymnastics, Closed-loop}
+```
 
-### Generate jump, salto (3, 4, 5 and 6 phases) and salto with actuator
-All jump and salto simulations can be found in the folder: ([`code_salto.py`](https://github.com/AnaisFarr/Robust_standingBack/blob/main/code_salto))
+# Status
+| Type | Status |
+|---|---|
+| Zenodo  |  |
 
-In first, I create codes to generate simple jump in two ([`Salto_2phases.py`](https://github.com/AnaisFarr/Robust_standingBack/blob/main/code_salto/Jump_2phases.py)) and 
-three phases([`Salto_3phases.py`](https://github.com/AnaisFarr/Robust_standingBack/blob/main/code_salto/Jump_3phases.py)) in order to learn how to use bioptim.
+# How to install
+In order to run the code, you need to install the following packages from [pyomeca]( https://github.com/pyomeca):
+```bash
+conda install -c conda-forge biorbd=1.11.1
+```
+```bash
+conda install -c conda-forge bioviz=2.3.2
+```
+```bash
+conda install -c conda-forge bioptim=3.2.1
+```
+# Contents from the paper
+In predictive simulations of human movements, contact interactions between limbs are often neglected to reduce modeling complexity. However, limb-on-limb contacts are inherent to certain movements, such as the backward tuck somersault where athletes grasp their legs with their hands while rotating in the air. 
 
-The second step was to add a backward somersault during the flight phase, when the model attain the maximal height of 
-his centre of mass (CoM). I begin by implement a backward somersault in a 3 phases movement ([`Salto_3phases.py`](https://github.com/AnaisFarr/Robust_standingBack/blob/main/code_salto/Salto_3phases.py)) 
-and gradually I increase the number of phases until reach 7 phases([`Salto_7phases.py`](https://github.com/AnaisFarr/Robust_standingBack/blob/main/code_salto/Salto_7phases.py)).
+In the present study, we introduced limb-on-limb holonomic constraints into an optimal control problem to simulate more realistic techniques of backward tuck somersault. It was simulated using a planar digital twin comprising eight degrees of freedom and was divided into five phases: propulsion, pre-tuck flight, tuck, post-tuck flight, and landing. We modeled the limb-on-limb interaction during the tuck phase in two ways: 
+- with holonomic tucking constraints allowing force generation between the hands and shank
+- with kinematic tucking constraints only prescribing the hand position, without force generation. Incorporating the holonomic tucking constraint allowed the avatar to pull its shanks using its hands, replicating the behavior measured in an athlete. 
 
-We also tried to simulate a backward salto with actuator dynamics ([`Salto_actuator.py`](https://github.com/AnaisFarr/Robust_standingBack/blob/main/code_salto/Salto_actuator.py)).
-
-### Robustness
-After this, we want a code who produce two different techniques of backward somersault ([`Dedoublement_phase.py`](https://github.com/AnaisFarr/Robust_standingBack/blob/main/code_salto/Dedoublement_phase.py)): 
-one in 6 phases and an other with a waiting phase (i.e. phase 2) between the propulsion phase and the take-of phase.
-These two methods have the same results for the preparation of propulsion and the propulsion phase.
-
-![Robustness](docs/Dedoublement_phase.png "Method for inducing robustness")
-
-### Closed-loop during the tucked phase
-We also tried to simulate a backward salto with a closed-loop during the tucked phase, 
-all these simulations can be found in the folder: ([`holonomic_research`](https://github.com/AnaisFarr/Robust_standingBack/tree/ocp1/holonomic_research)). 
-Several salto with and without floating base and with a certain number of phases were simulated up to 6 phases
-([`Salto_6phases_CL.py](https://github.com/AnaisFarr/Robust_standingBack/blob/ocp1/holonomic_research/Salto_6phases_CL.py)). 
-However, the 6-phase salto is not yet complete, as the landing is too rigid.
-
-We list all the results of the simulation of jump and salto (simple, actuator, robustness and closed-loop) into a [Google Sheets](
-https://docs.google.com/spreadsheets/d/1Zcdg7ftSXRW_HKXzb-tU153mgNU3cz4pQy1RCIJ5Snk/edit?usp=sharing).
-
-## Model
-The different model use are in the folder "Model". 
-The name of the model is defines like this: `"Model2D_8Dof_2C_3M"` according to the type of the model (i.e. 2D or 3D), the number of degree of freedom (i.e. Dof) 
-the number of contact (i.e. C) and the number of markers (i.e. M).
-
-## How to save and visualize data
-
-To save data, we use a function save_results_with_pickle, from the [Save file](https://github.com/AnaisFarr/Robust_standingBack/blob/main/code_salto/Save.py), who use pickle to save all parameters (states, states dot, controls, cost, objectives, contraints).
-There are different codes for saving data depending on the nature of the salto (with or without a closed-loop during the grouping phase) 
-because the variables (i.e. q and qdot) do not have the same name with a closed-loop (i.e. q_u and qdot_u).
-
-To visualize data, we use the file [Visualisation](https://github.com/AnaisFarr/Robust_standingBack/blob/main/code_salto/visualisation.py).
-There are different codes to visualize the simulation according to the nature of the movement (i.e. with or without closed-loop) 
-and according to the number of phases (from 1 to 6).
+This pulling strategy reduced the hip joint torques and the metabolic energy expenditure required to counteract the centrifugal pseudo-forces during the somersault rotation, leading to a more efficient movement. These findings suggest that incorporating limb-on-limb holonomic constraints enhances the biomechanical accuracy and realism of simulated human movements. Our implementation of limb-on-limb holonomic constraints can be utilized in other simulation contexts, potentially advancing the modeling of complex human motions in sports science, rehabilitation, and robotics.
