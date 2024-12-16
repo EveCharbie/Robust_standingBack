@@ -178,6 +178,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
             x_bounds.add("q", bounds=q_bounds[i_phase], phase=i_phase)
             x_bounds.add("qdot", bounds=qdot_bounds[i_phase], phase=i_phase)
 
+    # Initial guess
+    sol_salto = get_created_data_from_pickle(JUMP_INIT_PATH)
     x_init = InitialGuessList()
     # Initial guess from jump
     x_init.add("q", sol_salto["q"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
@@ -243,13 +245,13 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
 movement = "Salto_close_loop_landing"
 version = "Eve_final3"
 nb_phase = 5
-sol_salto = get_created_data_from_pickle(JUMP_INIT_PATH)
 
 
 # --- Load model --- #
 def main():
 
     WITH_MULTI_START = True
+    save_folder = f"./solutions_CL/{str(movement)}_{str(nb_phase)}phases_V{version}"
 
     biorbd_model_path = (PATH_MODEL_1_CONTACT, PATH_MODEL, PATH_MODEL, PATH_MODEL, PATH_MODEL_1_CONTACT)
     phase_time = (0.2, 0.2, 0.3, 0.3, 0.3)
@@ -263,7 +265,6 @@ def main():
     solver.set_tol(1e-6)
 
     if WITH_MULTI_START:
-        save_folder = f"./solutions_CL/{str(movement)}_{str(nb_phase)}phases_V{version}"
 
         combinatorial_parameters = {
             "bio_model_path": [biorbd_model_path],
@@ -292,13 +293,11 @@ def main():
         sol.print_cost()
 
         # --- Save results --- #
-        # save_results_holonomic(
-        #     sol,
-        #     combinatorial_parameters,
-        #     save_folder=f"./solutions_CL/{str(movement)}_{str(nb_phase)}phases_V{version}",
-        # )
         sol.graphs(show_bounds=True, save_name=str(movement) + "_" + str(nb_phase) + "phases_V" + version)
-        sol.animate()
+        sol.animate(viewer="pyorerun")
+
+        combinatorial_parameters = [biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, "no_seed"]
+        save_results_holonomic(sol, *combinatorial_parameters, save_folder=save_folder)
 
 
 if __name__ == "__main__":

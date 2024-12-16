@@ -112,3 +112,46 @@ def custom_takeoff(controllers: list[PenaltyController, PenaltyController]):
     name = f"PHASE_TRANSITION_{pre.phase_idx % ocp.n_phases}_{post.phase_idx % ocp.n_phases}"
     func = pre.to_casadi_func(name, val, pre.states.mx, post.states.mx)(cx_end, cx_start)
     return func
+
+
+def continuity_only_q_and_qdot(controllers: list[PenaltyController, PenaltyController]):
+    """
+    A discontinuous function that simulates an inelastic impact of a new contact point
+
+    Parameters
+    ----------
+    transition: PhaseTransition
+        A reference to the phase transition
+    controllers: list[PenaltyController, PenaltyController]
+            The penalty node elements
+
+    Returns
+    -------
+    The difference between the last and first node after applying the impulse equations
+    """
+
+    ocp = controllers[0].ocp
+
+    # Aliases
+    pre, post = controllers
+
+    q_pre = pre.states["q"].mx
+    qdot_pre = pre.states["qdot"].mx
+
+    val = []
+    cx_start = []
+    cx_end = []
+    for key in pre.states:
+        cx_end = vertcat(cx_end, pre.states[key].mapping.to_second.map(pre.states[key].cx))
+        cx_start = vertcat(cx_start, post.states[key].mapping.to_second.map(post.states[key].cx))
+        post_mx = post.states[key].mx
+        if key == "tau":
+            continuity = 0  # skip tau continuity
+        else:
+            continuity = post.states[key].mapping.to_first.map(pre.states[key].mx - post_mx)
+
+        val = vertcat(val, continuity)
+
+    name = f"PHASE_TRANSITION_{pre.phase_idx % ocp.n_phases}_{post.phase_idx % ocp.n_phases}"
+    func = pre.to_casadi_func(name, val, pre.states.mx, post.states.mx)(cx_end, cx_start)
+    return func

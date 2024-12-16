@@ -41,7 +41,7 @@ from constraints import add_constraints
 from constants import JUMP_INIT_PATH
 from actuator_constants import ACTUATORS, initialize_tau
 from multistart import prepare_multi_start
-from phase_transitions import custom_takeoff
+from phase_transitions import custom_takeoff, continuity_only_q_and_qdot
 
 
 # --- Prepare ocp --- #
@@ -94,6 +94,8 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     # Transition de phase
     phase_transitions = PhaseTransitionList()
     phase_transitions.add(custom_takeoff, phase_pre_idx=0)
+    phase_transitions.add(continuity_only_q_and_qdot, phase_pre_idx=1)
+    phase_transitions.add(continuity_only_q_and_qdot, phase_pre_idx=2)
     phase_transitions.add(PhaseTransitionFcn.IMPACT, phase_pre_idx=3)
 
     # --- Constraints ---#
@@ -122,6 +124,7 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
         )
 
     # Initial guess
+    sol_salto = get_created_data_from_pickle(JUMP_INIT_PATH)
     x_init = InitialGuessList()
     # Initial guess from Jump
     x_init.add("q", sol_salto["q"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
@@ -196,15 +199,15 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
 
 # --- Parameters --- #
 movement = "Salto"
-version = "Pierre_taudot2_KTC_force_constrained_with_noise"
+version = "Pierre_taudot2_KTC_force_constrained_with_noise_50N"
 nb_phase = 5
-sol_salto = get_created_data_from_pickle(JUMP_INIT_PATH)
 
 
 # --- Load model --- #
 def main():
 
-    WITH_MULTI_START = True
+    WITH_MULTI_START = False
+    save_folder = f"./solutions/{str(movement)}_{str(nb_phase)}phases_V{version}"
 
     biorbd_model_path = (PATH_MODEL_1_CONTACT, PATH_MODEL, PATH_MODEL, PATH_MODEL, PATH_MODEL_1_CONTACT)
     phase_time = (0.2, 0.2, 0.3, 0.3, 0.3)
@@ -227,7 +230,6 @@ def main():
             "seed": list(range(0, 20)),
         }
 
-        save_folder = f"./solutions/{str(movement)}_{str(nb_phase)}phases_V{version}"
         multi_start = prepare_multi_start(
             prepare_ocp,
             save_results_taudot,
@@ -247,9 +249,11 @@ def main():
         sol.print_cost()
 
         # --- Save results --- #
-        # save_results_taudot(sol, combinatorial_parameters)
-        sol.graphs(show_bounds=True, save_name=str(movement) + "_" + str(nb_phase) + "phases_V" + version)
-        sol.animate(viewer="pyorerun")
+        # sol.graphs(show_bounds=True, save_name=str(movement) + "_" + str(nb_phase) + "phases_V" + version)
+        # sol.animate(viewer="pyorerun")
+
+        combinatorial_parameters = [biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, "no_seed"]
+        save_results_taudot(sol, *combinatorial_parameters, save_folder=save_folder)
 
 
 if __name__ == "__main__":
