@@ -4,7 +4,7 @@ from plotly.colors import DEFAULT_PLOTLY_COLORS
 from pyorerun import PhaseRerun, BiorbdModel
 from pyorerun.multi_frame_rate_phase_rerun import MultiFrameRatePhaseRerun
 
-folder = "Salto_5phases_VPierre_taudot2_force_constrained"
+folder = "KTC"
 model_path = "../../models/Model2D_7Dof_2C_5M_CL_V3.bioMod"
 
 # remove "rgb(" and ")" and split by ","

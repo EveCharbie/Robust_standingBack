@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import biorbd
 import matplotlib.pyplot as plt
+import pickle
 
 import sys
 sys.path.append("../holonomic_research/")
@@ -146,7 +147,13 @@ data_CL = pd.read_pickle(sol_CL)
 data_without = pd.read_pickle(sol_without)
 data_free = pd.read_pickle(sol_free)
 
+print("Computational time without: ", data_without["real_time_to_optimize"]/60, "min")
+print("Computational time CL: ", data_CL["real_time_to_optimize"]/60, "min")
+print("Computational time free: ", data_free["real_time_to_optimize"]/60, "min")
 
+print("Residual forces at take-off without: ", np.linalg.norm(data_without["contact_forces"][0][:, -1]), "N")
+print("Residual forces at take-off CL: ", np.linalg.norm(data_CL["contact_forces"][0][:, -1]), "N")
+print("Residual forces at take-off free: ", np.linalg.norm(data_free["contact_forces"][0][:, -1]), "N")
 
 PLOT_TAU_FLAG = True
 PLOT_INERTIA_FLAG = True
@@ -276,8 +283,12 @@ for i in range(len(data_CL["time"])):
     time_phase_without.append(data_without["time"][i][-1] - data_without["time"][i][0])
     time_phase_free.append(data_free["time"][i][-1] - data_free["time"][i][0])
 
-print("*** Phase_time *** \nCL :", time_phase_CL, "\nwithout : ", time_phase_without, "\nfree : ", time_phase_free)
-print("Total CL :", np.sum(time_phase_CL), "\nTotal without : ", np.sum(time_phase_without), "\nTotal free : ", np.sum(time_phase_free))
+print("*** Phase_time *** \nCL :", time_phase_CL, np.sum(time_phase_CL[1:4]),
+      "\nwithout : ", time_phase_without, np.sum(time_phase_without[1:4]),
+      "\nfree : ", time_phase_free, np.sum(time_phase_free[1:4]))
+print("Total CL :", np.sum(time_phase_CL),
+      "\nTotal without : ", np.sum(time_phase_without),
+      "\nTotal free : ", np.sum(time_phase_free))
 
 
 plt.figure()
@@ -285,6 +296,7 @@ plt.plot(data_CL["lambda"][0, :], "b")
 plt.plot(data_CL["lambda"][1, :], "r")
 plt.savefig("lambda_tempo.png")
 # plt.show()
+print("Maximal hand-on-shank contact force (norm): ", np.max(np.linalg.norm(data_CL["lambda"], axis=0)), "N")
 
 
 # Graphique
@@ -863,11 +875,28 @@ if PLOT_TAU_FLAG:
     axs[1, 1].plot([], [], color="tab:orange", label="Holonomic tucking constraints")
     axs[1, 1].legend(bbox_to_anchor=(1.0, 2.8), ncol=3)
 
-    axs[1, 1].set_ylabel(r"$\int{ | \tau/{\tilde{\tau^{max}}} | dt}$" + "\n[s]")
+    axs[1, 1].set_ylabel(r"$\int{ | \tau/{\tilde{\tau}^{max}} | dt}$" + "\n[s]")
     plt.subplots_adjust(hspace=0.4, wspace=0.3, top=0.85)
     plt.savefig("tau_ratio_all" + "." + format_graph, format=format_graph)
     # plt.show()
 
+    hip_tau_CL = np.trapezoid(np.abs(tau_CL[2, :]), x=time_vector_CL)
+    hip_tau_without = np.trapezoid(np.abs(tau_without[2, :]), x=time_vector_without)
+    hip_tau_free = np.trapezoid(np.abs(tau_free[2, :]), x=time_vector_free)
+    print("Hip tau CL: ", hip_tau_CL)
+    print("Hip tau without: ", hip_tau_without)
+    print("Hip tau free: ", hip_tau_free)
+    print(f"A reduction of {(hip_tau_without - hip_tau_CL) / hip_tau_without * 100:.2f}% with the HTC")
+    print(f"A reduction of {(hip_tau_free - hip_tau_CL) / hip_tau_free * 100:.2f}% with the NTC")
+
+    arm_tau_CL = np.trapezoid(np.abs(tau_CL[0, 21:104]) + np.abs(tau_CL[1, 21:104]), x=time_vector_CL[21:104])
+    arm_tau_without = np.trapezoid(np.abs(tau_without[0, 21:104]) + np.abs(tau_without[1, 21:104]), x=time_vector_without[21:104])
+    arm_tau_free = np.trapezoid(np.abs(tau_free[0, 21:104]) + np.abs(tau_free[1, 21:104]), x=time_vector_free[21:104])
+    print("Arm tau CL: ", arm_tau_CL)
+    print("Arm tau without: ", arm_tau_without)
+    print("Arm tau free: ", arm_tau_free)
+    print(f"A reduction of {(arm_tau_CL - arm_tau_without) / arm_tau_CL * 100:.2f}% with the HTC")
+    print(f"A reduction of {(arm_tau_free - hip_tau_CL) / arm_tau_free * 100:.2f}% with the NTC")
 
     # Figure taudot
     fig, axs = plt.subplots(2, 3, figsize=(10, 4))
@@ -1031,18 +1060,22 @@ if PLOT_INERTIA_FLAG:
     ax[1].set_xlim(time_min_graph, time_max_graph)
     ax[1].grid(True, linewidth=0.4)
 
+    print("Max angular momentum CL: ", np.max(np.linalg.norm(ang_mom_CL, axis=1)))
+    print("Max angular momentum without: ", np.max(np.linalg.norm(ang_mom_without, axis=1)))
+    print("Max angular momentum free: ", np.max(np.linalg.norm(ang_mom_free, axis=1)))
+
     # Body velocity
     body_velo_CL = np.zeros((data_CL["q_all"].shape[1], 3))
     body_velo_without = np.zeros((data_without["q_all"].shape[1], 3))
     body_velo_free = np.zeros((data_free["q_all"].shape[1], 3))
     for i in range(data_CL["q_all"].shape[1]):
-        body_velo_CL[i, :] = model.bodyAngularVelocity(data_CL["q_all"][:, i], data_CL["qdot_all"][:, i]).to_array()
+        body_velo_CL[i, :] = model.bodyAngularVelocity(data_CL["q_all"][:, i], data_CL["qdot_all"][:, i]).to_array() * 180/np.pi
         body_velo_without[i, :] = model.bodyAngularVelocity(
             data_without["q_all"][:, i], data_without["qdot_all"][:, i]
-        ).to_array()
+        ).to_array() * 180/np.pi
         body_velo_free[i, :] = model.bodyAngularVelocity(
             data_free["q_all"][:, i], data_free["qdot_all"][:, i]
-        ).to_array()
+        ).to_array() * 180/np.pi
 
     ax[2].plot(
         time_vector_free,
@@ -1073,6 +1106,11 @@ if PLOT_INERTIA_FLAG:
     ax[2].set_ylabel("Somersault velocity\n" + r"[$rad/s$]")
     ax[2].set_xlim(time_min_graph, time_max_graph)
     ax[2].grid(True, linewidth=0.4)
+
+    print("Max somersault velocity CL: ", np.max(body_velo_CL[:, 0]))
+    print("Max somersault velocity without: ", np.max(body_velo_without[:, 0]))
+    print("Max somersault velocity free: ", np.max(body_velo_free[:, 0]))
+
 
     # Centrifugal effect
     centricugal_CL = model.mass() * body_velo_CL[:, 0] ** 2 * np.sqrt(inertia_CL[:, 0] / model.mass())
@@ -1114,6 +1152,9 @@ if PLOT_INERTIA_FLAG:
     plt.savefig("Inertia" + "." + format_graph, format = format_graph)
     # plt.show()
 
+    print("Max centrifugal pseudo-force CL: ", np.max(centricugal_CL))
+    print("Max centrifugal pseudo-force without: ", np.max(centricugal_without))
+    print("Max centrifugal pseudo-force free: ", np.max(centricugal_free))
 
 if PLOT_ENERY_FLAG:
     power_without = np.abs(tau_without * qdot_without_rad[3:, :])
@@ -1125,6 +1166,12 @@ if PLOT_ENERY_FLAG:
     energy_without = np.trapezoid(power_total_without, time_vector_without)
     energy_free = np.trapezoid(power_total_free, time_vector_free)
     energy_CL = np.trapezoid(power_total_CL, time_vector_CL)
+
+    print("Energy CL : ", energy_CL, "J")
+    print("Energy without : ", energy_without, "J")
+    print("Energy free : ", energy_free, "J")
+    print("A reduction of ", (energy_without - energy_CL) / energy_without * 100, "% with the HTC")
+    print("A reduction of ", (energy_free - energy_CL) / energy_free * 100, "% with the NTC")
 
     fig, axs = plt.subplots(1, 2, figsize=(10, 4))
     axs[0].plot(time_vector_free, power_total_free, color="tab:green", label="No tucking constraints")

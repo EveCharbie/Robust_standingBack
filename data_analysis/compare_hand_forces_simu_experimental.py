@@ -29,8 +29,8 @@ def force_treatment(forces_insoles, time, first_peak_time):
 
 # Get simulation forces
 # path_sol = "/home/mickaelbegon/Documents/Anais/Results_simu"
-path_sol = "../holonomic_research/"
-sol_CL = path_sol + "/" + "Salto_close_loop_landing_5phases_VEve12.pkl"
+# path_sol = "../holonomic_research/"
+sol_CL = '../holonomic_research/solutions_CL/HTC/sol_3_CVG.pkl'
 data_CL = pd.read_pickle(sol_CL)
 lambdas = data_CL["lambda"]
 
@@ -70,7 +70,7 @@ ax.plot(time, np.mean(forces, axis=1), label="Mean", color='k', linewidth=2)
 ax.plot([time[0], time[-1]], [0, 0], '-k', linewidth=0.5)
 
 # Plot the simulation results
-time_tuck = data_CL["time"][2][:-1] - data_CL["time"][2][0]
+time_tuck = data_CL["time"][2] - data_CL["time"][2][0]
 ax.plot(time_tuck, lambdas[0], color='r', label=["Normal force"])
 ax.plot(time_tuck, lambdas[1], color='g', label=["Shear force"])
 
@@ -78,7 +78,7 @@ ax.legend(bbox_to_anchor=(1.0, 1), loc='upper left')
 ax.set_xlabel("Time [s]")
 ax.set_ylabel("Force on the tibia [N]")
 plt.subplots_adjust(right=0.7)
-plt.savefig("hand_leg_forces_experimental_vs_simulations.png", dpi=300)
+plt.savefig("hand_leg_forces_experimental_vs_simulations.svg", format="svg")
 plt.show()
 
 
