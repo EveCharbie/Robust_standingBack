@@ -32,18 +32,59 @@ def get_created_data_from_pickle(file: str):
 
     return data_tmp
 
-def plot_vertical_time_lines(time_end_phase_CL, time_end_phase_without, ax, color, linestyle, linewidth):
+def plot_vertical_time_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, ax, color, linestyle, linewidth):
     color_CL = "tab:orange" if color is None else color
     color_without = "tab:blue" if color is None else color
+    color_free = "tab:green" if color is None else color
     linewidth = 0.7 if linewidth is None else linewidth
-    ax.axvline(time_end_phase_CL, color=color_CL, linestyle=linestyle, linewidth=linewidth)
+    ax.axvline(time_end_phase_free, color=color_free, linestyle=linestyle, linewidth=linewidth)
     ax.axvline(time_end_phase_without, color=color_without, linestyle=linestyle, linewidth=linewidth)
+    ax.axvline(time_end_phase_CL, color=color_CL, linestyle=linestyle, linewidth=linewidth)
     return
 
+def plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, ax):
+    plot_vertical_time_lines(
+        time_end_phase_CL[0],
+        time_end_phase_without[0],
+        time_end_phase_free[0],
+        ax,
+        color="k",
+        linestyle="-",
+        linewidth=0.5,
+    )
+    plot_vertical_time_lines(
+        time_end_phase_CL[1],
+        time_end_phase_without[1],
+        time_end_phase_free[1],
+        ax,
+        color=None,
+        linestyle=phase_delimiter[1],
+        linewidth=None,
+    )
+    plot_vertical_time_lines(
+        time_end_phase_CL[2],
+        time_end_phase_without[2],
+        time_end_phase_free[2],
+        ax,
+        color=None,
+        linestyle=phase_delimiter[2],
+        linewidth=None,
+    )
+    plot_vertical_time_lines(
+        time_end_phase_CL[3],
+        time_end_phase_without[3],
+        time_end_phase_free[3],
+        ax,
+        color=None,
+        linestyle=phase_delimiter[3],
+        linewidth=None,
+    )
+    return
 
 # Solution with and without holonomic constraints
 path_without = "../holonomic_research/solutions/KTC/"
 path_CL = "../holonomic_research/solutions_CL/HTC/"
+path_free = "../holonomic_research/solutions_FREE/FREE/"
 
 path_model = "../models/Model2D_7Dof_2C_5M_CL_V3.bioMod"
 model = biorbd.Model(path_model)
@@ -72,8 +113,18 @@ for file in os.listdir(path_CL):
             sol_CL = path_CL + file
 print("Min cost CL: ", min_cost_CL)
 
+min_cost_free = np.inf
+for file in os.listdir(path_free):
+    if file.endswith(end_file):
+        data = pd.read_pickle(path_free + file)
+        if data["cost"] < min_cost_free:
+            min_cost_free = data["cost"]
+            sol_free = path_free + file
+print("Min cost free: ", min_cost_free)
+
 data_CL = pd.read_pickle(sol_CL)
 data_without = pd.read_pickle(sol_without)
+data_free = pd.read_pickle(sol_free)
 
 
 
@@ -161,19 +212,52 @@ time_control_without = (
         - time_without[0][-1]
 )
 
-time_max_graph = max(time_vector_without[-1], time_vector_CL[-1])
-time_min_graph = min(time_vector_without[0], time_vector_CL[0])
+# Solution without any tucking constraints
+q_free_rad = data_free["q_all"][:, :]
+q_free_rad_original = data_free["q_all"][:, :]
+q_free_rad[6, :] = q_free_rad[6, :] * -1
+q_free_deg = np.vstack([q_free_rad[0:2, :], q_free_rad[2:, :] * 180 / np.pi])
+qdot_free_rad = data_free["qdot_all"]
+qdot_free_rad[6, :] = qdot_free_rad[6, :] * -1
+qdot_free_deg = np.vstack([qdot_free_rad[0:2, :], qdot_free_rad[2:, :] * 180 / np.pi])
+tau_free = data_free["tau_all"]
+taudot_free = data_free["taudot_all"] if "taudot_all" in data_free.keys() else np.hstack(data_free["taudot"])
+
+time_free = data_free["time"]
+time_end_phase_free = []
+time_end_phase_tau_free = []
+for i in range(len(time_free)):
+    time_end_phase_free.append(time_free[i][-1])
+    time_end_phase_tau_free.append(time_free[i][-2])
+time_vector_free = (
+        np.vstack(data_free["time"]).reshape(
+            -1,
+        )
+        - time_free[0][-1]
+)
+time_end_phase_free = np.array(time_end_phase_free) - time_free[0][-1]
+time_control_free = (
+        np.vstack([arr[:-1, :] for arr in time_free]).reshape(
+            -1,
+        )
+        - time_free[0][-1]
+)
+
+time_max_graph = max(time_vector_without[-1], time_vector_CL[-1], time_vector_free[-1])
+time_min_graph = min(time_vector_without[0], time_vector_CL[0], time_vector_free[0])
 
 # Duree phase solutions with and without holonomic constraints
 time_phase_CL = []
 time_phase_without = []
+time_phase_free = []
 
 for i in range(len(data_CL["time"])):
     time_phase_CL.append(data_CL["time"][i][-1] - data_CL["time"][i][0])
     time_phase_without.append(data_without["time"][i][-1] - data_without["time"][i][0])
+    time_phase_free.append(data_free["time"][i][-1] - data_free["time"][i][0])
 
-print("*** Phase_time *** \nCL :", time_phase_CL, "\nwithout : ", time_phase_without)
-print("Total CL :", np.sum(time_phase_CL), "\nTotal without : ", np.sum(time_phase_without))
+print("*** Phase_time *** \nCL :", time_phase_CL, "\nwithout : ", time_phase_without, "\nfree : ", time_phase_free)
+print("Total CL :", np.sum(time_phase_CL), "\nTotal without : ", np.sum(time_phase_without), "\nTotal free : ", np.sum(time_phase_free))
 
 
 plt.figure()
@@ -212,45 +296,32 @@ if PLOT_TAU_FLAG:
     fig, axs = plt.subplots(3, 3, figsize=(10, 6))
     num_col = 0
     num_line = 0
-    y_max_1 = np.max([abs(q_CL_deg[0:2, :]), abs(q_without_deg[0:2, :])])
-    y_max_2 = np.max([abs(q_CL_deg[2:5, :]), abs(q_without_deg[2:5, :])])
-    y_max_3 = np.max([abs(q_CL_deg[5:, :]), abs(q_without_deg[5:, :])])
+    y_max_1 = np.max([abs(q_CL_deg[0:2, :]), abs(q_without_deg[0:2, :]), abs(q_free_deg[0:2, :])])
+    y_max_2 = np.max([abs(q_CL_deg[2:5, :]), abs(q_without_deg[2:5, :]), abs(q_free_deg[2:5, :])])
+    y_max_3 = np.max([abs(q_CL_deg[5:, :]), abs(q_without_deg[5:, :]), abs(q_free_deg[5:, :])])
     for i_dof in range(q_CL_deg.shape[0]):
         axs[num_line, num_col].plot(np.array([time_min_graph, time_max_graph]), np.array([0, 0]), "-k", linewidth=0.5)
 
-        plot_vertical_time_lines(
-            time_end_phase_CL[0],
-            time_end_phase_without[0],
-            axs[num_line, num_col],
-            color="k",
-            linestyle="-",
+        plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, axs[num_line, num_col])
+
+        axs[num_line, num_col].fill_between(
+            time_vector_free,
+            max_bound_q[i_dof, :],
+            np.ones(max_bound_q[i_dof, :].shape) * 1000,
+            color="tab:green",
+            alpha=0.1,
+            step="pre",
             linewidth=0.5,
         )
-        plot_vertical_time_lines(
-            time_end_phase_CL[1],
-            time_end_phase_without[1],
-            axs[num_line, num_col],
-            color=None,
-            linestyle=phase_delimiter[1],
-            linewidth=None,
+        axs[num_line, num_col].fill_between(
+            time_vector_free,
+            np.ones(min_bound_q[i_dof, :].shape) * -1000,
+            min_bound_q[i_dof, :],
+            color="tab:green",
+            alpha=0.1,
+            step="pre",
+            linewidth=0.5,
         )
-        plot_vertical_time_lines(
-            time_end_phase_CL[2],
-            time_end_phase_without[2],
-            axs[num_line, num_col],
-            color=None,
-            linestyle=phase_delimiter[2],
-            linewidth=None,
-        )
-        plot_vertical_time_lines(
-            time_end_phase_CL[3],
-            time_end_phase_without[3],
-            axs[num_line, num_col],
-            color=None,
-            linestyle=phase_delimiter[3],
-            linewidth=None,
-        )
-
         axs[num_line, num_col].fill_between(
             time_vector_without,
             max_bound_q[i_dof, :],
@@ -288,6 +359,14 @@ if PLOT_TAU_FLAG:
             linewidth=0.5,
         )
 
+        axs[num_line, num_col].plot(
+            time_vector_free,
+            q_free_deg[i_dof, :],
+            color="tab:green",
+            label="No tucking constraints",
+            alpha=0.75,
+            linewidth=1,
+        )
         axs[num_line, num_col].plot(
             time_vector_without,
             q_without_deg[i_dof, :],
@@ -332,7 +411,16 @@ if PLOT_TAU_FLAG:
     axs[1, 0].set_ylabel(r"Joint angle [$^\circ$]", fontsize=7)  # Pelvis Rotation
     axs[2, 0].set_ylabel(r"Joint angle [$^\circ$]", fontsize=7)  # Thight Rotation
 
-    # Récupérer les handles et labels de la légende de la figure de la première ligne, première colonne
+    axs[0, 0].fill_between(
+        np.array([0, 0]),
+        np.array([0, 0]),
+        np.array([0, 0]),
+        color="tab:green",
+        alpha=0.1,
+        step="pre",
+        linewidth=0.5,
+        label="$q_{bounds}$ No tucking constraints",
+    )
     axs[0, 0].fill_between(
         np.array([0, 0]),
         np.array([0, 0]),
@@ -372,6 +460,14 @@ if PLOT_TAU_FLAG:
     for i_dof in range(qdot_CL_deg.shape[0]):
         axs[num_line, num_col].plot(np.array([time_min_graph, time_max_graph]), np.array([0, 0]), "-k", linewidth=0.5)
         axs[num_line, num_col].plot(
+            time_vector_free,
+            qdot_free_deg[i_dof],
+            color="tab:green",
+            label="No tucking constraints",
+            alpha=0.75,
+            linewidth=1,
+        )
+        axs[num_line, num_col].plot(
             time_vector_without,
             qdot_without_deg[i_dof],
             color="tab:blue",
@@ -387,39 +483,7 @@ if PLOT_TAU_FLAG:
             alpha=0.75,
             linewidth=1,
         )
-
-        plot_vertical_time_lines(
-            time_end_phase_CL[0],
-            time_end_phase_without[0],
-            axs[num_line, num_col],
-            color="k",
-            linestyle="-",
-            linewidth=0.5,
-        )
-        plot_vertical_time_lines(
-            time_end_phase_CL[1],
-            time_end_phase_without[1],
-            axs[num_line, num_col],
-            color=None,
-            linestyle=phase_delimiter[1],
-            linewidth=None,
-        )
-        plot_vertical_time_lines(
-            time_end_phase_CL[2],
-            time_end_phase_without[2],
-            axs[num_line, num_col],
-            color=None,
-            linestyle=phase_delimiter[2],
-            linewidth=None,
-        )
-        plot_vertical_time_lines(
-            time_end_phase_CL[3],
-            time_end_phase_without[3],
-            axs[num_line, num_col],
-            color=None,
-            linestyle=phase_delimiter[3],
-            linewidth=None,
-        )
+        plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, axs[num_line, num_col])
 
         axs[num_line, num_col].set_title(dof_names[i_dof])
 
@@ -446,14 +510,8 @@ if PLOT_TAU_FLAG:
 
         # Y_label
         axs[0, 0].set_ylabel("Velocity [m/s]", fontsize=7)  # Pelvis Translation
-        # axs[0, 1].set_yticklabels([])  # Pelvis Translation
         axs[1, 0].set_ylabel("F (+) / E (-) [" + r"$^\circ$/s" + "]", fontsize=7)  # Pelvis Rotation
-        # axs[1, 1].set_yticklabels([])  # Arm Rotation
-        # axs[1, 2].set_yticklabels([])  # Forearm Rotation
         axs[2, 0].set_ylabel("F (+) / E (-) [" + r"$^\circ$/s" + "]", fontsize=7)  # Thight Rotation
-        # axs[2, 1].set_yticklabels([])  # Leg Rotation
-        # axs[2, 2].set_yticklabels([])  # Foot Rotation
-        # Récupérer les handles et labels de la légende de la figure de la première ligne, première colonne
         handles, labels = axs[0, 0].get_legend_handles_labels()
 
         # Ajouter la légende à la figure de la première ligne, troisième colonne
@@ -468,6 +526,8 @@ if PLOT_TAU_FLAG:
     tau_CL_max_bound = np.zeros((5, tau_CL.shape[1]))
     tau_without_min_bound = np.zeros((5, tau_without.shape[1]))
     tau_without_max_bound = np.zeros((5, tau_without.shape[1]))
+    tau_free_min_bound = np.zeros((5, tau_free.shape[1]))
+    tau_free_max_bound = np.zeros((5, tau_free.shape[1]))
     for i_dof, key in enumerate(ACTUATORS.keys()):
         # Change the sign of the theta_opt for the knee
         if i_dof == 3:
@@ -495,10 +555,24 @@ if PLOT_TAU_FLAG:
                 ACTUATORS[key].r_plus,
                 -q_without_rad[i_dof + 3],
             )
+            true_min_free = -actuator_function(
+                ACTUATORS[key].tau_max_minus,
+                ACTUATORS[key].theta_opt_minus,
+                ACTUATORS[key].r_minus,
+                -q_free_rad[i_dof + 3],
+            )
+            true_max_free = actuator_function(
+                ACTUATORS[key].tau_max_plus,
+                ACTUATORS[key].theta_opt_plus,
+                ACTUATORS[key].r_plus,
+                -q_free_rad[i_dof + 3],
+            )
             tau_CL_min_bound[i_dof, :] = -true_max_CL
             tau_CL_max_bound[i_dof, :] = -true_min_CL
             tau_without_min_bound[i_dof, :] = -true_max_without
             tau_without_max_bound[i_dof, :] = -true_min_without
+            tau_free_min_bound[i_dof, :] = -true_max_free
+            tau_free_max_bound[i_dof, :] = -true_min_free
         else:
             tau_CL_min_bound[i_dof, :] = -actuator_function(
                 ACTUATORS[key].tau_max_minus,
@@ -524,28 +598,62 @@ if PLOT_TAU_FLAG:
                 ACTUATORS[key].r_plus,
                 q_without_rad[i_dof + 3],
             )
+            tau_free_min_bound[i_dof, :] = -actuator_function(
+                ACTUATORS[key].tau_max_minus,
+                ACTUATORS[key].theta_opt_minus,
+                ACTUATORS[key].r_minus,
+                q_free_rad[i_dof + 3],
+            )
+            tau_free_max_bound[i_dof, :] = actuator_function(
+                ACTUATORS[key].tau_max_plus,
+                ACTUATORS[key].theta_opt_plus,
+                ACTUATORS[key].r_plus,
+                q_free_rad[i_dof + 3],
+            )
 
     # Figure tau
     fig, axs = plt.subplots(2, 3, figsize=(10, 4))
     num_col = 1
     num_line = 0
 
-    y_max_1 = np.max([abs(tau_without[0:2, :]), abs(tau_CL[0:2, :])])
-    y_max_2 = np.max([abs(tau_without[2:, :]), abs(tau_CL[2:, :])])
+    y_max_1 = np.max([abs(tau_without[0:2, :]), abs(tau_CL[0:2, :]), abs(tau_free[0:2, :])])
+    y_max_2 = np.max([abs(tau_without[2:, :]), abs(tau_CL[2:, :]), abs(tau_free[2:, :])])
 
-    axs[0, 0].plot([], [], color="tab:orange", label="Holonomic tucking contraints")
+    axs[0, 0].plot([], [], color="tab:green", label="No tucking constraints")
     axs[0, 0].plot([], [], color="tab:blue", label="Kinematic tucking constraints")
+    axs[0, 0].plot([], [], color="tab:orange", label="Holonomic tucking contraints")
     axs[0, 0].fill_between(
-        [], [], [], color="tab:orange", alpha=0.1, label=r"$\tilde{\tau}^{max}$ Holonomic tucking contraints", linewidth=0.5
+        [], [], [], color="tab:green", alpha=0.1, label=r"$\tilde{\tau}^{max}$ No tucking constraints", linewidth=0.5
     )
     axs[0, 0].fill_between(
         [], [], [], color="tab:blue", alpha=0.1, label=r"$\tilde{\tau}^{max}$ Kinematic tucking constraints", linewidth=0.5
+    )
+    axs[0, 0].fill_between(
+        [], [], [], color="tab:orange", alpha=0.1, label=r"$\tilde{\tau}^{max}$ Holonomic tucking contraints", linewidth=0.5
     )
     axs[0, 0].legend(loc="center right", bbox_to_anchor=(0.9, 0.5), fontsize=8)
     axs[0, 0].axis("off")
 
     for i_dof in range(tau_CL.shape[0]):
         axs[num_line, num_col].plot(np.array([time_min_graph, time_max_graph]), np.array([0, 0]), "-k", linewidth=0.5)
+        axs[num_line, num_col].fill_between(
+            time_vector_free,
+            tau_free_max_bound[i_dof],
+            np.ones(tau_free_max_bound[i_dof].shape) * 1000,
+            color="tab:green",
+            alpha=0.1,
+            step="pre",
+            linewidth=0.5,
+        )
+        axs[num_line, num_col].fill_between(
+            time_vector_free,
+            np.ones(tau_free_max_bound[i_dof].shape) * -1000,
+            tau_free_min_bound[i_dof],
+            color="tab:green",
+            alpha=0.1,
+            step="pre",
+            linewidth=0.5,
+        )
         axs[num_line, num_col].fill_between(
             time_vector_without,
             tau_without_max_bound[i_dof],
@@ -584,6 +692,14 @@ if PLOT_TAU_FLAG:
         )
 
         axs[num_line, num_col].plot(
+            time_vector_free,
+            tau_free[i_dof],
+            color="tab:green",
+            alpha=0.75,
+            linewidth=1,
+            label="No tucking constraints",
+        )
+        axs[num_line, num_col].plot(
             time_vector_without,
             tau_without[i_dof],
             color="tab:blue",
@@ -599,39 +715,7 @@ if PLOT_TAU_FLAG:
             linewidth=1,
             label="Holonomic tucking constraints",
         )
-
-        plot_vertical_time_lines(
-            time_end_phase_CL[0],
-            time_end_phase_without[0],
-            axs[num_line, num_col],
-            color="k",
-            linestyle="-",
-            linewidth=0.5,
-        )
-        plot_vertical_time_lines(
-            time_end_phase_CL[1],
-            time_end_phase_without[1],
-            axs[num_line, num_col],
-            color=None,
-            linestyle=phase_delimiter[1],
-            linewidth=None,
-        )
-        plot_vertical_time_lines(
-            time_end_phase_CL[2],
-            time_end_phase_without[2],
-            axs[num_line, num_col],
-            color=None,
-            linestyle=phase_delimiter[2],
-            linewidth=None,
-        )
-        plot_vertical_time_lines(
-            time_end_phase_CL[3],
-            time_end_phase_without[3],
-            axs[num_line, num_col],
-            color=None,
-            linestyle=phase_delimiter[3],
-            linewidth=None,
-        )
+        plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, axs[num_line, num_col])
 
         axs[num_line, num_col].set_title(dof_names_tau[i_dof], fontsize=8)
         axs[num_line, num_col].set_xlim(time_min_graph, time_max_graph)
@@ -653,9 +737,6 @@ if PLOT_TAU_FLAG:
     # Y_label
     axs[0, 1].set_ylabel("Joint torque [Nm]", fontsize=7)  # Arm Rotation
     axs[1, 0].set_ylabel("Joint torque [Nm]", fontsize=7)  # Leg Rotation
-    # axs[0, 2].set_yticklabels([])
-    # axs[1, 1].set_yticklabels([])
-    # axs[1, 2].set_yticklabels([])
     plt.tight_layout()
     plt.subplots_adjust(wspace=0.15, hspace=0.4)
     fig.savefig("tau" + "." + format_graph, format=format_graph)
@@ -663,13 +744,14 @@ if PLOT_TAU_FLAG:
     # Tau ratio all phases
     tau_CL_ratio_all = np.zeros(tau_CL.shape)
     tau_without_ratio_all = np.zeros(tau_without.shape)
+    tau_free_ratio_all = np.zeros(tau_free.shape)
 
     fig, axs = plt.subplots(2, 2, figsize=(10, 4))
     axs[0, 0].plot(
-        time_vector_CL,
-        np.sum(np.abs(tau_CL), axis=0),
-        color="tab:orange",
-        label="Holonomic tucking constraints",
+        time_vector_free,
+        np.sum(np.abs(tau_free), axis=0),
+        color="tab:green",
+        label="No tucking constraints",
         alpha=0.75,
         linewidth=1,
     )
@@ -681,34 +763,15 @@ if PLOT_TAU_FLAG:
         alpha=0.75,
         linewidth=1,
     )
-
-    plot_vertical_time_lines(
-        time_end_phase_CL[0], time_end_phase_without[0], axs[0, 0], color="k", linestyle="-", linewidth=0.5
+    axs[0, 0].plot(
+        time_vector_CL,
+        np.sum(np.abs(tau_CL), axis=0),
+        color="tab:orange",
+        label="Holonomic tucking constraints",
+        alpha=0.75,
+        linewidth=1,
     )
-    plot_vertical_time_lines(
-        time_end_phase_CL[1],
-        time_end_phase_without[1],
-        axs[0, 0],
-        color=None,
-        linestyle=phase_delimiter[1],
-        linewidth=None,
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[2],
-        time_end_phase_without[2],
-        axs[0, 0],
-        color=None,
-        linestyle=phase_delimiter[2],
-        linewidth=None,
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[3],
-        time_end_phase_without[3],
-        axs[0, 0],
-        color=None,
-        linestyle=phase_delimiter[3],
-        linewidth=None,
-    )
+    plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, axs[0, 0])
 
     for i_dof in range(5):
         for i_node in range(tau_CL.shape[1]):
@@ -722,15 +785,18 @@ if PLOT_TAU_FLAG:
                 tau_without_ratio_all[i_dof, i_node] = np.abs(
                     tau_without[i_dof, i_node] / tau_without_min_bound[i_dof, i_node]
                 )
-        # axs[1, 0].step(time_tau_CL, tau_CL_ratio_all[i_dof, :], color="tab:orange",
-        #               label="Holonomic tucking constraints", alpha=0.75, linewidth=1)
-        # axs[1, 0].step(time_tau_without, tau_without_ratio_all[i_dof, :], color="tab:blue",
-        #               label="Kinematic tucking constraints", alpha=0.75, linewidth=1)
+            if tau_free[i_dof, i_node] > 0:
+                tau_free_ratio_all[i_dof, i_node] = tau_free[i_dof, i_node] / tau_free_max_bound[i_dof, i_node]
+            else:
+                tau_free_ratio_all[i_dof, i_node] = np.abs(
+                    tau_free[i_dof, i_node] / tau_free_min_bound[i_dof, i_node]
+                )
+
     axs[1, 0].plot(
-        time_vector_CL,
-        np.sum(np.abs(tau_CL_ratio_all), axis=0),
-        color="tab:orange",
-        label="Holonomic tucking constraints",
+        time_vector_free,
+        np.sum(np.abs(tau_free_ratio_all), axis=0),
+        color="tab:green",
+        label="No tucking constraints",
         alpha=0.75,
         linewidth=1,
     )
@@ -742,60 +808,43 @@ if PLOT_TAU_FLAG:
         alpha=0.75,
         linewidth=1,
     )
+    axs[1, 0].plot(
+        time_vector_CL,
+        np.sum(np.abs(tau_CL_ratio_all), axis=0),
+        color="tab:orange",
+        label="Holonomic tucking constraints",
+        alpha=0.75,
+        linewidth=1,
+    )
 
-    plot_vertical_time_lines(
-        time_end_phase_CL[0], time_end_phase_without[0], axs[1, 0], color="k", linestyle="-", linewidth=0.5
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[1],
-        time_end_phase_without[1],
-        axs[1, 0],
-        color=None,
-        linestyle=phase_delimiter[1],
-        linewidth=None,
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[2],
-        time_end_phase_without[2],
-        axs[1, 0],
-        color=None,
-        linestyle=phase_delimiter[2],
-        linewidth=None,
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[3],
-        time_end_phase_without[3],
-        axs[1, 0],
-        color=None,
-        linestyle=phase_delimiter[3],
-        linewidth=None,
-    )
+    plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, axs[1, 0])
 
     integral_tau_all_CL = np.trapezoid(np.sum(np.abs(tau_CL), axis=0), x=time_vector_CL)
     integral_tau_all_without = np.trapezoid(np.sum(np.abs(tau_without), axis=0), x=time_vector_without)
-    axs[0, 1].bar([0, 1], [integral_tau_all_CL, integral_tau_all_without], color=["tab:orange", "tab:blue"])
+    integral_tau_all_free = np.trapezoid(np.sum(np.abs(tau_free), axis=0), x=time_vector_free)
+    axs[0, 1].bar([0, 1, 2], [integral_tau_all_free, integral_tau_all_without, integral_tau_all_CL], color=["tab:green", "tab:blue", "tab:orange"])
     integral_tau_all_ratio_CL = np.trapezoid(np.sum(np.abs(tau_CL_ratio_all), axis=0), x=time_vector_CL)
     integral_tau_all_ratio_without = np.trapezoid(np.sum(np.abs(tau_without_ratio_all), axis=0), x=time_vector_without)
-    axs[1, 1].bar([0, 1], [integral_tau_all_ratio_CL, integral_tau_all_ratio_without], color=["tab:orange", "tab:blue"])
+    integral_tau_all_ratio_free = np.trapezoid(np.sum(np.abs(tau_free_ratio_all), axis=0), x=time_vector_free)
+    axs[1, 1].bar([0, 1, 2], [integral_tau_all_ratio_free, integral_tau_all_ratio_without, integral_tau_all_ratio_CL], color=["tab:green", "tab:blue", "tab:orange"])
 
     # axs[0, 0].set_xlabel("Time [s]")
     axs[0, 0].set_ylabel("Joint torque \n[Nm]")
     axs[1, 0].set_xlabel("Time [s]")
     axs[1, 0].set_ylabel("Physiological joint torque ratio")
-    axs[0, 1].set_xticks([0, 1], ["HTC", "KTC"])
-    axs[1, 1].set_xticks([0, 1], ["HTC", "KTC"])
+    axs[0, 1].set_xticks([0, 1, 2], ["NTC", "KTC", "HTC"])
+    axs[1, 1].set_xticks([0, 1, 2], ["NTC", "KTC", "HTC"])
     axs[0, 1].set_ylabel(r"$\int{ | \tau | dt}$" + "\n[Nm.s]")
     axs[0, 0].set_xticks([0.0, 0.5, 1.0, 1.5], ["0.0", "0.5", "1.0", "1.5"])
     axs[1, 0].set_xticks([0.0, 0.5, 1.0, 1.5], ["0.0", "0.5", "1.0", "1.5"])
 
-    axs[1, 1].plot([], [], color="tab:orange", label="Holonomic tucking constraints")
+    axs[1, 1].plot([], [], color="tab:green", label="No tucking constraints")
     axs[1, 1].plot([], [], color="tab:blue", label="Kinematic tucking constraints")
-    # axs[1, 1].fill_between([], [], [], color="tab:orange", label=r"$\int{| \tau / \tilde{\tau}^{max} | dt}$ HTC")
-    # axs[1, 1].fill_between([], [], [], color="tab:blue", label=r"$\int{| \tau / \tilde{\tau}^{max} | dt}$ KTC")
-    axs[1, 1].legend(loc="center right", bbox_to_anchor=(0.5, 3.1), ncol=2)
+    axs[1, 1].plot([], [], color="tab:orange", label="Holonomic tucking constraints")
+    axs[1, 1].legend(bbox_to_anchor=(1.0, 2.8), ncol=3)
 
     axs[1, 1].set_ylabel(r"$\int{ | \tau/{\tilde{\tau^{max}}} | dt}$" + "\n[s]")
-    plt.subplots_adjust(hspace=0.25, wspace=0.4, top=0.95)
+    plt.subplots_adjust(hspace=0.4, wspace=0.3, top=0.85)
     plt.savefig("tau_ratio_all" + "." + format_graph, format=format_graph)
     # plt.show()
 
@@ -805,17 +854,26 @@ if PLOT_TAU_FLAG:
     num_col = 1
     num_line = 0
 
-    y_max_1 = np.max([abs(taudot_without[0:2, :]), abs(taudot_CL[0:2, :])])
-    y_max_2 = np.max([abs(taudot_without[2:, :]), abs(taudot_CL[2:, :])])
+    y_max_1 = np.max([abs(taudot_without[0:2, :]), abs(taudot_CL[0:2, :]), abs(taudot_free[0:2, :])])
+    y_max_2 = np.max([abs(taudot_without[2:, :]), abs(taudot_CL[2:, :]), abs(taudot_free[2:, :])])
 
-    axs[0, 0].plot([], [], color="tab:orange", label="Holonomic tucking contraints")
+    axs[0, 0].plot([], [], color="tab:green", label="No tucking constraints")
     axs[0, 0].plot([], [], color="tab:blue", label="Kinematic tucking constraints")
+    axs[0, 0].plot([], [], color="tab:orange", label="Holonomic tucking contraints")
     axs[0, 0].legend(loc="center right", bbox_to_anchor=(0.9, 0.5), fontsize=8)
     axs[0, 0].axis("off")
 
     for i_dof in range(tau_CL.shape[0]):
         axs[num_line, num_col].plot(np.array([time_min_graph, time_max_graph]), np.array([0, 0]), "-k", linewidth=0.5)
 
+        axs[num_line, num_col].step(
+            time_control_free,
+            taudot_free[i_dof],
+            color="tab:green",
+            alpha=0.75,
+            linewidth=1,
+            label="No tucking constraints",
+        )
         axs[num_line, num_col].step(
             time_control_without,
             taudot_without[i_dof],
@@ -832,39 +890,7 @@ if PLOT_TAU_FLAG:
             linewidth=1,
             label="Holonomic tucking constraints",
         )
-
-        plot_vertical_time_lines(
-            time_end_phase_CL[0],
-            time_end_phase_without[0],
-            axs[num_line, num_col],
-            color="k",
-            linestyle="-",
-            linewidth=0.5,
-        )
-        plot_vertical_time_lines(
-            time_end_phase_CL[1],
-            time_end_phase_without[1],
-            axs[num_line, num_col],
-            color=None,
-            linestyle=phase_delimiter[1],
-            linewidth=None,
-        )
-        plot_vertical_time_lines(
-            time_end_phase_CL[2],
-            time_end_phase_without[2],
-            axs[num_line, num_col],
-            color=None,
-            linestyle=phase_delimiter[2],
-            linewidth=None,
-        )
-        plot_vertical_time_lines(
-            time_end_phase_CL[3],
-            time_end_phase_without[3],
-            axs[num_line, num_col],
-            color=None,
-            linestyle=phase_delimiter[3],
-            linewidth=None,
-        )
+        plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, axs[num_line, num_col])
 
         axs[num_line, num_col].set_title(dof_names_tau[i_dof], fontsize=8)
         axs[num_line, num_col].set_xlim(time_min_graph, time_max_graph)
@@ -886,9 +912,6 @@ if PLOT_TAU_FLAG:
     # Y_label
     axs[0, 1].set_ylabel("Joint torque derivative [Nm/s]", fontsize=7)  # Arm Rotation
     axs[1, 0].set_ylabel("Joint torque derivative [Nm/s]", fontsize=7)  # Leg Rotation
-    # axs[0, 2].set_yticklabels([])
-    # axs[1, 1].set_yticklabels([])
-    # axs[1, 2].set_yticklabels([])
     plt.tight_layout()
     plt.subplots_adjust(wspace=0.15, hspace=0.4)
     fig.savefig("taudot" + "." + format_graph, format=format_graph)
@@ -898,11 +921,21 @@ if PLOT_INERTIA_FLAG:
     # Inertia
     inertia_CL = np.zeros((data_CL["q_all"].shape[1], 3))
     inertia_without = np.zeros((data_without["q_all"].shape[1], 3))
+    inertia_free = np.zeros((data_free["q_all"].shape[1], 3))
     for i in range(data_CL["q_all"].shape[1]):
         inertia_CL[i, :] = np.diagonal(model.bodyInertia(data_CL["q_all"][:, i]).to_array()).T
         inertia_without[i, :] = np.diagonal(model.bodyInertia(data_without["q_all"][:, i]).to_array()).T
+        inertia_free[i, :] = np.diagonal(model.bodyInertia(data_free["q_all"][:, i]).to_array()).T
 
     fig, ax = plt.subplots(4, 1, figsize=(8, 9))
+    ax[0].plot(
+        time_vector_free,
+        inertia_free[:, 0],
+        color="tab:green",
+        label="No tucking constraints",
+        alpha=0.75,
+        linewidth=1,
+    )
     ax[0].plot(
         time_vector_without,
         inertia_without[:, 0],
@@ -919,34 +952,34 @@ if PLOT_INERTIA_FLAG:
         alpha=0.75,
         linewidth=1,
     )
-
-    plot_vertical_time_lines(
-        time_end_phase_CL[0], time_end_phase_without[0], ax[0], color="k", linestyle="-", linewidth=0.5
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[1], time_end_phase_without[1], ax[0], color=None, linestyle=phase_delimiter[1], linewidth=None
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[2], time_end_phase_without[2], ax[0], color=None, linestyle=phase_delimiter[2], linewidth=None
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[3], time_end_phase_without[3], ax[0], color=None, linestyle=phase_delimiter[3], linewidth=None
-    )
+    plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, ax[0])
 
     ax[0].set_ylabel("Moment of inertia\n" + r"[$kg.m^2$]")
     ax[0].set_xlim(time_min_graph, time_max_graph)
     ax[0].grid(True, linewidth=0.4)
-    ax[0].legend(bbox_to_anchor=(0.95, 1.45), ncol=2)
+    ax[0].legend(bbox_to_anchor=(1.1, 1.45), ncol=3)
 
     # Angular momentum
     ang_mom_CL = np.zeros((data_CL["q_all"].shape[1], 3))
     ang_mom_without = np.zeros((data_without["q_all"].shape[1], 3))
+    ang_mom_free = np.zeros((data_free["q_all"].shape[1], 3))
     for i in range(data_CL["q_all"].shape[1]):
         ang_mom_CL[i, :] = model.angularMomentum(data_CL["q_all"][:, i], data_CL["qdot_all"][:, i], True).to_array()
         ang_mom_without[i, :] = model.angularMomentum(
             data_without["q_all"][:, i], data_without["qdot_all"][:, i], True
         ).to_array()
+        ang_mom_free[i, :] = model.angularMomentum(
+            data_free["q_all"][:, i], data_free["qdot_all"][:, i], True
+        ).to_array()
 
+    ax[1].plot(
+        time_vector_free,
+        ang_mom_free[:, 0],
+        color="tab:green",
+        label="No tucking constraints",
+        alpha=0.75,
+        linewidth=1,
+    )
     ax[1].plot(
         time_vector_without,
         ang_mom_without[:, 0],
@@ -963,19 +996,7 @@ if PLOT_INERTIA_FLAG:
         alpha=0.75,
         linewidth=1,
     )
-
-    plot_vertical_time_lines(
-        time_end_phase_CL[0], time_end_phase_without[0], ax[1], color="k", linestyle="-", linewidth=0.5
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[1], time_end_phase_without[1], ax[1], color=None, linestyle=phase_delimiter[1], linewidth=None
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[2], time_end_phase_without[2], ax[1], color=None, linestyle=phase_delimiter[2], linewidth=None
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[3], time_end_phase_without[3], ax[1], color=None, linestyle=phase_delimiter[3], linewidth=None
-    )
+    plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, ax[1])
 
     ax[1].set_ylabel("Angular momentum\n" + r"[$kg.m^2/s$]")
     ax[1].set_xlim(time_min_graph, time_max_graph)
@@ -984,12 +1005,24 @@ if PLOT_INERTIA_FLAG:
     # Body velocity
     body_velo_CL = np.zeros((data_CL["q_all"].shape[1], 3))
     body_velo_without = np.zeros((data_without["q_all"].shape[1], 3))
+    body_velo_free = np.zeros((data_free["q_all"].shape[1], 3))
     for i in range(data_CL["q_all"].shape[1]):
         body_velo_CL[i, :] = model.bodyAngularVelocity(data_CL["q_all"][:, i], data_CL["qdot_all"][:, i]).to_array()
         body_velo_without[i, :] = model.bodyAngularVelocity(
             data_without["q_all"][:, i], data_without["qdot_all"][:, i]
         ).to_array()
+        body_velo_free[i, :] = model.bodyAngularVelocity(
+            data_free["q_all"][:, i], data_free["qdot_all"][:, i]
+        ).to_array()
 
+    ax[2].plot(
+        time_vector_free,
+        body_velo_free[:, 0],
+        color="tab:green",
+        label="No tucking constraints",
+        alpha=0.75,
+        linewidth=1,
+    )
     ax[2].plot(
         time_vector_without,
         body_velo_without[:, 0],
@@ -1006,19 +1039,7 @@ if PLOT_INERTIA_FLAG:
         alpha=0.75,
         linewidth=1,
     )
-
-    plot_vertical_time_lines(
-        time_end_phase_CL[0], time_end_phase_without[0], ax[2], color="k", linestyle="-", linewidth=0.5
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[1], time_end_phase_without[1], ax[2], color=None, linestyle=phase_delimiter[1], linewidth=None
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[2], time_end_phase_without[2], ax[2], color=None, linestyle=phase_delimiter[2], linewidth=None
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[3], time_end_phase_without[3], ax[2], color=None, linestyle=phase_delimiter[3], linewidth=None
-    )
+    plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, ax[2])
 
     ax[2].set_ylabel("Somersault velocity\n" + r"[$rad/s$]")
     ax[2].set_xlim(time_min_graph, time_max_graph)
@@ -1027,7 +1048,16 @@ if PLOT_INERTIA_FLAG:
     # Centrifugal effect
     centricugal_CL = model.mass() * body_velo_CL[:, 0] ** 2 * np.sqrt(inertia_CL[:, 0] / model.mass())
     centricugal_without = model.mass() * body_velo_without[:, 0] ** 2 * np.sqrt(inertia_without[:, 0] / model.mass())
+    centricugal_free = model.mass() * body_velo_free[:, 0] ** 2 * np.sqrt(inertia_free[:, 0] / model.mass())
 
+    ax[3].plot(
+        time_vector_free,
+        centricugal_free,
+        color="tab:green",
+        label="No tucking constraints",
+        alpha=0.75,
+        linewidth=1,
+    )
     ax[3].plot(
         time_vector_without,
         centricugal_without,
@@ -1044,19 +1074,7 @@ if PLOT_INERTIA_FLAG:
         alpha=0.75,
         linewidth=1,
     )
-
-    plot_vertical_time_lines(
-        time_end_phase_CL[0], time_end_phase_without[0], ax[3], color="k", linestyle="-", linewidth=0.5
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[1], time_end_phase_without[1], ax[3], color=None, linestyle=phase_delimiter[1], linewidth=None
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[2], time_end_phase_without[2], ax[3], color=None, linestyle=phase_delimiter[2], linewidth=None
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[3], time_end_phase_without[3], ax[3], color=None, linestyle=phase_delimiter[3], linewidth=None
-    )
+    plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, ax[3])
 
     ax[3].set_ylabel("Centrifugal pseudo-force\n" + r"[$N$]")
     ax[3].set_xlim(time_min_graph, time_max_graph)
@@ -1067,130 +1085,34 @@ if PLOT_INERTIA_FLAG:
     plt.savefig("Inertia" + "." + format_graph, format = format_graph)
     # plt.show()
 
-    comddot_without = np.zeros((3, data_without["q_all"].shape[1]))
-    comddot_CL = np.zeros((3, data_CL["q_all"].shape[1]))
-    for i_frame in range(data_CL["q_all"].shape[1]):
-        Q_without = data_without["q_all"][:, i_frame]
-        Qdot_without = data_without["qdot_all"][:, i_frame]
-        Tau_without = tau_without[:, i_frame]
-        Qddot_without = model.ForwardDynamics(Q_without, Qdot_without, Tau_without).to_array()
-        comddot_without[:, i_frame] = model.CoMddot(Q_without, Qdot_without, Qddot_without).to_array()
-        Q_CL = data_CL["q_all"][:, i_frame]
-        Qdot_CL = data_CL["qdot_all"][:, i_frame]
-        Tau_CL = tau_CL[:, i_frame]
-        Qddot_CL = model.ForwardDynamics(Q_CL, Qdot_CL, Tau_CL).to_array()
-        comddot_CL[:, i_frame] = model.CoMddot(Q_CL, Qdot_CL, Qddot_CL).to_array()
-
-    plt.figure()
-    plot_vertical_time_lines(
-        time_end_phase_CL[0], time_end_phase_without[0], plt, color="k", linestyle="-", linewidth=0.5
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[1], time_end_phase_without[1], plt, color=None, linestyle=phase_delimiter[1], linewidth=None
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[2], time_end_phase_without[2], plt, color=None, linestyle=phase_delimiter[2], linewidth=None
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[3], time_end_phase_without[3], plt, color=None, linestyle=phase_delimiter[3], linewidth=None
-    )
-    plt.plot(time_vector_without, comddot_without[0, :], ':', label="x KTC", color="tab:blue")
-    plt.plot(time_vector_without, comddot_without[1, :], '--', label="y KTC", color="tab:blue")
-    plt.plot(time_vector_without, comddot_without[2, :], '-.', label="z KTC", color="tab:blue")
-    plt.plot(time_vector_without, np.linalg.norm(comddot_without, axis=0), '-', label="norm KTC", color="tab:blue", linewidth=3)
-    plt.plot(time_vector_CL, comddot_CL[0, :], ":", label="x HTC", color="tab:orange")
-    plt.plot(time_vector_CL, comddot_CL[1, :], "--", label="y HTC", color="tab:orange")
-    plt.plot(time_vector_CL, comddot_CL[2, :], "-.", label="z HTC", color="tab:orange")
-    plt.plot(time_vector_CL, np.linalg.norm(comddot_CL, axis=0), '-', label="norm HTC", color="tab:orange", linewidth=3)
-    plt.title("CoM ddot")
-    plt.legend()
-    plt.show()
-
-    comdot_without = np.zeros((3, data_without["q_all"].shape[1]))
-    comdot_CL = np.zeros((3, data_CL["q_all"].shape[1]))
-    for i_frame in range(data_CL["q_all"].shape[1]):
-        Q_without = data_without["q_all"][:, i_frame]
-        Qdot_without = data_without["qdot_all"][:, i_frame]
-        comdot_without[:, i_frame] = model.CoMdot(Q_without, Qdot_without).to_array()
-        Q_CL = data_CL["q_all"][:, i_frame]
-        Qdot_CL = data_CL["qdot_all"][:, i_frame]
-        comdot_CL[:, i_frame] = model.CoMdot(Q_CL, Qdot_CL).to_array()
-
-    plt.figure()
-    plot_vertical_time_lines(
-        time_end_phase_CL[0], time_end_phase_without[0], plt, color="k", linestyle="-", linewidth=0.5
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[1], time_end_phase_without[1], plt, color=None, linestyle=phase_delimiter[1], linewidth=None
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[2], time_end_phase_without[2], plt, color=None, linestyle=phase_delimiter[2], linewidth=None
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[3], time_end_phase_without[3], plt, color=None, linestyle=phase_delimiter[3], linewidth=None
-    )
-    plt.plot(time_vector_without, comdot_without[0, :], ':', label="x KTC", color="tab:blue")
-    plt.plot(time_vector_without, comdot_without[1, :], '--', label="y KTC", color="tab:blue")
-    plt.plot(time_vector_without, comdot_without[2, :], '-.', label="z KTC", color="tab:blue")
-    plt.plot(time_vector_without, np.linalg.norm(comdot_without, axis=0), '-', label="norm KTC", color="tab:blue", linewidth=3)
-    plt.plot(time_vector_CL, comdot_CL[0, :], ":", label="x HTC", color="tab:orange")
-    plt.plot(time_vector_CL, comdot_CL[1, :], "--", label="y HTC", color="tab:orange")
-    plt.plot(time_vector_CL, comdot_CL[2, :], "-.", label="z HTC", color="tab:orange")
-    plt.plot(time_vector_CL, np.linalg.norm(comdot_CL, axis=0), '-', label="norm HTC", color="tab:orange", linewidth=3)
-    plt.title("CoM dot")
-    plt.legend()
-    plt.show()
 
 if PLOT_ENERY_FLAG:
     power_without = np.abs(tau_without * qdot_without_rad[3:, :])
+    power_free = np.abs(tau_free * qdot_free_rad[3:, :])
     power_CL = np.abs(tau_CL * qdot_CL_rad[3:, :])
     power_total_without = np.sum(power_without, axis=0)
+    power_total_free = np.sum(power_free, axis=0)
     power_total_CL = np.sum(power_CL, axis=0)
     energy_without = np.trapezoid(power_total_without, time_vector_without)
+    energy_free = np.trapezoid(power_total_free, time_vector_free)
     energy_CL = np.trapezoid(power_total_CL, time_vector_CL)
 
     fig, axs = plt.subplots(1, 2, figsize=(10, 4))
-    axs[0].plot(time_vector_CL, power_total_CL, color="tab:orange", label="Holonomic tucking constraints")
+    axs[0].plot(time_vector_free, power_total_free, color="tab:green", label="No tucking constraints")
     axs[0].plot(time_vector_without, power_total_without, color="tab:blue", label="Kinematic tucking constraints")
+    axs[0].plot(time_vector_CL, power_total_CL, color="tab:orange", label="Holonomic tucking constraints")
+    plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, axs[0])
 
-    plot_vertical_time_lines(
-        time_end_phase_CL[0], time_end_phase_without[0], axs[0], color="k", linestyle="-", linewidth=0.5
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[1],
-        time_end_phase_without[1],
-        axs[0],
-        color=None,
-        linestyle=phase_delimiter[1],
-        linewidth=None,
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[2],
-        time_end_phase_without[2],
-        axs[0],
-        color=None,
-        linestyle=phase_delimiter[2],
-        linewidth=None,
-    )
-    plot_vertical_time_lines(
-        time_end_phase_CL[3],
-        time_end_phase_without[3],
-        axs[0],
-        color=None,
-        linestyle=phase_delimiter[3],
-        linewidth=None,
-    )
+    axs[1].bar([0, 1, 2], [energy_free, energy_without, energy_CL], color=["tab:green", "tab:blue", "tab:orange"])
 
-    axs[1].bar([0, 1], [energy_CL, energy_without], color=["tab:orange", "tab:blue"])
-
-    axs[0].legend(bbox_to_anchor=(2.0, 1.3), ncol=2)
+    axs[0].legend(bbox_to_anchor=(2.4, 1.3), ncol=3)
     axs[0].grid(True, linewidth=0.4)
     axs[0].set_ylabel("Joint power \n[J/s]")
     axs[0].set_xlabel("Time [s]")
     axs[0].set_xticks([0.0, 0.5, 1.0, 1.5], ["0.0", "0.5", "1.0", "1.5"])
 
     axs[1].set_ylabel("Energy expenditure \n[J]")
-    axs[1].set_xticks([0, 1], ["HTC", "KTC"])
+    axs[1].set_xticks([0, 1, 2], ["NTC", "KTC", "HTC"])
 
     plt.subplots_adjust(wspace=0.4, bottom=0.2, top=0.8)
     plt.savefig("Energy"+ "." + format_graph, format=format_graph)
