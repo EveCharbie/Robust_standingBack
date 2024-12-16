@@ -1,14 +1,10 @@
-import os
+
 import numpy as np
 import pandas as pd
 import biorbd
-import matplotlib.pyplot as plt
+import pickle
 
-import sys
-
-sys.path.append("../holonomic_research/")
-from actuators import Joint, actuator_function
-from actuator_constants import ACTUATORS
+from data_analysis.analyze_data_simu import model_adjusted
 
 
 def adjust_q_with_full_floating_base(q: np.ndarray) -> np.ndarray:
@@ -112,8 +108,8 @@ adjusted_q_CL = adjust_q_with_full_floating_base(data_CL["q_all"])
 adjusted_qdot_CL = adjust_q_with_full_floating_base(data_CL["qdot_all"])
 
 for i in range(data_CL["q_all"].shape[1]):
-    ang_mom_CL[i, :] = model.angularMomentum(adjusted_q[:, i], adjusted_qdot[:, i], True).to_array()
-    ang_mom_without[i, :] = model.angularMomentum(adjusted_q_CL[:, i], adjusted_qdot_CL[:, i], True).to_array()
+    ang_mom_CL[i, :] = model_adjusted.angularMomentum(adjusted_q[:, i], adjusted_qdot[:, i], True).to_array()
+    ang_mom_without[i, :] = model_adjusted.angularMomentum(adjusted_q_CL[:, i], adjusted_qdot_CL[:, i], True).to_array()
 
 import plotly.graph_objects as go
 
@@ -164,6 +160,22 @@ fig.add_trace(
         y=ang_mom_without[:, 2],
         mode="lines",
         name="KTC - z",
+    )
+)
+fig.add_trace(
+    go.Scatter(
+        x=list(range(0, data_CL["q_all"].shape[1])),
+        y=np.linalg.norm(ang_mom_CL, axis=1),
+        mode="lines",
+        name="HTC - norm",
+    )
+)
+fig.add_trace(
+    go.Scatter(
+        x=list(range(0, data_CL["q_all"].shape[1])),
+        y=np.linalg.norm(ang_mom_without, axis=1),
+        mode="lines",
+        name="KTC - norm",
     )
 )
 fig.show()

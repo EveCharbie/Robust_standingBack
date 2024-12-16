@@ -81,6 +81,24 @@ def plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_fre
     )
     return
 
+def adjust_q_with_full_floating_base(q: np.ndarray) -> np.ndarray:
+    """
+    Adjust the q vector to take into account the full floating base
+
+    Parameters
+    ----------
+    q: np.ndarray
+        The q vector to adjust
+
+    Returns
+    -------
+    The adjusted q vector
+    """
+    q_adjusted = np.zeros((q.shape[0] + 3, q.shape[1]))
+    q_adjusted[1:4, :] = q[0:3, :]
+    q_adjusted[6:, :] = q[3:, :]
+    return q_adjusted
+
 # Solution with and without holonomic constraints
 path_without = "../holonomic_research/solutions/KTC/"
 path_CL = "../holonomic_research/solutions_CL/HTC/"
@@ -88,6 +106,8 @@ path_free = "../holonomic_research/solutions_FREE/FREE/"
 
 path_model = "../models/Model2D_7Dof_2C_5M_CL_V3.bioMod"
 model = biorbd.Model(path_model)
+path_model_adjusted = "../models/Model2D_7Dof_3C_5M_CL_V3_V3D.bioMod"
+model_adjusted = biorbd.Model(path_model_adjusted)
 
 CONSIDER_ONLY_CONVERGED = True
 if CONSIDER_ONLY_CONVERGED:
@@ -264,7 +284,7 @@ plt.figure()
 plt.plot(data_CL["lambda"][0, :], "b")
 plt.plot(data_CL["lambda"][1, :], "r")
 plt.savefig("lambda_tempo.png")
-plt.show()
+# plt.show()
 
 
 # Graphique
@@ -918,6 +938,10 @@ if PLOT_TAU_FLAG:
 
 
 if PLOT_INERTIA_FLAG:
+    data_CL = pd.read_pickle(sol_CL)
+    data_without = pd.read_pickle(sol_without)
+    data_free = pd.read_pickle(sol_free)
+
     # Inertia
     inertia_CL = np.zeros((data_CL["q_all"].shape[1], 3))
     inertia_without = np.zeros((data_without["q_all"].shape[1], 3))
@@ -960,21 +984,26 @@ if PLOT_INERTIA_FLAG:
     ax[0].legend(bbox_to_anchor=(1.1, 1.45), ncol=3)
 
     # Angular momentum
+    # Adjust the DoFs to add a free floating base to work around a bug in biornd
     ang_mom_CL = np.zeros((data_CL["q_all"].shape[1], 3))
     ang_mom_without = np.zeros((data_without["q_all"].shape[1], 3))
     ang_mom_free = np.zeros((data_free["q_all"].shape[1], 3))
+
+    adjusted_q_without = adjust_q_with_full_floating_base(data_without["q_all"])
+    adjusted_qdot_without = adjust_q_with_full_floating_base(data_without["qdot_all"])
+    adjusted_q_CL = adjust_q_with_full_floating_base(data_CL["q_all"])
+    adjusted_qdot_CL = adjust_q_with_full_floating_base(data_CL["qdot_all"])
+    adjusted_q_free = adjust_q_with_full_floating_base(data_free["q_all"])
+    adjusted_qdot_free = adjust_q_with_full_floating_base(data_free["qdot_all"])
+
     for i in range(data_CL["q_all"].shape[1]):
-        ang_mom_CL[i, :] = model.angularMomentum(data_CL["q_all"][:, i], data_CL["qdot_all"][:, i], True).to_array()
-        ang_mom_without[i, :] = model.angularMomentum(
-            data_without["q_all"][:, i], data_without["qdot_all"][:, i], True
-        ).to_array()
-        ang_mom_free[i, :] = model.angularMomentum(
-            data_free["q_all"][:, i], data_free["qdot_all"][:, i], True
-        ).to_array()
+        ang_mom_CL[i, :] = model_adjusted.angularMomentum(adjusted_q_CL[:, i], adjusted_qdot_CL[:, i], True).to_array()
+        ang_mom_without[i, :] = model_adjusted.angularMomentum(adjusted_q_without[:, i], adjusted_qdot_without[:, i], True).to_array()
+        ang_mom_free[i, :] = model_adjusted.angularMomentum(adjusted_q_free[:, i], adjusted_qdot_free[:, i], True).to_array()
 
     ax[1].plot(
         time_vector_free,
-        ang_mom_free[:, 0],
+        np.linalg.norm(ang_mom_free, axis=1),
         color="tab:green",
         label="No tucking constraints",
         alpha=0.75,
@@ -982,7 +1011,7 @@ if PLOT_INERTIA_FLAG:
     )
     ax[1].plot(
         time_vector_without,
-        ang_mom_without[:, 0],
+        np.linalg.norm(ang_mom_without, axis=1),
         color="tab:blue",
         label="Kinematic tucking constraints",
         alpha=0.75,
@@ -990,7 +1019,7 @@ if PLOT_INERTIA_FLAG:
     )
     ax[1].plot(
         time_vector_CL,
-        ang_mom_CL[:, 0],
+        np.linalg.norm(ang_mom_CL, axis=1),
         color="tab:orange",
         label="Holonomic tucking constraints",
         alpha=0.75,
