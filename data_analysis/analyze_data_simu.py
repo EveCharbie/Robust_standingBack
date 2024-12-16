@@ -206,6 +206,7 @@ time_control_CL = (
         )
         - time_CL[0][-1]
 )
+time_tuck_CL = time_vector_CL[42:73]
 
 # Solution without closed-loop constraints
 q_without_rad = data_without["q_all"][:, :]
@@ -238,6 +239,7 @@ time_control_without = (
         )
         - time_without[0][-1]
 )
+time_tuck_without = time_vector_without[42:73]
 
 # Solution without any tucking constraints
 q_free_rad = data_free["q_all"][:, :]
@@ -269,6 +271,7 @@ time_control_free = (
         )
         - time_free[0][-1]
 )
+time_tuck_free = time_vector_free[42:73]
 
 time_max_graph = max(time_vector_without[-1], time_vector_CL[-1], time_vector_free[-1])
 time_min_graph = min(time_vector_without[0], time_vector_CL[0], time_vector_free[0])
@@ -400,6 +403,13 @@ if PLOT_TAU_FLAG:
             linewidth=1,
         )
         axs[num_line, num_col].plot(
+            time_tuck_free,
+            q_free_deg[i_dof, 42:73],
+            color="tab:green",
+            alpha=0.75,
+            linewidth=3,
+        )
+        axs[num_line, num_col].plot(
             time_vector_without,
             q_without_deg[i_dof, :],
             color="tab:blue",
@@ -408,12 +418,26 @@ if PLOT_TAU_FLAG:
             linewidth=1,
         )
         axs[num_line, num_col].plot(
+            time_tuck_without,
+            q_without_deg[i_dof, 42:73],
+            color="tab:blue",
+            alpha=0.75,
+            linewidth=3,
+        )
+        axs[num_line, num_col].plot(
             time_vector_CL,
             q_CL_deg[i_dof, :],
             color="tab:orange",
             label="Holonomic tucking constraints",
             alpha=0.75,
             linewidth=1,
+        )
+        axs[num_line, num_col].plot(
+            time_tuck_CL,
+            q_CL_deg[i_dof, 42:73],
+            color="tab:orange",
+            alpha=0.75,
+            linewidth=3,
         )
 
         axs[num_line, num_col].set_title(dof_names[i_dof], fontsize=8)
@@ -500,6 +524,13 @@ if PLOT_TAU_FLAG:
             linewidth=1,
         )
         axs[num_line, num_col].plot(
+            time_tuck_free,
+            qdot_free_deg[i_dof, 42:73],
+            color="tab:green",
+            alpha=0.75,
+            linewidth=3,
+        )
+        axs[num_line, num_col].plot(
             time_vector_without,
             qdot_without_deg[i_dof],
             color="tab:blue",
@@ -508,12 +539,26 @@ if PLOT_TAU_FLAG:
             linewidth=1,
         )
         axs[num_line, num_col].plot(
+            time_tuck_without,
+            qdot_without_deg[i_dof, 42:73],
+            color="tab:blue",
+            alpha=0.75,
+            linewidth=3,
+        )
+        axs[num_line, num_col].plot(
             time_vector_CL,
             qdot_CL_deg[i_dof],
             color="tab:orange",
             label="Holonomic tucking constraints",
             alpha=0.75,
             linewidth=1,
+        )
+        axs[num_line, num_col].plot(
+            time_tuck_CL,
+            qdot_CL_deg[i_dof, 42:73],
+            color="tab:orange",
+            alpha=0.75,
+            linewidth=3,
         )
         plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, axs[num_line, num_col])
 
@@ -732,6 +777,13 @@ if PLOT_TAU_FLAG:
             label="No tucking constraints",
         )
         axs[num_line, num_col].plot(
+            time_tuck_free,
+            tau_free[i_dof, 42:73],
+            color="tab:green",
+            alpha=0.75,
+            linewidth=3,
+        )
+        axs[num_line, num_col].plot(
             time_vector_without,
             tau_without[i_dof],
             color="tab:blue",
@@ -740,12 +792,26 @@ if PLOT_TAU_FLAG:
             label="Kinematic tucking constraints",
         )
         axs[num_line, num_col].plot(
+            time_tuck_without,
+            tau_without[i_dof, 42:73],
+            color="tab:blue",
+            alpha=0.75,
+            linewidth=3,
+        )
+        axs[num_line, num_col].plot(
             time_vector_CL,
             tau_CL[i_dof],
             color="tab:orange",
             alpha=0.75,
             linewidth=1,
             label="Holonomic tucking constraints",
+        )
+        axs[num_line, num_col].plot(
+            time_tuck_CL,
+            tau_CL[i_dof, 42:73],
+            color="tab:orange",
+            alpha=0.75,
+            linewidth=3,
         )
         plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, axs[num_line, num_col])
 
@@ -788,6 +854,13 @@ if PLOT_TAU_FLAG:
         linewidth=1,
     )
     axs[0, 0].plot(
+        time_tuck_free,
+        np.sum(np.abs(tau_free[:, 42:73]), axis=0),
+        color="tab:green",
+        alpha=0.75,
+        linewidth=3,
+    )
+    axs[0, 0].plot(
         time_vector_without,
         np.sum(np.abs(tau_without), axis=0),
         color="tab:blue",
@@ -796,12 +869,26 @@ if PLOT_TAU_FLAG:
         linewidth=1,
     )
     axs[0, 0].plot(
+        time_tuck_without,
+        np.sum(np.abs(tau_without[:, 42:73]), axis=0),
+        color="tab:blue",
+        alpha=0.75,
+        linewidth=3,
+    )
+    axs[0, 0].plot(
         time_vector_CL,
         np.sum(np.abs(tau_CL), axis=0),
         color="tab:orange",
         label="Holonomic tucking constraints",
         alpha=0.75,
         linewidth=1,
+    )
+    axs[0, 0].plot(
+        time_tuck_CL,
+        np.sum(np.abs(tau_CL[:, 42:73]), axis=0),
+        color="tab:orange",
+        alpha=0.75,
+        linewidth=3,
     )
     plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, axs[0, 0])
 
@@ -833,12 +920,26 @@ if PLOT_TAU_FLAG:
         linewidth=1,
     )
     axs[1, 0].plot(
+        time_tuck_free,
+        np.sum(np.abs(tau_free_ratio_all[:, 42:73]), axis=0),
+        color="tab:green",
+        alpha=0.75,
+        linewidth=3,
+    )
+    axs[1, 0].plot(
         time_vector_without,
         np.sum(np.abs(tau_without_ratio_all), axis=0),
         color="tab:blue",
         label="Kinematic tucking constraints",
         alpha=0.75,
         linewidth=1,
+    )
+    axs[1, 0].plot(
+        time_tuck_without,
+        np.sum(np.abs(tau_without_ratio_all[:, 42:73]), axis=0),
+        color="tab:blue",
+        alpha=0.75,
+        linewidth=3,
     )
     axs[1, 0].plot(
         time_vector_CL,
@@ -848,6 +949,13 @@ if PLOT_TAU_FLAG:
         alpha=0.75,
         linewidth=1,
     )
+    axs[1, 0].plot(
+        time_tuck_CL,
+        np.sum(np.abs(tau_CL_ratio_all[:, 42:73]), axis=0),
+        color="tab:orange",
+        alpha=0.75,
+        linewidth=3,
+    )
 
     plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, axs[1, 0])
 
@@ -855,18 +963,27 @@ if PLOT_TAU_FLAG:
     integral_tau_all_without = np.trapezoid(np.sum(np.abs(tau_without), axis=0), x=time_vector_without)
     integral_tau_all_free = np.trapezoid(np.sum(np.abs(tau_free), axis=0), x=time_vector_free)
     axs[0, 1].bar([0, 1, 2], [integral_tau_all_free, integral_tau_all_without, integral_tau_all_CL], color=["tab:green", "tab:blue", "tab:orange"])
+    axs[0, 1].text(0, integral_tau_all_free + 0.1, f"{integral_tau_all_free:.2f} Nms", ha="center", va="bottom")
+    axs[0, 1].text(1, integral_tau_all_without + 0.1, f"{integral_tau_all_without:.2f} Nms", ha="center", va="bottom")
+    axs[0, 1].text(2, integral_tau_all_CL + 0.1, f"{integral_tau_all_CL:.2f} Nms", ha="center", va="bottom")
+
     integral_tau_all_ratio_CL = np.trapezoid(np.sum(np.abs(tau_CL_ratio_all), axis=0), x=time_vector_CL)
     integral_tau_all_ratio_without = np.trapezoid(np.sum(np.abs(tau_without_ratio_all), axis=0), x=time_vector_without)
     integral_tau_all_ratio_free = np.trapezoid(np.sum(np.abs(tau_free_ratio_all), axis=0), x=time_vector_free)
     axs[1, 1].bar([0, 1, 2], [integral_tau_all_ratio_free, integral_tau_all_ratio_without, integral_tau_all_ratio_CL], color=["tab:green", "tab:blue", "tab:orange"])
+    axs[1, 1].text(0, integral_tau_all_ratio_free + 0.1, f"{integral_tau_all_ratio_free:.2f} Nms", ha="center", va="bottom")
+    axs[1, 1].text(1, integral_tau_all_ratio_without + 0.1, f"{integral_tau_all_ratio_without:.2f} Nms", ha="center", va="bottom")
+    axs[1, 1].text(2, integral_tau_all_ratio_CL + 0.1, f"{integral_tau_all_ratio_CL:.2f} Nms", ha="center", va="bottom")
 
-    # axs[0, 0].set_xlabel("Time [s]")
+
     axs[0, 0].set_ylabel("Joint torque \n[Nm]")
     axs[1, 0].set_xlabel("Time [s]")
-    axs[1, 0].set_ylabel("Physiological joint torque ratio")
+    axs[1, 0].set_ylabel("Physiological \njoint torque ratio")
     axs[0, 1].set_xticks([0, 1, 2], ["NTC", "KTC", "HTC"])
     axs[1, 1].set_xticks([0, 1, 2], ["NTC", "KTC", "HTC"])
     axs[0, 1].set_ylabel(r"$\int{ | \tau | dt}$" + "\n[Nm.s]")
+    axs[0, 1].set_ylim(0, 1200)
+    axs[1, 1].set_ylim(0, 8)
     axs[0, 0].set_xticks([0.0, 0.5, 1.0, 1.5], ["0.0", "0.5", "1.0", "1.5"])
     axs[1, 0].set_xticks([0.0, 0.5, 1.0, 1.5], ["0.0", "0.5", "1.0", "1.5"])
 
@@ -880,9 +997,9 @@ if PLOT_TAU_FLAG:
     plt.savefig("tau_ratio_all" + "." + format_graph, format=format_graph)
     # plt.show()
 
-    hip_tau_CL = np.trapezoid(np.abs(tau_CL[2, :]), x=time_vector_CL)
-    hip_tau_without = np.trapezoid(np.abs(tau_without[2, :]), x=time_vector_without)
-    hip_tau_free = np.trapezoid(np.abs(tau_free[2, :]), x=time_vector_free)
+    hip_tau_CL = np.trapezoid(np.abs(tau_CL[2, 21:104]), x=time_vector_CL[21:104])
+    hip_tau_without = np.trapezoid(np.abs(tau_without[2, 21:104]), x=time_vector_without[21:104])
+    hip_tau_free = np.trapezoid(np.abs(tau_free[2, 21:104]), x=time_vector_free[21:104])
     print("Hip tau CL: ", hip_tau_CL)
     print("Hip tau without: ", hip_tau_without)
     print("Hip tau free: ", hip_tau_free)
@@ -924,12 +1041,26 @@ if PLOT_TAU_FLAG:
             label="No tucking constraints",
         )
         axs[num_line, num_col].step(
+            time_tuck_free[:-1],
+            taudot_free[i_dof, 40:70],
+            color="tab:green",
+            alpha=0.75,
+            linewidth=3,
+        )
+        axs[num_line, num_col].step(
             time_control_without,
             taudot_without[i_dof],
             color="tab:blue",
             alpha=0.75,
             linewidth=1,
             label="Kinematic tucking constraints",
+        )
+        axs[num_line, num_col].step(
+            time_tuck_without[:-1],
+            taudot_without[i_dof, 40:70],
+            color="tab:blue",
+            alpha=0.75,
+            linewidth=3,
         )
         axs[num_line, num_col].step(
             time_control_CL,
@@ -939,17 +1070,22 @@ if PLOT_TAU_FLAG:
             linewidth=1,
             label="Holonomic tucking constraints",
         )
+        axs[num_line, num_col].step(
+            time_tuck_CL[:-1],
+            taudot_CL[i_dof, 40:70],
+            color="tab:orange",
+            alpha=0.75,
+            linewidth=3,
+        )
         plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, axs[num_line, num_col])
 
         axs[num_line, num_col].set_title(dof_names_tau[i_dof], fontsize=8)
         axs[num_line, num_col].set_xlim(time_min_graph, time_max_graph)
         axs[num_line, num_col].grid(True, linewidth=0.4)
+
         # Réduire la taille des labels des xticks et yticks
         axs[num_line, num_col].tick_params(axis="both", which="major", labelsize=6)
-        if num_line == 0:
-            axs[num_line, num_col].set_ylim(-y_max_1 + (-y_max_1 * 0.1), y_max_1 + (y_max_1 * 0.1))
-        else:
-            axs[num_line, num_col].set_ylim(-y_max_2 + (-y_max_2 * 0.1), y_max_2 + (y_max_2 * 0.1))
+        axs[num_line, num_col].set_ylim(-2800, 9000)
 
         num_col += 1
         if num_col == 3:
@@ -959,8 +1095,8 @@ if PLOT_TAU_FLAG:
             axs[num_line, num_col].set_xlabel("Time [s]", fontsize=7)
 
     # Y_label
-    axs[0, 1].set_ylabel("Joint torque derivative [Nm/s]", fontsize=7)  # Arm Rotation
-    axs[1, 0].set_ylabel("Joint torque derivative [Nm/s]", fontsize=7)  # Leg Rotation
+    axs[0, 1].set_ylabel("Joint torque derivative [Nm/s]", fontsize=7)
+    axs[1, 0].set_ylabel("Joint torque derivative [Nm/s]", fontsize=7)
     plt.tight_layout()
     plt.subplots_adjust(wspace=0.15, hspace=0.4)
     fig.savefig("taudot" + "." + format_graph, format=format_graph)
@@ -990,10 +1126,24 @@ if PLOT_INERTIA_FLAG:
         linewidth=1,
     )
     ax[0].plot(
+        time_tuck_free,
+        inertia_free[42:73, 0],
+        color="tab:green",
+        alpha=0.75,
+        linewidth=3,
+    )
+    ax[0].plot(
         time_vector_without,
         inertia_without[:, 0],
         color="tab:blue",
         label="Kinematic tucking constraints",
+        alpha=0.75,
+        linewidth=1,
+    )
+    ax[0].plot(
+        time_tuck_without,
+        inertia_without[42:73, 0],
+        color="tab:blue",
         alpha=0.75,
         linewidth=1,
     )
@@ -1004,6 +1154,13 @@ if PLOT_INERTIA_FLAG:
         label="Holonomic tucking constraints",
         alpha=0.75,
         linewidth=1,
+    )
+    ax[0].plot(
+        time_tuck_CL,
+        inertia_CL[42:73, 0],
+        color="tab:orange",
+        alpha=0.75,
+        linewidth=3,
     )
     plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, ax[0])
 
@@ -1039,6 +1196,13 @@ if PLOT_INERTIA_FLAG:
         linewidth=1,
     )
     ax[1].plot(
+        time_tuck_free,
+        np.linalg.norm(ang_mom_free[42:73, :], axis=1),
+        color="tab:green",
+        alpha=0.75,
+        linewidth=3,
+    )
+    ax[1].plot(
         time_vector_without,
         np.linalg.norm(ang_mom_without, axis=1),
         color="tab:blue",
@@ -1047,12 +1211,26 @@ if PLOT_INERTIA_FLAG:
         linewidth=1,
     )
     ax[1].plot(
+        time_tuck_without,
+        np.linalg.norm(ang_mom_without[42:73, :], axis=1),
+        color="tab:blue",
+        alpha=0.75,
+        linewidth=3,
+    )
+    ax[1].plot(
         time_vector_CL,
         np.linalg.norm(ang_mom_CL, axis=1),
         color="tab:orange",
         label="Holonomic tucking constraints",
         alpha=0.75,
         linewidth=1,
+    )
+    ax[1].plot(
+        time_tuck_CL,
+        np.linalg.norm(ang_mom_CL[42:73, :], axis=1),
+        color="tab:orange",
+        alpha=0.75,
+        linewidth=3,
     )
     plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, ax[1])
 
@@ -1086,6 +1264,13 @@ if PLOT_INERTIA_FLAG:
         linewidth=1,
     )
     ax[2].plot(
+        time_tuck_free,
+        body_velo_free[42:73, 0],
+        color="tab:green",
+        alpha=0.75,
+        linewidth=3,
+    )
+    ax[2].plot(
         time_vector_without,
         body_velo_without[:, 0],
         color="tab:blue",
@@ -1094,12 +1279,26 @@ if PLOT_INERTIA_FLAG:
         linewidth=1,
     )
     ax[2].plot(
+        time_tuck_without,
+        body_velo_without[42:73, 0],
+        color="tab:blue",
+        alpha=0.75,
+        linewidth=3,
+    )
+    ax[2].plot(
         time_vector_CL,
         body_velo_CL[:, 0],
         color="tab:orange",
         label="Holonomic tucking constraints",
         alpha=0.75,
         linewidth=1,
+    )
+    ax[2].plot(
+        time_tuck_CL,
+        body_velo_CL[42:73, 0],
+        color="tab:orange",
+        alpha=0.75,
+        linewidth=3,
     )
     plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, ax[2])
 
@@ -1126,12 +1325,26 @@ if PLOT_INERTIA_FLAG:
         linewidth=1,
     )
     ax[3].plot(
+        time_tuck_free,
+        centricugal_free[42:73],
+        color="tab:green",
+        alpha=0.75,
+        linewidth=3,
+    )
+    ax[3].plot(
         time_vector_without,
         centricugal_without,
         color="tab:blue",
         label="Kinematic tucking constraints",
         alpha=0.75,
         linewidth=1,
+    )
+    ax[3].plot(
+        time_tuck_without,
+        centricugal_without[42:73],
+        color="tab:blue",
+        alpha=0.75,
+        linewidth=3,
     )
     ax[3].plot(
         time_vector_CL,
@@ -1141,9 +1354,16 @@ if PLOT_INERTIA_FLAG:
         alpha=0.75,
         linewidth=1,
     )
+    ax[3].plot(
+        time_tuck_CL,
+        centricugal_CL[42:73],
+        color="tab:orange",
+        alpha=0.75,
+        linewidth=3,
+    )
     plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, ax[3])
 
-    ax[3].set_ylabel("Centrifugal pseudo-force\n" + r"[$N$]")
+    ax[3].set_ylabel("Centrifugal \npseudo-force\n" + r"[$N$]")
     ax[3].set_xlim(time_min_graph, time_max_graph)
     ax[3].grid(True, linewidth=0.4)
     ax[3].set_xlabel("Time [s]")
@@ -1180,6 +1400,9 @@ if PLOT_ENERY_FLAG:
     plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, axs[0])
 
     axs[1].bar([0, 1, 2], [energy_free, energy_without, energy_CL], color=["tab:green", "tab:blue", "tab:orange"])
+    axs[1].text(0, energy_free + 0.1, f"{energy_free:.2f} J", ha="center", va="bottom")
+    axs[1].text(1, energy_without + 0.1, f"{energy_without:.2f} J", ha="center", va="bottom")
+    axs[1].text(2, energy_CL + 0.1, f"{energy_CL:.2f} J", ha="center", va="bottom")
 
     axs[0].legend(bbox_to_anchor=(2.4, 1.3), ncol=3)
     axs[0].grid(True, linewidth=0.4)
@@ -1188,6 +1411,7 @@ if PLOT_ENERY_FLAG:
     axs[0].set_xticks([0.0, 0.5, 1.0, 1.5], ["0.0", "0.5", "1.0", "1.5"])
 
     axs[1].set_ylabel("Energy expenditure \n[J]")
+    axs[1].set_ylim(0, 5500)
     axs[1].set_xticks([0, 1, 2], ["NTC", "KTC", "HTC"])
 
     plt.subplots_adjust(wspace=0.4, bottom=0.2, top=0.8)
