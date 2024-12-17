@@ -9,6 +9,10 @@ import numpy as np
 import pickle
 import pandas as pd
 
+from matplotlib import rcParams
+rcParams['font.family'] = 'DeJavu Serif'  # Use serif font
+rcParams['font.serif'] = ['Times New Roman']  # Specify Times New Roman or Times
+
 
 def force_treatment(forces_insoles, time, first_peak_time):
 
@@ -75,6 +79,8 @@ ax.set_ylabel("Force on the tibia [N]")
 plt.subplots_adjust(right=0.7)
 plt.savefig("hand_leg_forces_experimental_vs_simulations.svg", format="svg")
 plt.show()
+
+print("Max lambda norm : ", np.max(np.linalg.norm(lambdas, axis=0)))
 
 
 
