@@ -7,10 +7,15 @@ import biorbd
 import matplotlib.pyplot as plt
 import pickle
 
+from matplotlib import rcParams
+rcParams['font.family'] = 'DeJavu Serif'  # Use serif font
+rcParams['font.serif'] = ['Times New Roman']  # Specify Times New Roman or Times
+
 import sys
 sys.path.append("../holonomic_research/")
 from actuators import Joint, actuator_function
 from actuator_constants import ACTUATORS
+
 
 def get_created_data_from_pickle(file: str):
     """
@@ -165,7 +170,7 @@ phase_delimiter = ["-", "--", ":", "-.", "-"]
 dof_names = [
     "Pelvis \n(Translation Y)",
     "Pelvis \n(Translation Z)",
-    "Pelvis",
+    "Pelvis (Rotation X)",
     "Shoulder",
     "Elbow",
     "Hip",
@@ -346,7 +351,7 @@ if PLOT_TAU_FLAG:
             color="tab:green",
             alpha=0.1,
             step="pre",
-            linewidth=0.5,
+            linewidth=1,
         )
         axs[num_line, num_col].fill_between(
             time_vector_free,
@@ -355,7 +360,7 @@ if PLOT_TAU_FLAG:
             color="tab:green",
             alpha=0.1,
             step="pre",
-            linewidth=0.5,
+            linewidth=1,
         )
         axs[num_line, num_col].fill_between(
             time_vector_without,
@@ -364,7 +369,7 @@ if PLOT_TAU_FLAG:
             color="tab:blue",
             alpha=0.1,
             step="pre",
-            linewidth=0.5,
+            linewidth=1,
         )
         axs[num_line, num_col].fill_between(
             time_vector_without,
@@ -373,7 +378,7 @@ if PLOT_TAU_FLAG:
             color="tab:blue",
             alpha=0.1,
             step="pre",
-            linewidth=0.5,
+            linewidth=1,
         )
         axs[num_line, num_col].fill_between(
             time_vector_CL,
@@ -382,7 +387,7 @@ if PLOT_TAU_FLAG:
             color="tab:orange",
             alpha=0.1,
             step="pre",
-            linewidth=0.5,
+            linewidth=1,
         )
         axs[num_line, num_col].fill_between(
             time_vector_CL,
@@ -391,7 +396,7 @@ if PLOT_TAU_FLAG:
             color="tab:orange",
             alpha=0.1,
             step="pre",
-            linewidth=0.5,
+            linewidth=1,
         )
 
         axs[num_line, num_col].plot(
@@ -474,8 +479,8 @@ if PLOT_TAU_FLAG:
         color="tab:green",
         alpha=0.1,
         step="pre",
-        linewidth=0.5,
-        label="$q_{bounds}$ No tucking constraints",
+        linewidth=1,
+        label="Joint coordinates bounds ($q_{bounds}$) - NTC",
     )
     axs[0, 0].fill_between(
         np.array([0, 0]),
@@ -484,8 +489,8 @@ if PLOT_TAU_FLAG:
         color="tab:blue",
         alpha=0.1,
         step="pre",
-        linewidth=0.5,
-        label="$q_{bounds}$ Kinematic tucking constraints",
+        linewidth=1,
+        label="Joint coordinates bounds ($q_{bounds}$) - KTC",
     )
     axs[0, 0].fill_between(
         np.array([0, 0]),
@@ -494,8 +499,8 @@ if PLOT_TAU_FLAG:
         color="tab:orange",
         alpha=0.1,
         step="pre",
-        linewidth=0.5,
-        label="$q_{bounds}$ Holonomic tucking constraints",
+        linewidth=1,
+        label="Joint coordinates bounds ($q_{bounds}$) - HTC",
     )
     handles, labels = axs[0, 0].get_legend_handles_labels()
 
@@ -504,7 +509,7 @@ if PLOT_TAU_FLAG:
     axs[0, 2].axis("off")
     plt.tight_layout()
     plt.subplots_adjust(wspace=0.15, hspace=0.4)
-    fig.savefig("q" + "." + format_graph, format=format_graph)
+    fig.savefig("q" + "." + format_graph, format=format_graph, dpi=300)
 
     # Figure qdot
     fig, axs = plt.subplots(3, 3, figsize=(10, 6))
@@ -596,7 +601,7 @@ if PLOT_TAU_FLAG:
         axs[0, 2].axis("off")
     plt.tight_layout()
     plt.subplots_adjust(wspace=0.15, hspace=0.4)
-    fig.savefig("qdot" + "." + format_graph, format=format_graph)
+    fig.savefig("qdot" + "." + format_graph, format=format_graph, dpi=300)
 
 
     tau_CL_min_bound = np.zeros((5, tau_CL.shape[1]))
@@ -696,17 +701,17 @@ if PLOT_TAU_FLAG:
     y_max_1 = np.max([abs(tau_without[0:2, :]), abs(tau_CL[0:2, :]), abs(tau_free[0:2, :])])
     y_max_2 = np.max([abs(tau_without[2:, :]), abs(tau_CL[2:, :]), abs(tau_free[2:, :])])
 
-    axs[0, 0].plot([], [], color="tab:green", label="No tucking constraints")
-    axs[0, 0].plot([], [], color="tab:blue", label="Kinematic tucking constraints")
-    axs[0, 0].plot([], [], color="tab:orange", label="Holonomic tucking contraints")
+    axs[0, 0].plot([], [], color="tab:green", label="No tucking constraints (NTC)")
+    axs[0, 0].plot([], [], color="tab:blue", label="Kinematic tucking constraints (KTC)")
+    axs[0, 0].plot([], [], color="tab:orange", label="Holonomic tucking contraints (HTC)")
     axs[0, 0].fill_between(
-        [], [], [], color="tab:green", alpha=0.1, label=r"$\tilde{\tau}^{max}$ No tucking constraints", linewidth=0.5
+        [], [], [], color="tab:green", alpha=0.1, label=r"Non-physiological torque ($\tilde{\tau}^{max}(q, \tau)$) - NTC", linewidth=1
     )
     axs[0, 0].fill_between(
-        [], [], [], color="tab:blue", alpha=0.1, label=r"$\tilde{\tau}^{max}$ Kinematic tucking constraints", linewidth=0.5
+        [], [], [], color="tab:blue", alpha=0.1, label=r"Non-physiological torque ($\tilde{\tau}^{max}(q, \tau)$) - KTC", linewidth=1
     )
     axs[0, 0].fill_between(
-        [], [], [], color="tab:orange", alpha=0.1, label=r"$\tilde{\tau}^{max}$ Holonomic tucking contraints", linewidth=0.5
+        [], [], [], color="tab:orange", alpha=0.1, label=r"Non-physiological torque ($\tilde{\tau}^{max}(q, \tau)$) - (HTC)", linewidth=1
     )
     axs[0, 0].legend(loc="center right", bbox_to_anchor=(0.9, 0.5), fontsize=8)
     axs[0, 0].axis("off")
@@ -720,7 +725,7 @@ if PLOT_TAU_FLAG:
             color="tab:green",
             alpha=0.1,
             step="pre",
-            linewidth=0.5,
+            linewidth=1,
         )
         axs[num_line, num_col].fill_between(
             time_vector_free,
@@ -729,7 +734,7 @@ if PLOT_TAU_FLAG:
             color="tab:green",
             alpha=0.1,
             step="pre",
-            linewidth=0.5,
+            linewidth=1,
         )
         axs[num_line, num_col].fill_between(
             time_vector_without,
@@ -738,7 +743,7 @@ if PLOT_TAU_FLAG:
             color="tab:blue",
             alpha=0.1,
             step="pre",
-            linewidth=0.5,
+            linewidth=1,
         )
         axs[num_line, num_col].fill_between(
             time_vector_without,
@@ -747,7 +752,7 @@ if PLOT_TAU_FLAG:
             color="tab:blue",
             alpha=0.1,
             step="pre",
-            linewidth=0.5,
+            linewidth=1,
         )
         axs[num_line, num_col].fill_between(
             time_vector_CL,
@@ -756,7 +761,7 @@ if PLOT_TAU_FLAG:
             color="tab:orange",
             alpha=0.1,
             step="pre",
-            linewidth=0.5,
+            linewidth=1,
         )
         axs[num_line, num_col].fill_between(
             time_vector_CL,
@@ -765,7 +770,7 @@ if PLOT_TAU_FLAG:
             color="tab:orange",
             alpha=0.1,
             step="pre",
-            linewidth=0.5,
+            linewidth=1,
         )
 
         axs[num_line, num_col].plot(
@@ -837,7 +842,7 @@ if PLOT_TAU_FLAG:
     axs[1, 0].set_ylabel("Joint torque [Nm]", fontsize=7)  # Leg Rotation
     plt.tight_layout()
     plt.subplots_adjust(wspace=0.15, hspace=0.4)
-    fig.savefig("tau" + "." + format_graph, format=format_graph)
+    fig.savefig("tau" + "." + format_graph, format=format_graph, dpi=300)
 
     # Tau ratio all phases
     tau_CL_ratio_all = np.zeros(tau_CL.shape)
@@ -849,7 +854,7 @@ if PLOT_TAU_FLAG:
         time_vector_free,
         np.sum(np.abs(tau_free), axis=0),
         color="tab:green",
-        label="No tucking constraints",
+        label="No tucking constraints (NTC)",
         alpha=0.75,
         linewidth=1,
     )
@@ -864,7 +869,7 @@ if PLOT_TAU_FLAG:
         time_vector_without,
         np.sum(np.abs(tau_without), axis=0),
         color="tab:blue",
-        label="Kinematic tucking constraints",
+        label="Kinematic tucking constraints (KTC)",
         alpha=0.75,
         linewidth=1,
     )
@@ -879,7 +884,7 @@ if PLOT_TAU_FLAG:
         time_vector_CL,
         np.sum(np.abs(tau_CL), axis=0),
         color="tab:orange",
-        label="Holonomic tucking constraints",
+        label="Holonomic tucking constraints (HTC)",
         alpha=0.75,
         linewidth=1,
     )
@@ -971,9 +976,9 @@ if PLOT_TAU_FLAG:
     integral_tau_all_ratio_without = np.trapezoid(np.sum(np.abs(tau_without_ratio_all), axis=0), x=time_vector_without)
     integral_tau_all_ratio_free = np.trapezoid(np.sum(np.abs(tau_free_ratio_all), axis=0), x=time_vector_free)
     axs[1, 1].bar([0, 1, 2], [integral_tau_all_ratio_free, integral_tau_all_ratio_without, integral_tau_all_ratio_CL], color=["tab:green", "tab:blue", "tab:orange"])
-    axs[1, 1].text(0, integral_tau_all_ratio_free + 0.1, f"{integral_tau_all_ratio_free:.2f} Nms", ha="center", va="bottom")
-    axs[1, 1].text(1, integral_tau_all_ratio_without + 0.1, f"{integral_tau_all_ratio_without:.2f} Nms", ha="center", va="bottom")
-    axs[1, 1].text(2, integral_tau_all_ratio_CL + 0.1, f"{integral_tau_all_ratio_CL:.2f} Nms", ha="center", va="bottom")
+    axs[1, 1].text(0, integral_tau_all_ratio_free + 0.1, f"{integral_tau_all_ratio_free:.2f} s", ha="center", va="bottom")
+    axs[1, 1].text(1, integral_tau_all_ratio_without + 0.1, f"{integral_tau_all_ratio_without:.2f} s", ha="center", va="bottom")
+    axs[1, 1].text(2, integral_tau_all_ratio_CL + 0.1, f"{integral_tau_all_ratio_CL:.2f} s", ha="center", va="bottom")
 
 
     axs[0, 0].set_ylabel("Joint torque \n[Nm]")
@@ -994,7 +999,7 @@ if PLOT_TAU_FLAG:
 
     axs[1, 1].set_ylabel(r"$\int{ | \tau/{\tilde{\tau}^{max}} | dt}$" + "\n[s]")
     plt.subplots_adjust(hspace=0.4, wspace=0.3, top=0.85)
-    plt.savefig("tau_ratio_all" + "." + format_graph, format=format_graph)
+    plt.savefig("tau_ratio_all" + "." + format_graph, format=format_graph, dpi=300)
     # plt.show()
 
     hip_tau_CL = np.trapezoid(np.abs(tau_CL[2, 21:104]), x=time_vector_CL[21:104])
@@ -1099,7 +1104,7 @@ if PLOT_TAU_FLAG:
     axs[1, 0].set_ylabel("Joint torque derivative [Nm/s]", fontsize=7)
     plt.tight_layout()
     plt.subplots_adjust(wspace=0.15, hspace=0.4)
-    fig.savefig("taudot" + "." + format_graph, format=format_graph)
+    fig.savefig("taudot" + "." + format_graph, format=format_graph, dpi=300)
 
 
 if PLOT_INERTIA_FLAG:
@@ -1415,5 +1420,5 @@ if PLOT_ENERY_FLAG:
     axs[1].set_xticks([0, 1, 2], ["NTC", "KTC", "HTC"])
 
     plt.subplots_adjust(wspace=0.4, bottom=0.2, top=0.8)
-    plt.savefig("Energy"+ "." + format_graph, format=format_graph)
+    plt.savefig("Energy"+ "." + format_graph, format=format_graph, dpi=300)
     plt.show()
