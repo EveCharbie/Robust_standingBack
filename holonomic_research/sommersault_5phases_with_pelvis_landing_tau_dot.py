@@ -156,7 +156,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     if WITH_MULTI_START:
         x_init.add_noise(
             bounds=x_bounds,
-            # magnitude=0,
             magnitude=0.2,
             magnitude_type=MagnitudeType.RELATIVE,
             n_shooting=[n_shooting[i] + 1 for i in range(len(n_shooting))],
@@ -164,7 +163,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
         )
         u_init.add_noise(
             bounds=u_bounds,
-            # magnitude=0,
             magnitude=0.1,
             magnitude_type=MagnitudeType.RELATIVE,
             n_shooting=[n_shooting[i] for i in range(len(n_shooting))],
