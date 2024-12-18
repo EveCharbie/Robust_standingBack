@@ -58,20 +58,20 @@ for file in file_names.keys():
     time_insoles = data_L["time"]
 
     force, time = force_treatment(-forces_insoles, time_insoles, file_names[file])
-    ax.plot(time, -force, label=file, color='k', alpha=0.1)
+    ax.plot(time, force, label=file, color='k', alpha=0.1)
 
     times[:, list(file_names.keys()).index(file)] = time
     forces[:, list(file_names.keys()).index(file)] = force
 
 # Plot the mean
-ax.plot(time, np.mean(-forces, axis=1), label="Mean", color='k', linewidth=2)
+ax.plot(time, np.mean(forces, axis=1), label="Mean", color='k', linewidth=2)
 # ax.fill_between(time, np.min(forces, axis=1), np.max(forces, axis=1), color='k', alpha=0.1)
 ax.plot([time[0], time[-1]], [0, 0], '-k', linewidth=0.5)
 
 # Plot the simulation results
 time_tuck = data_CL["time"][2] - data_CL["time"][2][0]
-ax.plot(time_tuck, -lambdas[0], color='r', label=["Normal force"])
-ax.plot(time_tuck, -lambdas[1], color='g', label=["Shear force"])
+ax.plot(time_tuck, lambdas[0], color='r', label=["Normal force"])
+ax.plot(time_tuck, lambdas[1], color='g', label=["Shear force"])
 
 ax.legend(bbox_to_anchor=(1.0, 1), loc='upper left')
 ax.set_xlabel("Time [s]")

@@ -15,7 +15,11 @@ import sys
 sys.path.append("../holonomic_research/")
 from actuators import Joint, actuator_function
 from actuator_constants import ACTUATORS
-
+from sommersault_5phases_with_pelvis_landing_tau_dot import prepare_ocp as prepare_ocp_without
+from constants import (
+    PATH_MODEL_1_CONTACT,
+    PATH_MODEL,
+)
 
 def get_created_data_from_pickle(file: str):
     """
@@ -121,6 +125,10 @@ if CONSIDER_ONLY_CONVERGED:
 else:
     end_file = ".pkl"
 
+biorbd_model_path = (PATH_MODEL_1_CONTACT, PATH_MODEL, PATH_MODEL, PATH_MODEL, PATH_MODEL_1_CONTACT)
+phase_time = (0.2, 0.2, 0.3, 0.3, 0.3)
+n_shooting = (20, 20, 30, 30, 30)
+
 min_cost_without = np.inf
 for file in os.listdir(path_without):
     if file.endswith(end_file):
@@ -128,6 +136,11 @@ for file in os.listdir(path_without):
         if data["cost"] < min_cost_without:
             min_cost_without = data["cost"]
             sol_without = path_without + file
+            # bioptim_sol_path = path_without + file.replace(".pkl", "_sol.pkl")
+            # with open(bioptim_sol_path, "rb") as f:
+            #     bioptim_sol_without = pickle.load(f)
+            # bioptim_sol_without.ocp = prepare_ocp_without(biorbd_model_path, phase_time, n_shooting, False, 0)
+            # bioptim_sol_without.detailed_cost()
 print("Min cost without: ", min_cost_without)
 
 min_cost_CL = np.inf
@@ -403,7 +416,7 @@ if PLOT_TAU_FLAG:
             time_vector_free,
             q_free_deg[i_dof, :],
             color="tab:green",
-            label="No tucking constraints",
+            label="No tucking constraint",
             alpha=0.75,
             linewidth=1,
         )
@@ -520,11 +533,14 @@ if PLOT_TAU_FLAG:
     y_max_3 = np.max([abs(qdot_without_deg[5:, :]), abs(qdot_without_deg[5:, :])])
     for i_dof in range(qdot_CL_deg.shape[0]):
         axs[num_line, num_col].plot(np.array([time_min_graph, time_max_graph]), np.array([0, 0]), "-k", linewidth=0.5)
+
+        plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, axs[num_line, num_col])
+
         axs[num_line, num_col].plot(
             time_vector_free,
             qdot_free_deg[i_dof],
             color="tab:green",
-            label="No tucking constraints",
+            label="No tucking constraint",
             alpha=0.75,
             linewidth=1,
         )
@@ -565,20 +581,20 @@ if PLOT_TAU_FLAG:
             alpha=0.75,
             linewidth=3,
         )
-        plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, axs[num_line, num_col])
 
         axs[num_line, num_col].set_title(dof_names[i_dof])
 
+        axs[num_line, num_col].set_title(dof_names[i_dof], fontsize=8)
+        axs[num_line, num_col].set_xlim(time_min_graph, time_max_graph)
+        axs[num_line, num_col].grid(True, linewidth=0.4)
+        # Réduire la taille des labels des xticks et yticks
+        axs[num_line, num_col].tick_params(axis="both", which="major", labelsize=6)
         if num_line == 0:
             axs[num_line, num_col].set_ylim(-y_max_1 + (-y_max_1 * 0.1), y_max_1 + (y_max_1 * 0.1))
         elif num_line == 1:
             axs[num_line, num_col].set_ylim(-y_max_2 + (-y_max_2 * 0.1), y_max_2 + (y_max_2 * 0.1))
         elif num_line == 2:
             axs[num_line, num_col].set_ylim(-y_max_3 + (-y_max_3 * 0.1), y_max_3 + (y_max_3 * 0.1))
-        axs[num_line, num_col].set_xlim(time_min_graph, time_max_graph)
-        axs[num_line, num_col].grid(True, linewidth=0.4)
-        # Réduire la taille des labels des xticks et yticks
-        axs[num_line, num_col].tick_params(axis="both", which="major")
 
         num_col = num_col + 1
         if i_dof == 1:
@@ -590,20 +606,23 @@ if PLOT_TAU_FLAG:
         if num_line == 2:
             axs[num_line, num_col].set_xlabel("Time [s]", fontsize=7)
 
-        # Y_label
-        axs[0, 0].set_ylabel("Velocity [m/s]", fontsize=7)  # Pelvis Translation
-        axs[1, 0].set_ylabel("F (+) / E (-) [" + r"$^\circ$/s" + "]", fontsize=7)  # Pelvis Rotation
-        axs[2, 0].set_ylabel("F (+) / E (-) [" + r"$^\circ$/s" + "]", fontsize=7)  # Thight Rotation
-        handles, labels = axs[0, 0].get_legend_handles_labels()
+    # Y_label
+    axs[0, 0].set_ylabel("Velocity [m/s]", fontsize=7)  # Pelvis Translation
+    axs[1, 0].set_ylabel(r"Joint angular velocity [$^\circ/s$]", fontsize=7)  # Pelvis Rotation
+    axs[2, 0].set_ylabel(r"Joint angular velocity [$^\circ/s$]", fontsize=7)  # Thight Rotation
 
-        # Ajouter la légende à la figure de la première ligne, troisième colonne
-        axs[0, 2].legend(handles, labels, loc="center", fontsize=7)
-        axs[0, 2].axis("off")
+    handles, labels = axs[0, 0].get_legend_handles_labels()
+
+    # Ajouter la légende à la figure de la première ligne, troisième colonne
+    axs[0, 2].legend(handles, labels, loc="center", fontsize=7)
+    axs[0, 2].axis("off")
+
     plt.tight_layout()
     plt.subplots_adjust(wspace=0.15, hspace=0.4)
     fig.savefig("qdot" + "." + format_graph, format=format_graph, dpi=300)
 
 
+    # Figure tau
     tau_CL_min_bound = np.zeros((5, tau_CL.shape[1]))
     tau_CL_max_bound = np.zeros((5, tau_CL.shape[1]))
     tau_without_min_bound = np.zeros((5, tau_without.shape[1]))
@@ -701,7 +720,7 @@ if PLOT_TAU_FLAG:
     y_max_1 = np.max([abs(tau_without[0:2, :]), abs(tau_CL[0:2, :]), abs(tau_free[0:2, :])])
     y_max_2 = np.max([abs(tau_without[2:, :]), abs(tau_CL[2:, :]), abs(tau_free[2:, :])])
 
-    axs[0, 0].plot([], [], color="tab:green", label="No tucking constraints (NTC)")
+    axs[0, 0].plot([], [], color="tab:green", label="No tucking constraint (NTC)")
     axs[0, 0].plot([], [], color="tab:blue", label="Kinematic tucking constraints (KTC)")
     axs[0, 0].plot([], [], color="tab:orange", label="Holonomic tucking contraints (HTC)")
     axs[0, 0].fill_between(
@@ -779,7 +798,7 @@ if PLOT_TAU_FLAG:
             color="tab:green",
             alpha=0.75,
             linewidth=1,
-            label="No tucking constraints",
+            label="No tucking constraint",
         )
         axs[num_line, num_col].plot(
             time_tuck_free,
@@ -854,7 +873,7 @@ if PLOT_TAU_FLAG:
         time_vector_free,
         np.sum(np.abs(tau_free), axis=0),
         color="tab:green",
-        label="No tucking constraints (NTC)",
+        label="No tucking constraint (NTC)",
         alpha=0.75,
         linewidth=1,
     )
@@ -920,7 +939,7 @@ if PLOT_TAU_FLAG:
         time_vector_free,
         np.sum(np.abs(tau_free_ratio_all), axis=0),
         color="tab:green",
-        label="No tucking constraints",
+        label="No tucking constraint",
         alpha=0.75,
         linewidth=1,
     )
@@ -992,7 +1011,7 @@ if PLOT_TAU_FLAG:
     axs[0, 0].set_xticks([0.0, 0.5, 1.0, 1.5], ["0.0", "0.5", "1.0", "1.5"])
     axs[1, 0].set_xticks([0.0, 0.5, 1.0, 1.5], ["0.0", "0.5", "1.0", "1.5"])
 
-    axs[1, 1].plot([], [], color="tab:green", label="No tucking constraints")
+    axs[1, 1].plot([], [], color="tab:green", label="No tucking constraint")
     axs[1, 1].plot([], [], color="tab:blue", label="Kinematic tucking constraints")
     axs[1, 1].plot([], [], color="tab:orange", label="Holonomic tucking constraints")
     axs[1, 1].legend(bbox_to_anchor=(1.0, 2.8), ncol=3)
@@ -1028,7 +1047,7 @@ if PLOT_TAU_FLAG:
     y_max_1 = np.max([abs(taudot_without[0:2, :]), abs(taudot_CL[0:2, :]), abs(taudot_free[0:2, :])])
     y_max_2 = np.max([abs(taudot_without[2:, :]), abs(taudot_CL[2:, :]), abs(taudot_free[2:, :])])
 
-    axs[0, 0].plot([], [], color="tab:green", label="No tucking constraints")
+    axs[0, 0].plot([], [], color="tab:green", label="No tucking constraint")
     axs[0, 0].plot([], [], color="tab:blue", label="Kinematic tucking constraints")
     axs[0, 0].plot([], [], color="tab:orange", label="Holonomic tucking contraints")
     axs[0, 0].legend(loc="center right", bbox_to_anchor=(0.9, 0.5), fontsize=8)
@@ -1043,7 +1062,7 @@ if PLOT_TAU_FLAG:
             color="tab:green",
             alpha=0.75,
             linewidth=1,
-            label="No tucking constraints",
+            label="No tucking constraint",
         )
         axs[num_line, num_col].step(
             time_tuck_free[:-1],
@@ -1126,7 +1145,7 @@ if PLOT_INERTIA_FLAG:
         time_vector_free,
         inertia_free[:, 0],
         color="tab:green",
-        label="No tucking constraints",
+        label="No tucking constraint",
         alpha=0.75,
         linewidth=1,
     )
@@ -1196,7 +1215,7 @@ if PLOT_INERTIA_FLAG:
         time_vector_free,
         np.linalg.norm(ang_mom_free, axis=1),
         color="tab:green",
-        label="No tucking constraints",
+        label="No tucking constraint",
         alpha=0.75,
         linewidth=1,
     )
@@ -1264,7 +1283,7 @@ if PLOT_INERTIA_FLAG:
         time_vector_free,
         body_velo_free[:, 0],
         color="tab:green",
-        label="No tucking constraints",
+        label="No tucking constraint",
         alpha=0.75,
         linewidth=1,
     )
@@ -1325,7 +1344,7 @@ if PLOT_INERTIA_FLAG:
         time_vector_free,
         centricugal_free,
         color="tab:green",
-        label="No tucking constraints",
+        label="No tucking constraint",
         alpha=0.75,
         linewidth=1,
     )
@@ -1399,7 +1418,7 @@ if PLOT_ENERY_FLAG:
     print("A reduction of ", (energy_free - energy_CL) / energy_free * 100, "% with the NTC")
 
     fig, axs = plt.subplots(1, 2, figsize=(10, 4))
-    axs[0].plot(time_vector_free, power_total_free, color="tab:green", label="No tucking constraints")
+    axs[0].plot(time_vector_free, power_total_free, color="tab:green", label="No tucking constraint")
     axs[0].plot(time_vector_without, power_total_without, color="tab:blue", label="Kinematic tucking constraints")
     axs[0].plot(time_vector_CL, power_total_CL, color="tab:orange", label="Holonomic tucking constraints")
     plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, axs[0])
