@@ -33,7 +33,7 @@ def force_treatment(forces_insoles, time, first_peak_time):
 
 
 # Get simulation forces
-# path_sol = "/home/mickaelbegon/Documents/Anais/results_simu"
+# path_sol = "/home/mickaelbegon/Documents/Anais/results"
 # path_sol = "../src/"
 sol_CL = "../src/solutions_CL/HTC/sol_3_CVG.pkl"
 data_CL = pd.read_pickle(sol_CL)

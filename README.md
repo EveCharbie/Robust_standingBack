@@ -31,7 +31,7 @@ keywords = {Holonomic constraint, Constraint dynamics, Predictive simulation, Op
 # How to install dependencies
 In order to run the code, you need to install the following packages from [pyomeca]( https://github.com/pyomeca):
 ```bash
-conda install -c conda-forge biorbd=1.11.1 python-graphviz matplotlib numpy scipy pyorerun bioviz=2.3.2
+conda install -c conda-forge biorbd=1.11.1 python-graphviz matplotlib numpy scipy pyorerun bioviz=2.3.2 plotly
 ```
 
 # Installing Bioptim from source
