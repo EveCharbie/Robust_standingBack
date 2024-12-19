@@ -1,5 +1,3 @@
-
-
 import os
 import numpy as np
 import pandas as pd
@@ -8,10 +6,12 @@ import matplotlib.pyplot as plt
 import pickle
 
 from matplotlib import rcParams
-rcParams['font.family'] = 'DeJavu Serif'  # Use serif font
-rcParams['font.serif'] = ['Times New Roman']  # Specify Times New Roman or Times
+
+rcParams["font.family"] = "DeJavu Serif"  # Use serif font
+rcParams["font.serif"] = ["Times New Roman"]  # Specify Times New Roman or Times
 
 import sys
+
 sys.path.append("../holonomic_research/")
 from actuators import Joint, actuator_function
 from actuator_constants import ACTUATORS
@@ -20,6 +20,7 @@ from constants import (
     PATH_MODEL_1_CONTACT,
     PATH_MODEL,
 )
+
 
 def get_created_data_from_pickle(file: str):
     """
@@ -51,6 +52,7 @@ def plot_vertical_time_lines(time_end_phase_CL, time_end_phase_without, time_end
     ax.axvline(time_end_phase_without, color=color_without, linestyle=linestyle, linewidth=linewidth)
     ax.axvline(time_end_phase_CL, color=color_CL, linestyle=linestyle, linewidth=linewidth)
     return
+
 
 def plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, ax):
     plot_vertical_time_lines(
@@ -91,6 +93,7 @@ def plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_fre
     )
     return
 
+
 def adjust_q_with_full_floating_base(q: np.ndarray) -> np.ndarray:
     """
     Adjust the q vector to take into account the full floating base
@@ -108,6 +111,7 @@ def adjust_q_with_full_floating_base(q: np.ndarray) -> np.ndarray:
     q_adjusted[1:4, :] = q[0:3, :]
     q_adjusted[6:, :] = q[3:, :]
     return q_adjusted
+
 
 # Solution with and without holonomic constraints
 path_without = "../holonomic_research/solutions/KTC/"
@@ -165,9 +169,9 @@ data_CL = pd.read_pickle(sol_CL)
 data_without = pd.read_pickle(sol_without)
 data_free = pd.read_pickle(sol_free)
 
-print("Computational time without: ", data_without["real_time_to_optimize"]/60, "min")
-print("Computational time CL: ", data_CL["real_time_to_optimize"]/60, "min")
-print("Computational time free: ", data_free["real_time_to_optimize"]/60, "min")
+print("Computational time without: ", data_without["real_time_to_optimize"] / 60, "min")
+print("Computational time CL: ", data_CL["real_time_to_optimize"] / 60, "min")
+print("Computational time free: ", data_free["real_time_to_optimize"] / 60, "min")
 
 print("Residual forces at take-off without: ", np.linalg.norm(data_without["contact_forces"][0][:, -1]), "N")
 print("Residual forces at take-off CL: ", np.linalg.norm(data_CL["contact_forces"][0][:, -1]), "N")
@@ -235,8 +239,9 @@ qdot_without_rad = data_without["qdot_all"]
 qdot_without_rad[6, :] = qdot_without_rad[6, :] * -1
 qdot_without_deg = np.vstack([qdot_without_rad[0:2, :], qdot_without_rad[2:, :] * 180 / np.pi])
 tau_without = data_without["tau_all"]
-taudot_without = data_without["taudot_all"] if "taudot_all" in data_without.keys() else np.hstack(
-    data_without["taudot"])
+taudot_without = (
+    data_without["taudot_all"] if "taudot_all" in data_without.keys() else np.hstack(data_without["taudot"])
+)
 
 time_without = data_without["time"]
 time_end_phase_without = []
@@ -304,12 +309,25 @@ for i in range(len(data_CL["time"])):
     time_phase_without.append(data_without["time"][i][-1] - data_without["time"][i][0])
     time_phase_free.append(data_free["time"][i][-1] - data_free["time"][i][0])
 
-print("*** Phase_time *** \nCL :", time_phase_CL, np.sum(time_phase_CL[1:4]),
-      "\nwithout : ", time_phase_without, np.sum(time_phase_without[1:4]),
-      "\nfree : ", time_phase_free, np.sum(time_phase_free[1:4]))
-print("Total CL :", np.sum(time_phase_CL),
-      "\nTotal without : ", np.sum(time_phase_without),
-      "\nTotal free : ", np.sum(time_phase_free))
+print(
+    "*** Phase_time *** \nCL :",
+    time_phase_CL,
+    np.sum(time_phase_CL[1:4]),
+    "\nwithout : ",
+    time_phase_without,
+    np.sum(time_phase_without[1:4]),
+    "\nfree : ",
+    time_phase_free,
+    np.sum(time_phase_free[1:4]),
+)
+print(
+    "Total CL :",
+    np.sum(time_phase_CL),
+    "\nTotal without : ",
+    np.sum(time_phase_without),
+    "\nTotal free : ",
+    np.sum(time_phase_free),
+)
 
 
 plt.figure()
@@ -931,9 +949,7 @@ if PLOT_TAU_FLAG:
             if tau_free[i_dof, i_node] > 0:
                 tau_free_ratio_all[i_dof, i_node] = tau_free[i_dof, i_node] / tau_free_max_bound[i_dof, i_node]
             else:
-                tau_free_ratio_all[i_dof, i_node] = np.abs(
-                    tau_free[i_dof, i_node] / tau_free_min_bound[i_dof, i_node]
-                )
+                tau_free_ratio_all[i_dof, i_node] = np.abs(tau_free[i_dof, i_node] / tau_free_min_bound[i_dof, i_node])
 
     axs[1, 0].plot(
         time_vector_free,
@@ -1393,7 +1409,7 @@ if PLOT_INERTIA_FLAG:
     ax[3].set_xlabel("Time [s]")
 
     fig.subplots_adjust()
-    plt.savefig("Inertia" + "." + format_graph, format = format_graph)
+    plt.savefig("Inertia" + "." + format_graph, format=format_graph)
     # plt.show()
 
     print("Max centrifugal pseudo-force CL: ", np.max(centricugal_CL))
@@ -1439,5 +1455,5 @@ if PLOT_ENERY_FLAG:
     axs[1].set_xticks([0, 1, 2], ["NTC", "KTC", "HTC"])
 
     plt.subplots_adjust(wspace=0.4, bottom=0.2, top=0.8)
-    plt.savefig("Energy"+ "." + format_graph, format=format_graph, dpi=300)
+    plt.savefig("Energy" + "." + format_graph, format=format_graph, dpi=300)
     plt.show()
