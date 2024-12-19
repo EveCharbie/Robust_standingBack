@@ -7,7 +7,7 @@ from bioptim import (
 )
 from casadi import MX, vertcat
 import numpy as np
-from biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
+from .biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
 
 
 def CoM_over_toes(controller: PenaltyController) -> MX:

@@ -23,11 +23,11 @@ from bioptim import (
     PhaseTransitionFcn,
     MagnitudeType,
 )
-from save_load_helpers import get_created_data_from_pickle
-from bounds_x import add_x_bounds
-from save_results import save_results_taudot
-from objectives import add_objectives, minimize_actuator_torques, add_taudot_objectives
-from constants import (
+from src.save_load_helpers import get_created_data_from_pickle
+from src.bounds_x import add_x_bounds
+from src.save_results import save_results_taudot
+from src.objectives import add_objectives, minimize_actuator_torques, add_taudot_objectives
+from src.constants import (
     JUMP_INIT_PATH,
     POSE_TUCKING_START,
     POSE_TUCKING_END,
@@ -35,10 +35,10 @@ from constants import (
     PATH_MODEL_1_CONTACT,
     PATH_MODEL,
 )
-from constraints import add_constraints
-from actuator_constants import ACTUATORS, initialize_tau
-from multistart import prepare_multi_start
-from phase_transitions import custom_takeoff, continuity_only_q_and_qdot
+from src.constraints import add_constraints
+from src.actuator_constants import ACTUATORS, initialize_tau
+from src.multistart import prepare_multi_start
+from src.phase_transitions import custom_takeoff, continuity_only_q_and_qdot
 
 
 # --- Prepare ocp --- #

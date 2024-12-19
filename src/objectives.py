@@ -2,12 +2,11 @@ from bioptim import (
     ObjectiveFcn,
     Node,
     Axis,
-    ObjectiveList,
     PenaltyController,
 )
 import casadi as cas
 
-from actuators import actuator_function
+from .actuators import actuator_function
 
 
 def minimize_actuator_torques(controller: PenaltyController, actuators) -> cas.MX:

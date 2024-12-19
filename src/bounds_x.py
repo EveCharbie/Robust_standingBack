@@ -1,7 +1,7 @@
 from bioptim import BoundsList
 import numpy as np
 
-from constants import POSE_PROPULSION_START, POSE_LANDING_START, POSE_LANDING_END
+from .constants import POSE_PROPULSION_START, POSE_LANDING_START, POSE_LANDING_END
 
 
 def add_x_bounds(bio_models) -> BoundsList:

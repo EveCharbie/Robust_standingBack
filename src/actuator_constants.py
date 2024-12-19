@@ -1,5 +1,5 @@
 import numpy as np
-from actuators import Joint
+from .actuators import Joint
 
 TAU_MAX = [0, 0, 0, 325.531, 138, 981.1876, 735.3286, 343.9806]
 TAU_MIN = [0, 0, 0, -325.531, -138, -981.1876, -735.3286, -343.9806]
