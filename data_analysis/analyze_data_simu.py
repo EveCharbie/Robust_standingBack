@@ -1020,10 +1020,11 @@ if PLOT_TAU_FLAG:
 
     plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, axs[1, 0])
 
-    integral_tau_all_CL = np.trapezoid(np.sum(np.abs(tau_CL), axis=0), x=time_vector_CL)
-    integral_tau_all_without = np.trapezoid(np.sum(np.abs(tau_without), axis=0), x=time_vector_without)
-    integral_tau_all_free = np.trapezoid(np.sum(np.abs(tau_free), axis=0), x=time_vector_free)
-    axs[0, 1].bar([0, 1, 2], [integral_tau_all_free, integral_tau_all_without, integral_tau_all_CL], color=["tab:green", "tab:blue", "tab:orange"])
+    # Tau ratio all phases
+    tau_CL_ratio_all = np.zeros(tau_CL.shape)
+    tau_without_ratio_all = np.zeros(tau_without.shape)
+    tau_free_ratio_all = np.zeros(tau_free.shape)
+
     axs[0, 1].bar(
         [0, 1, 2],
         [integral_tau_all_free, integral_tau_all_without, integral_tau_all_CL],
@@ -1036,11 +1037,18 @@ if PLOT_TAU_FLAG:
     integral_tau_all_ratio_CL = np.trapezoid(np.sum(np.abs(tau_CL_ratio_all), axis=0), x=time_vector_CL)
     integral_tau_all_ratio_without = np.trapezoid(np.sum(np.abs(tau_without_ratio_all), axis=0), x=time_vector_without)
     integral_tau_all_ratio_free = np.trapezoid(np.sum(np.abs(tau_free_ratio_all), axis=0), x=time_vector_free)
-    axs[1, 1].bar([0, 1, 2], [integral_tau_all_ratio_free, integral_tau_all_ratio_without, integral_tau_all_ratio_CL], color=["tab:green", "tab:blue", "tab:orange"])
-    axs[1, 1].text(0, integral_tau_all_ratio_free + 0.1, f"{integral_tau_all_ratio_free:.2f} s", ha="center", va="bottom")
-    axs[1, 1].text(1, integral_tau_all_ratio_without + 0.1, f"{integral_tau_all_ratio_without:.2f} s", ha="center", va="bottom")
+    axs[1, 1].bar(
+        [0, 1, 2],
+        [integral_tau_all_ratio_free, integral_tau_all_ratio_without, integral_tau_all_ratio_CL],
+        color=["tab:green", "tab:blue", "tab:orange"],
+    )
+    axs[1, 1].text(
+        0, integral_tau_all_ratio_free + 0.1, f"{integral_tau_all_ratio_free:.2f} s", ha="center", va="bottom"
+    )
+    axs[1, 1].text(
+        1, integral_tau_all_ratio_without + 0.1, f"{integral_tau_all_ratio_without:.2f} s", ha="center", va="bottom"
+    )
     axs[1, 1].text(2, integral_tau_all_ratio_CL + 0.1, f"{integral_tau_all_ratio_CL:.2f} s", ha="center", va="bottom")
-
 
     axs[0, 0].set_ylabel("Joint torque \n[Nm]")
     axs[1, 0].set_xlabel("Time [s]")
@@ -1157,7 +1165,9 @@ if PLOT_TAU_FLAG:
     print(f"A reduction of {(hip_tau_free - hip_tau_CL) / hip_tau_free * 100:.2f}% with the NTC")
 
     arm_tau_CL = np.trapezoid(np.abs(tau_CL[0, 21:104]) + np.abs(tau_CL[1, 21:104]), x=time_vector_CL[21:104])
-    arm_tau_without = np.trapezoid(np.abs(tau_without[0, 21:104]) + np.abs(tau_without[1, 21:104]), x=time_vector_without[21:104])
+    arm_tau_without = np.trapezoid(
+        np.abs(tau_without[0, 21:104]) + np.abs(tau_without[1, 21:104]), x=time_vector_without[21:104]
+    )
     arm_tau_free = np.trapezoid(np.abs(tau_free[0, 21:104]) + np.abs(tau_free[1, 21:104]), x=time_vector_free[21:104])
     print("Arm tau CL: ", arm_tau_CL)
     print("Arm tau without: ", arm_tau_without)
@@ -1334,8 +1344,12 @@ if PLOT_INERTIA_FLAG:
 
     for i in range(data_CL["q_all"].shape[1]):
         ang_mom_CL[i, :] = model_adjusted.angularMomentum(adjusted_q_CL[:, i], adjusted_qdot_CL[:, i], True).to_array()
-        ang_mom_without[i, :] = model_adjusted.angularMomentum(adjusted_q_without[:, i], adjusted_qdot_without[:, i], True).to_array()
-        ang_mom_free[i, :] = model_adjusted.angularMomentum(adjusted_q_free[:, i], adjusted_qdot_free[:, i], True).to_array()
+        ang_mom_without[i, :] = model_adjusted.angularMomentum(
+            adjusted_q_without[:, i], adjusted_qdot_without[:, i], True
+        ).to_array()
+        ang_mom_free[i, :] = model_adjusted.angularMomentum(
+            adjusted_q_free[:, i], adjusted_qdot_free[:, i], True
+        ).to_array()
 
     ax[1].plot(
         time_vector_free,
@@ -1397,13 +1411,17 @@ if PLOT_INERTIA_FLAG:
     body_velo_without = np.zeros((data_without["q_all"].shape[1], 3))
     body_velo_free = np.zeros((data_free["q_all"].shape[1], 3))
     for i in range(data_CL["q_all"].shape[1]):
-        body_velo_CL[i, :] = model.bodyAngularVelocity(data_CL["q_all"][:, i], data_CL["qdot_all"][:, i]).to_array() * 180/np.pi
-        body_velo_without[i, :] = model.bodyAngularVelocity(
-            data_without["q_all"][:, i], data_without["qdot_all"][:, i]
-        ).to_array() * 180/np.pi
-        body_velo_free[i, :] = model.bodyAngularVelocity(
-            data_free["q_all"][:, i], data_free["qdot_all"][:, i]
-        ).to_array() * 180/np.pi
+        body_velo_CL[i, :] = (
+            model.bodyAngularVelocity(data_CL["q_all"][:, i], data_CL["qdot_all"][:, i]).to_array() * 180 / np.pi
+        )
+        body_velo_without[i, :] = (
+            model.bodyAngularVelocity(data_without["q_all"][:, i], data_without["qdot_all"][:, i]).to_array()
+            * 180
+            / np.pi
+        )
+        body_velo_free[i, :] = (
+            model.bodyAngularVelocity(data_free["q_all"][:, i], data_free["qdot_all"][:, i]).to_array() * 180 / np.pi
+        )
 
     ax[2].plot(
         time_vector_free,
@@ -1459,7 +1477,6 @@ if PLOT_INERTIA_FLAG:
     print("Max somersault velocity CL: ", np.max(body_velo_CL[:, 0]))
     print("Max somersault velocity without: ", np.max(body_velo_without[:, 0]))
     print("Max somersault velocity free: ", np.max(body_velo_free[:, 0]))
-
 
     # Centrifugal effect
     centricugal_CL = model.mass() * body_velo_CL[:, 0] ** 2 * np.sqrt(inertia_CL[:, 0] / model.mass())
