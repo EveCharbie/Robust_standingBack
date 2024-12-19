@@ -43,7 +43,10 @@ def get_created_data_from_pickle(file: str):
 
     return data_tmp
 
-def plot_vertical_time_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, ax, color, linestyle, linewidth):
+
+def plot_vertical_time_lines(
+    time_end_phase_CL, time_end_phase_without, time_end_phase_free, ax, color, linestyle, linewidth
+):
     color_CL = "tab:orange" if color is None else color
     color_without = "tab:blue" if color is None else color
     color_free = "tab:green" if color is None else color
@@ -180,7 +183,8 @@ print("Residual forces at take-off free: ", np.linalg.norm(data_free["contact_fo
 PLOT_TAU_FLAG = True
 PLOT_INERTIA_FLAG = True
 PLOT_ENERY_FLAG = True
-format_graph = "png"
+# format_graph = "png"
+format_graph = "pdf"
 
 n_shooting_plus_one = (21, 21, 31, 31, 31)
 phase_delimiter = ["-", "--", ":", "-.", "-"]
@@ -216,17 +220,17 @@ for i in range(len(time_CL)):
     time_end_phase_CL.append(time_CL[i][-1])
     time_end_phase_tau_CL.append(time_CL[i][-2])
 time_vector_CL = (
-        np.vstack(data_CL["time"]).reshape(
-            -1,
-        )
-        - time_CL[0][-1]
+    np.vstack(data_CL["time"]).reshape(
+        -1,
+    )
+    - time_CL[0][-1]
 )
 time_end_phase_CL = np.array(time_end_phase_CL) - time_CL[0][-1]
 time_control_CL = (
-        np.vstack([arr[:-1, :] for arr in time_CL]).reshape(
-            -1,
-        )
-        - time_CL[0][-1]
+    np.vstack([arr[:-1, :] for arr in time_CL]).reshape(
+        -1,
+    )
+    - time_CL[0][-1]
 )
 time_tuck_CL = time_vector_CL[42:73]
 
@@ -250,17 +254,17 @@ for i in range(len(time_without)):
     time_end_phase_without.append(time_without[i][-1])
     time_end_phase_tau_without.append(time_without[i][-2])
 time_vector_without = (
-        np.vstack(data_without["time"]).reshape(
-            -1,
-        )
-        - time_without[0][-1]
+    np.vstack(data_without["time"]).reshape(
+        -1,
+    )
+    - time_without[0][-1]
 )
 time_end_phase_without = np.array(time_end_phase_without) - time_without[0][-1]
 time_control_without = (
-        np.vstack([arr[:-1, :] for arr in time_without]).reshape(
-            -1,
-        )
-        - time_without[0][-1]
+    np.vstack([arr[:-1, :] for arr in time_without]).reshape(
+        -1,
+    )
+    - time_without[0][-1]
 )
 time_tuck_without = time_vector_without[42:73]
 
@@ -282,17 +286,17 @@ for i in range(len(time_free)):
     time_end_phase_free.append(time_free[i][-1])
     time_end_phase_tau_free.append(time_free[i][-2])
 time_vector_free = (
-        np.vstack(data_free["time"]).reshape(
-            -1,
-        )
-        - time_free[0][-1]
+    np.vstack(data_free["time"]).reshape(
+        -1,
+    )
+    - time_free[0][-1]
 )
 time_end_phase_free = np.array(time_end_phase_free) - time_free[0][-1]
 time_control_free = (
-        np.vstack([arr[:-1, :] for arr in time_free]).reshape(
-            -1,
-        )
-        - time_free[0][-1]
+    np.vstack([arr[:-1, :] for arr in time_free]).reshape(
+        -1,
+    )
+    - time_free[0][-1]
 )
 time_tuck_free = time_vector_free[42:73]
 
@@ -639,7 +643,6 @@ if PLOT_TAU_FLAG:
     plt.subplots_adjust(wspace=0.15, hspace=0.4)
     fig.savefig("qdot" + "." + format_graph, format=format_graph, dpi=300)
 
-
     # Figure tau
     tau_CL_min_bound = np.zeros((5, tau_CL.shape[1]))
     tau_CL_max_bound = np.zeros((5, tau_CL.shape[1]))
@@ -742,13 +745,31 @@ if PLOT_TAU_FLAG:
     axs[0, 0].plot([], [], color="tab:blue", label="Kinematic tucking constraints (KTC)")
     axs[0, 0].plot([], [], color="tab:orange", label="Holonomic tucking contraints (HTC)")
     axs[0, 0].fill_between(
-        [], [], [], color="tab:green", alpha=0.1, label=r"Non-physiological torque ($\tilde{\tau}^{max}(q, \tau)$) - NTC", linewidth=1
+        [],
+        [],
+        [],
+        color="tab:green",
+        alpha=0.1,
+        label=r"Non-physiological torque ($\tilde{\tau}^{max}(q, \tau)$) - NTC",
+        linewidth=1,
     )
     axs[0, 0].fill_between(
-        [], [], [], color="tab:blue", alpha=0.1, label=r"Non-physiological torque ($\tilde{\tau}^{max}(q, \tau)$) - KTC", linewidth=1
+        [],
+        [],
+        [],
+        color="tab:blue",
+        alpha=0.1,
+        label=r"Non-physiological torque ($\tilde{\tau}^{max}(q, \tau)$) - KTC",
+        linewidth=1,
     )
     axs[0, 0].fill_between(
-        [], [], [], color="tab:orange", alpha=0.1, label=r"Non-physiological torque ($\tilde{\tau}^{max}(q, \tau)$) - (HTC)", linewidth=1
+        [],
+        [],
+        [],
+        color="tab:orange",
+        alpha=0.1,
+        label=r"Non-physiological torque ($\tilde{\tau}^{max}(q, \tau)$) - (HTC)",
+        linewidth=1,
     )
     axs[0, 0].legend(loc="center right", bbox_to_anchor=(0.9, 0.5), fontsize=8)
     axs[0, 0].axis("off")
@@ -1003,6 +1024,11 @@ if PLOT_TAU_FLAG:
     integral_tau_all_without = np.trapezoid(np.sum(np.abs(tau_without), axis=0), x=time_vector_without)
     integral_tau_all_free = np.trapezoid(np.sum(np.abs(tau_free), axis=0), x=time_vector_free)
     axs[0, 1].bar([0, 1, 2], [integral_tau_all_free, integral_tau_all_without, integral_tau_all_CL], color=["tab:green", "tab:blue", "tab:orange"])
+    axs[0, 1].bar(
+        [0, 1, 2],
+        [integral_tau_all_free, integral_tau_all_without, integral_tau_all_CL],
+        color=["tab:green", "tab:blue", "tab:orange"],
+    )
     axs[0, 1].text(0, integral_tau_all_free + 0.1, f"{integral_tau_all_free:.2f} Nms", ha="center", va="bottom")
     axs[0, 1].text(1, integral_tau_all_without + 0.1, f"{integral_tau_all_without:.2f} Nms", ha="center", va="bottom")
     axs[0, 1].text(2, integral_tau_all_CL + 0.1, f"{integral_tau_all_CL:.2f} Nms", ha="center", va="bottom")
@@ -1036,6 +1062,90 @@ if PLOT_TAU_FLAG:
     plt.subplots_adjust(hspace=0.4, wspace=0.3, top=0.85)
     plt.savefig("tau_ratio_all" + "." + format_graph, format=format_graph, dpi=300)
     # plt.show()
+
+    fig, axs = plt.subplots(1, 1, figsize=(10, 4))
+
+    for i_dof in range(5):
+        for i_node in range(tau_CL.shape[1]):
+            if tau_CL[i_dof, i_node] > 0:
+                tau_CL_ratio_all[i_dof, i_node] = tau_CL[i_dof, i_node] / tau_CL_max_bound[i_dof, i_node]
+            else:
+                tau_CL_ratio_all[i_dof, i_node] = np.abs(tau_CL[i_dof, i_node] / tau_CL_min_bound[i_dof, i_node])
+            if tau_without[i_dof, i_node] > 0:
+                tau_without_ratio_all[i_dof, i_node] = tau_without[i_dof, i_node] / tau_without_max_bound[i_dof, i_node]
+            else:
+                tau_without_ratio_all[i_dof, i_node] = np.abs(
+                    tau_without[i_dof, i_node] / tau_without_min_bound[i_dof, i_node]
+                )
+            if tau_free[i_dof, i_node] > 0:
+                tau_free_ratio_all[i_dof, i_node] = tau_free[i_dof, i_node] / tau_free_max_bound[i_dof, i_node]
+            else:
+                tau_free_ratio_all[i_dof, i_node] = np.abs(tau_free[i_dof, i_node] / tau_free_min_bound[i_dof, i_node])
+
+    axs.plot(
+        time_vector_free,
+        np.abs(tau_free_ratio_all[3, :]),
+        color="tab:green",
+        label="No tucking constraint",
+        alpha=0.73,
+        linewidth=1,
+    )
+    axs.plot(
+        time_tuck_free,
+        np.abs(tau_free_ratio_all[3, 42:73]),
+        color="tab:green",
+        alpha=0.73,
+        linewidth=3,
+    )
+    axs.plot(
+        time_vector_without,
+        np.abs(tau_without_ratio_all)[3, :],
+        color="tab:blue",
+        label="Kinematic tucking constraints",
+        alpha=0.73,
+        linewidth=1,
+    )
+    axs.plot(
+        time_tuck_without,
+        np.abs(tau_without_ratio_all[3, 42:73]),
+        color="tab:blue",
+        alpha=0.73,
+        linewidth=3,
+    )
+    axs.plot(
+        time_vector_CL,
+        np.abs(tau_CL_ratio_all[3, :]),
+        color="tab:orange",
+        label="Holonomic tucking constraints",
+        alpha=0.73,
+        linewidth=1,
+    )
+    axs.plot(
+        time_tuck_CL,
+        np.abs(tau_CL_ratio_all[3, 42:73]),
+        color="tab:orange",
+        alpha=0.73,
+        linewidth=3,
+    )
+
+    plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, axs)
+
+    axs.set_xlabel("Time [s]")
+    axs.set_ylabel("Physiological Hip\njoint torque ratio")
+    # axs.set_ylim(0, 1200)
+    # axs.set_ylim(0, 8)
+    axs.set_xticks([0.0, 0.5, 1.0, 1.5], ["0.0", "0.5", "1.0", "1.5"])
+    axs.set_xticks([0.0, 0.5, 1.0, 1.5], ["0.0", "0.5", "1.0", "1.5"])
+
+    axs.plot([], [], color="tab:green", label="No tucking constraint")
+    axs.plot([], [], color="tab:blue", label="Kinematic tucking constraints")
+    axs.plot([], [], color="tab:orange", label="Holonomic tucking constraints")
+    axs.legend(bbox_to_anchor=(1.0, 2.8), ncol=3)
+    axs.set_xlim(time_min_graph, time_max_graph)
+    axs.grid(True, linewidth=0.4)
+
+    plt.savefig("tau_ratio_hip" + "." + format_graph, format=format_graph, dpi=300)
+    plt.show()
 
     hip_tau_CL = np.trapezoid(np.abs(tau_CL[2, 21:104]), x=time_vector_CL[21:104])
     hip_tau_without = np.trapezoid(np.abs(tau_without[2, 21:104]), x=time_vector_without[21:104])
