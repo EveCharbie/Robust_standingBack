@@ -132,36 +132,9 @@ dmypy.json
 
 .idea/
 
-*.ogv
-
-*.vtp
-
-src/models/Wu_Shoulder_Model_kinova_scaled_adjusted_2.bioMod
-
-*.png
-
-*.pkl
-
-data_analysis/Figures/
-
-examples/jumps/Figures/
-
-*.svg
-
-*.xz
-
-*.c3d
-
 *.zip
 
 *.CSV
 
 USB_Anais/
-
 sandbox/
-
-src/Salto_5phases_VPierre_taudot/Salto_5phases_VPierre_taudot2_with_noise/
-
-src/solutions/Salto_5phases_VPierre_taudot2_with_noise/
-
-*.rrd
