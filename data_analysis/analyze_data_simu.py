@@ -1021,9 +1021,13 @@ if PLOT_TAU_FLAG:
     plot_all_lines(time_end_phase_CL, time_end_phase_without, time_end_phase_free, axs[1, 0])
 
     # Tau ratio all phases
-    tau_CL_ratio_all = np.zeros(tau_CL.shape)
-    tau_without_ratio_all = np.zeros(tau_without.shape)
-    tau_free_ratio_all = np.zeros(tau_free.shape)
+    # tau_CL_ratio_all = np.zeros(tau_CL.shape)
+    # tau_without_ratio_all = np.zeros(tau_without.shape)
+    # tau_free_ratio_all = np.zeros(tau_free.shape)
+
+    integral_tau_all_CL = np.trapezoid(np.sum(np.abs(tau_CL), axis=0), x=time_vector_CL)
+    integral_tau_all_without = np.trapezoid(np.sum(np.abs(tau_without), axis=0), x=time_vector_without)
+    integral_tau_all_free = np.trapezoid(np.sum(np.abs(tau_free), axis=0), x=time_vector_free)
 
     axs[0, 1].bar(
         [0, 1, 2],
