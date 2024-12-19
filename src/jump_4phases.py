@@ -45,7 +45,7 @@ from bioptim import (
     SolutionMerge,
     PhaseTransitionFcn,
 )
-from holonomic_research.save_load_helpers import get_created_data_from_pickle
+from src.save_load_helpers import get_created_data_from_pickle
 from constraints import CoM_over_toes
 
 

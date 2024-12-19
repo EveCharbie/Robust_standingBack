@@ -12,7 +12,7 @@ rcParams["font.serif"] = ["Times New Roman"]  # Specify Times New Roman or Times
 
 import sys
 
-sys.path.append("../holonomic_research/")
+sys.path.append("../src/")
 from actuators import Joint, actuator_function
 from actuator_constants import ACTUATORS
 from sommersault_5phases_with_pelvis_landing_tau_dot import prepare_ocp as prepare_ocp_without
@@ -117,9 +117,9 @@ def adjust_q_with_full_floating_base(q: np.ndarray) -> np.ndarray:
 
 
 # Solution with and without holonomic constraints
-path_without = "../holonomic_research/solutions/KTC/"
-path_CL = "../holonomic_research/solutions_CL/HTC/"
-path_free = "../holonomic_research/solutions_FREE/FREE/"
+path_without = "../src/solutions/KTC/"
+path_CL = "../src/solutions_CL/HTC/"
+path_free = "../src/solutions_FREE/FREE/"
 
 path_model = "../models/Model2D_7Dof_2C_5M_CL_V3.bioMod"
 model = biorbd.Model(path_model)
@@ -184,7 +184,8 @@ PLOT_TAU_FLAG = True
 PLOT_INERTIA_FLAG = True
 PLOT_ENERY_FLAG = True
 # format_graph = "png"
-format_graph = "pdf"
+# format_graph = "pdf"
+format_graph = "svg"
 
 n_shooting_plus_one = (21, 21, 31, 31, 31)
 phase_delimiter = ["-", "--", ":", "-.", "-"]

@@ -136,7 +136,7 @@ dmypy.json
 
 *.vtp
 
-holonomic_research/models/Wu_Shoulder_Model_kinova_scaled_adjusted_2.bioMod
+src/models/Wu_Shoulder_Model_kinova_scaled_adjusted_2.bioMod
 
 *.png
 
@@ -160,8 +160,8 @@ USB_Anais/
 
 sandbox/
 
-holonomic_research/Salto_5phases_VPierre_taudot/Salto_5phases_VPierre_taudot2_with_noise/
+src/Salto_5phases_VPierre_taudot/Salto_5phases_VPierre_taudot2_with_noise/
 
-holonomic_research/solutions/Salto_5phases_VPierre_taudot2_with_noise/
+src/solutions/Salto_5phases_VPierre_taudot2_with_noise/
 
 *.rrd

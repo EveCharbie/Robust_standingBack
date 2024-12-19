@@ -1,4 +1,3 @@
-
 import numpy as np
 import pandas as pd
 import biorbd
@@ -63,8 +62,8 @@ import os
 print(os.getcwd())
 
 # Solution with and without holonomic constraints
-path_without = "../holonomic_research/solutions/KTC/"
-path_CL = "../holonomic_research/solutions_CL/HTC/"
+path_without = "../src/solutions/KTC/"
+path_CL = "../src/solutions_CL/HTC/"
 
 # path_model = "../models/Model2D_7Dof_2C_5M_CL_V3.bioMod"
 path_model = "../models/Model2D_7Dof_3C_5M_CL_V3_V3D.bioMod"

@@ -51,7 +51,7 @@ from bioptim import (
     HolonomicConstraintsFcn,
 )
 from casadi import MX, vertcat
-from holonomic_research.save_load_helpers import get_created_data_from_pickle
+from src.save_load_helpers import get_created_data_from_pickle
 
 
 # --- Save results --- #

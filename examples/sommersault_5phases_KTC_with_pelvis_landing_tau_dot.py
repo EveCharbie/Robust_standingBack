@@ -26,7 +26,7 @@ from bioptim import (
     PhaseTransitionFcn,
     Solver,
 )
-from holonomic_research.constants import (
+from src.constants import (
     POSE_TUCKING_START,
     POSE_TUCKING_END,
     POSE_LANDING_START,

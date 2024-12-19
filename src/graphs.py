@@ -91,8 +91,8 @@ def constraints_graphs(ocp, sol):
 
 
 # Info
-pickle_1 = "/home/mickael/Documents/Anais/Robust_standingBack/holonomic_research/Salto_6phases_V13.pkl"
-pickle_2 = "/home/mickael/Documents/Anais/Robust_standingBack/holonomic_research/Salto_6phases_V10.pkl"
+pickle_1 = "/home/mickael/Documents/Anais/Robust_standingBack/src/Salto_6phases_V13.pkl"
+pickle_2 = "/home/mickael/Documents/Anais/Robust_standingBack/src/Salto_6phases_V10.pkl"
 name_file_model = "/home/mickael/Documents/Anais/Robust_standingBack/models/Model2D_7Dof_0C_3M.bioMod"
 
 

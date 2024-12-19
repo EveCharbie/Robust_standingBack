@@ -69,7 +69,7 @@ from constants import (
     PATH_MODEL,
 )
 from constraints import add_constraints, add_constraint_tucking_friction_cone
-from holonomic_research.objectives import add_tau_derivative_objectives
+from src.objectives import add_tau_derivative_objectives
 from multistart import prepare_multi_start
 from objectives import add_objectives, minimize_actuator_torques_CL
 from phase_transitions import custom_phase_transition_pre, custom_phase_transition_post
