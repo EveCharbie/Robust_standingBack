@@ -31,13 +31,9 @@ Phase 4: Landing
 """
 
 # --- Import package --- #
-import os
 import numpy as np
-import casadi as cas
-import pickle
 from bioptim import (
     BiorbdModel,
-    Node,
     InterpolationType,
     OptimalControlProgram,
     ConstraintList,
@@ -47,24 +43,16 @@ from bioptim import (
     PhaseTransitionList,
     DynamicsFcn,
     BiMappingList,
-    ConstraintFcn,
     BoundsList,
     InitialGuessList,
     Solver,
-    Axis,
-    SolutionMerge,
-    PenaltyController,
     PhaseTransitionFcn,
-    DynamicsFunctions,
-    HolonomicConstraintsList,
-    HolonomicConstraintsFcn,
     MagnitudeType,
-    MultiStart,
 )
 
-from actuator_constants import ACTUATORS, initialize_tau
-from bounds_x import add_x_bounds
-from constants import (
+from src.actuator_constants import ACTUATORS, initialize_tau
+from src.bounds_x import add_x_bounds
+from src.constants import (
     POSE_TUCKING_START,
     POSE_TUCKING_END,
     POSE_LANDING_START,
@@ -72,11 +60,11 @@ from constants import (
     PATH_MODEL,
     PATH_MODEL_1_CONTACT,
 )
-from constraints import add_constraints
-from multistart import prepare_multi_start
-from objectives import minimize_actuator_torques, add_objectives, add_tau_derivative_objectives
-from save_results import save_results
-from save_load_helpers import get_created_data_from_pickle
+from src.constraints import add_constraints
+from src.multistart import prepare_multi_start
+from src.objectives import minimize_actuator_torques, add_objectives, add_tau_derivative_objectives
+from src.save_results import save_results
+from src.save_load_helpers import get_created_data_from_pickle
 
 
 def add_u_bounds(u_bounds, tau_min, tau_max):
@@ -175,13 +163,6 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=2)
     u_init.add("tau", [tau_init] * (bio_model[0].nb_tau - 3), phase=3)
     u_init.add("tau", sol_salto["tau"][3], interpolation=InterpolationType.EACH_FRAME, phase=4)
-
-    # # Initial guess from somersault
-    # u_init.add("tau", sol_salto["tau"][0], interpolation=InterpolationType.EACH_FRAME, phase=0)
-    # u_init.add("tau", sol_salto["tau"][1], interpolation=InterpolationType.EACH_FRAME, phase=1)
-    # u_init.add("tau", sol_salto["tau"][2], interpolation=InterpolationType.EACH_FRAME, phase=2)
-    # u_init.add("tau", sol_salto["tau"][3], interpolation=InterpolationType.EACH_FRAME, phase=3)
-    # u_init.add("tau", sol_salto["tau"][4], interpolation=InterpolationType.EACH_FRAME, phase=4)
 
     if WITH_MULTI_START:
         x_init.add_noise(

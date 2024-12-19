@@ -26,11 +26,11 @@ from bioptim import (
     HolonomicConstraintsFcn,
     Bounds,
 )
-from actuator_constants import ACTUATORS, initialize_tau
-from biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
-from bounds_x import add_x_bounds
-from constraints import add_constraints, add_constraint_tucking_friction_cone
-from constants import (
+from src.actuator_constants import ACTUATORS, initialize_tau
+from src.biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
+from src.bounds_x import add_x_bounds
+from src.constraints import add_constraints, add_constraint_tucking_friction_cone
+from src.constants import (
     JUMP_INIT_PATH,
     POSE_TUCKING_START,
     POSE_TUCKING_END,
@@ -38,15 +38,15 @@ from constants import (
     PATH_MODEL_1_CONTACT,
     PATH_MODEL,
 )
-from holonomic_torque_derivative_dynamics import (
+from src.holonomic_torque_derivative_dynamics import (
     configure_holonomic_torque_derivative_driven,
     holonomic_torque_derivative_driven,
 )
-from objectives import add_objectives, minimize_actuator_torques_CL, add_taudot_objectives
-from multistart import prepare_multi_start
-from phase_transitions import custom_takeoff, custom_phase_transition_pre, custom_phase_transition_post
-from save_load_helpers import get_created_data_from_pickle
-from save_results import save_results_holonomic_taudot
+from src.objectives import add_objectives, minimize_actuator_torques_CL, add_taudot_objectives
+from src.multistart import prepare_multi_start
+from src.phase_transitions import custom_takeoff, custom_phase_transition_pre, custom_phase_transition_post
+from src.save_load_helpers import get_created_data_from_pickle
+from src.save_results import save_results_holonomic_taudot
 
 
 # --- Prepare ocp --- #

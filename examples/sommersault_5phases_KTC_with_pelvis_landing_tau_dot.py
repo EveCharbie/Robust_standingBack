@@ -7,7 +7,6 @@ This script is used to solve the somersault problem with 5 phases and a pelvis l
 # --- Import package --- #
 import numpy as np
 from bioptim import (
-    Axis,
     BiorbdModel,
     BiMappingList,
     BoundsList,
@@ -33,15 +32,15 @@ from src.constants import (
     PATH_MODEL_1_CONTACT,
     PATH_MODEL,
 )
-from save_load_helpers import get_created_data_from_pickle
-from bounds_x import add_x_bounds
-from save_results import save_results_taudot
-from objectives import add_objectives, minimize_actuator_torques, add_taudot_objectives
-from constraints import add_constraints
-from constants import JUMP_INIT_PATH
-from actuator_constants import ACTUATORS, initialize_tau
-from multistart import prepare_multi_start
-from phase_transitions import custom_takeoff, continuity_only_q_and_qdot
+from src.save_load_helpers import get_created_data_from_pickle
+from src.bounds_x import add_x_bounds
+from src.save_results import save_results_taudot
+from src.objectives import add_objectives, minimize_actuator_torques, add_taudot_objectives
+from src.constraints import add_constraints
+from src.constants import JUMP_INIT_PATH
+from src.actuator_constants import ACTUATORS, initialize_tau
+from src.multistart import prepare_multi_start
+from src.phase_transitions import custom_takeoff, continuity_only_q_and_qdot
 
 
 # --- Prepare ocp --- #

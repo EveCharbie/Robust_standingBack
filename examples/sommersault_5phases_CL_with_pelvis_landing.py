@@ -33,8 +33,6 @@ Phase 4: Landing
 # --- Import package --- #
 import os
 import numpy as np
-import casadi as cas
-import pickle
 from bioptim import (
     BiorbdModel,
     InterpolationType,
@@ -49,18 +47,15 @@ from bioptim import (
     BoundsList,
     InitialGuessList,
     Solver,
-    SolutionMerge,
     PhaseTransitionFcn,
     HolonomicConstraintsList,
     HolonomicConstraintsFcn,
     Bounds,
-    Node,
-    MultiStart,
     MagnitudeType,
 )
-from actuator_constants import ACTUATORS, initialize_tau
-from biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
-from constants import (
+from src.actuator_constants import ACTUATORS, initialize_tau
+from src.biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
+from src.constants import (
     JUMP_INIT_PATH,
     POSE_TUCKING_START,
     POSE_TUCKING_END,
@@ -68,13 +63,13 @@ from constants import (
     PATH_MODEL_1_CONTACT,
     PATH_MODEL,
 )
-from constraints import add_constraints, add_constraint_tucking_friction_cone
+from src.constraints import add_constraints, add_constraint_tucking_friction_cone
 from src.objectives import add_tau_derivative_objectives
-from multistart import prepare_multi_start
-from objectives import add_objectives, minimize_actuator_torques_CL
-from phase_transitions import custom_phase_transition_pre, custom_phase_transition_post
-from save_load_helpers import get_created_data_from_pickle
-from save_results import save_results_holonomic
+from src.multistart import prepare_multi_start
+from src.objectives import add_objectives, minimize_actuator_torques_CL
+from src.phase_transitions import custom_phase_transition_pre, custom_phase_transition_post
+from src.save_load_helpers import get_created_data_from_pickle
+from src.save_results import save_results_holonomic
 from sommersault_5phases_with_pelvis_landing import (
     add_x_bounds,
     add_u_bounds,
