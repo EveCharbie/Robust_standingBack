@@ -7,9 +7,9 @@ from src.constants import (
     PATH_MODEL,
 )
 
-from sommersault_taudot import prepare_ocp as prepare_ocp_ntc
-from sommersault_htc_taudot import prepare_ocp as prepare_ocp_with_htc
-from sommersault_ktc_taudot import prepare_ocp as prepare_ocp_with_ktc
+from somersault_taudot import prepare_ocp as prepare_ocp_ntc
+from somersault_htc_taudot import prepare_ocp as prepare_ocp_with_htc
+from somersault_ktc_taudot import prepare_ocp as prepare_ocp_with_ktc
 from src.save_results import save_results_taudot
 from src.save_results import save_results_holonomic_taudot
 

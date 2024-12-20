@@ -7,7 +7,7 @@ import pickle
 
 from matplotlib import rcParams
 
-from examples.sommersault_taudot import prepare_ocp as prepare_ocp_without
+from examples.somersault_taudot import prepare_ocp as prepare_ocp_without
 from src.actuators import Joint, actuator_function
 from src.actuator_constants import ACTUATORS
 from src.constants import (

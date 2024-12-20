@@ -70,7 +70,7 @@ from src.objectives import add_objectives, minimize_actuator_torques_CL
 from src.phase_transitions import custom_phase_transition_pre, custom_phase_transition_post
 from src.save_load_helpers import get_created_data_from_pickle
 from src.save_results import save_results_holonomic
-from sommersault import (
+from somersault import (
     add_x_bounds,
     add_u_bounds,
 )

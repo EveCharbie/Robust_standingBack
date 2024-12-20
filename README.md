@@ -54,9 +54,9 @@ Otherwise, use mumps, but you won't replicate the results.
 
 # Exemples
 In the folder `examples\`, you will find the following examples (NTC, KTC, HTC):
-- `sommersault_htc.py`: This script generates the optimal control problem with the holonomic constraint.
-- `sommersault_htc_taudot.py`: This script generates the optimal control problem with the holonomic constraint and torque derivative driven
-- `sommersault_ktc_taudot.py`: This script generates the optimal control problem with the kinematic constraint and torque derivative driven
-- `sommersault.py`: This script generates the optimal control problem without the holonomic constraint.
-- `sommersault_taudot.py`: This script generates the optimal control problem without the holonomic constraint and torque derivative driven 
+- `somersault_htc.py`: This script generates the optimal control problem with the holonomic constraint.
+- `somersault_htc_taudot.py`: This script generates the optimal control problem with the holonomic constraint and torque derivative driven
+- `somersault_ktc_taudot.py`: This script generates the optimal control problem with the kinematic constraint and torque derivative driven
+- `somersault.py`: This script generates the optimal control problem without the holonomic constraint.
+- `somersault_taudot.py`: This script generates the optimal control problem without the holonomic constraint and torque derivative driven 
 
