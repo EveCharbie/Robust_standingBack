@@ -16,13 +16,13 @@ from src.save_results import save_results_holonomic_taudot
 from src.multistart import prepare_multi_start
 
 
-def main(prepare_ocp: Callable, save_results: Callable, multi_start: bool = False):
+def main(prepare_ocp: Callable, save_results: Callable, multi_start: bool = False, condition: str = ""):
     # --- Parameters --- #
-    movement = "Salto"
-    version = "Pierre_taudot2_FREE_force_constrained_50N"
+    movement = "backflip"
+    version = "post_submission"
 
     WITH_MULTI_START = multi_start
-    save_folder = f"../results/{str(movement)}_V{version}"
+    save_folder = f"../results/{str(movement)}_V{version}/{condition}"
 
     biorbd_model_path = (PATH_MODEL_1_CONTACT, PATH_MODEL, PATH_MODEL, PATH_MODEL, PATH_MODEL_1_CONTACT)
     phase_time = (0.2, 0.2, 0.3, 0.3, 0.3)
@@ -72,6 +72,6 @@ def main(prepare_ocp: Callable, save_results: Callable, multi_start: bool = Fals
 
 
 if "__main__" == __name__:
-    main(prepare_ocp_ntc, save_results_taudot)
-    main(prepare_ocp_with_ktc, save_results_taudot)
-    main(prepare_ocp_with_htc, save_results_holonomic_taudot)
+    main(prepare_ocp_ntc, save_results_taudot, multi_start=True, condition="ntc")
+    main(prepare_ocp_with_ktc, save_results_taudot, multi_start=True, condition="ktc")
+    main(prepare_ocp_with_htc, save_results_holonomic_taudot, multi_start=True, condition="htc")
