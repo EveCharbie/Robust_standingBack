@@ -236,17 +236,14 @@ def prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, see
     )
 
 
-# --- Parameters --- #
-movement = "Salto_close_loop_landing"
-version = "Eve_final3"
-nb_phase = 5
-
-
 # --- Load model --- #
 def main():
+    # --- Parameters --- #
+    movement = "Salto_close_loop_landing"
+    version = "Eve_final3"
 
     WITH_MULTI_START = True
-    save_folder = f"./solutions_CL/{str(movement)}_{str(nb_phase)}phases_V{version}"
+    save_folder = f"../results/{str(movement)}_V{version}"
 
     biorbd_model_path = (PATH_MODEL_1_CONTACT, PATH_MODEL, PATH_MODEL, PATH_MODEL, PATH_MODEL_1_CONTACT)
     phase_time = (0.2, 0.2, 0.3, 0.3, 0.3)
@@ -288,7 +285,7 @@ def main():
         sol.print_cost()
 
         # --- Save results --- #
-        sol.graphs(show_bounds=True, save_name=str(movement) + "_" + str(nb_phase) + "phases_V" + version)
+        sol.graphs(show_bounds=True, save_name=str(movement) + "_V" + version)
         sol.animate(viewer="pyorerun")
 
         combinatorial_parameters = [biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START, "no_seed"]

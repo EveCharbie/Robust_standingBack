@@ -7,19 +7,16 @@ import pickle
 
 from matplotlib import rcParams
 
-rcParams["font.family"] = "DeJavu Serif"  # Use serif font
-rcParams["font.serif"] = ["Times New Roman"]  # Specify Times New Roman or Times
-
-import sys
-
-sys.path.append("../src/")
-from actuators import Joint, actuator_function
-from actuator_constants import ACTUATORS
-from sommersault_5phases_with_pelvis_landing_tau_dot import prepare_ocp as prepare_ocp_without
-from constants import (
+from examples.sommersault_5phases_with_pelvis_landing_tau_dot import prepare_ocp as prepare_ocp_without
+from src.actuators import Joint, actuator_function
+from src.actuator_constants import ACTUATORS
+from src.constants import (
     PATH_MODEL_1_CONTACT,
     PATH_MODEL,
 )
+
+rcParams["font.family"] = "DeJavu Serif"  # Use serif font
+rcParams["font.serif"] = ["Times New Roman"]  # Specify Times New Roman or Times
 
 
 def get_created_data_from_pickle(file: str):
@@ -117,9 +114,10 @@ def adjust_q_with_full_floating_base(q: np.ndarray) -> np.ndarray:
 
 
 # Solution with and without holonomic constraints
-path_without = "../src/solutions/KTC/"
-path_CL = "../src/solutions_CL/HTC/"
-path_free = "../src/solutions_FREE/FREE/"
+common_path = "../results/with_noise/"
+path_without = common_path + "KTC/"
+path_CL = common_path + "HTC/"
+path_free = common_path + "NTC/"
 
 path_model = "../models/Model2D_7Dof_2C_5M_CL_V3.bioMod"
 model = biorbd.Model(path_model)

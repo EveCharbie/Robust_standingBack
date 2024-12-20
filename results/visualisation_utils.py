@@ -2,6 +2,8 @@ import bioviz
 from scipy.interpolate import interp1d
 import numpy as np
 from src.save_load_helpers import get_created_data_from_pickle
+from src.biorbd_model_holonomic_updated import BiorbdModelCustomHolonomic
+from bioptim import HolonomicConstraintsList, HolonomicConstraintsFcn
 
 
 # --- Visualisation -- #

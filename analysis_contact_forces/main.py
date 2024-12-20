@@ -52,7 +52,7 @@ markers_insole_R_xy = position_markers_R[:2, :]
 # Cartography insole
 # Load insole_R: calibration file for the right insole (pressure data).
 insole_calibration_data_R = pd.read_csv(
-    data_folder + "markers_insoles_R_1_L.CSV",
+    data_folder + "markers_insoles_L_1_R.CSV",
     sep=",",
     decimal=".",
     low_memory=False,

@@ -3,7 +3,7 @@ import pandas as pd
 import biorbd
 import pickle
 
-from data_analysis.analyze_data_simu import model_adjusted
+from analysis_simulations.analyze_data_simu import model_adjusted
 
 
 def adjust_q_with_full_floating_base(q: np.ndarray) -> np.ndarray:
@@ -236,20 +236,3 @@ fig.add_trace(
     )
 )
 fig.show()
-
-# ax[1].plot(
-#     time_vector_without,
-#     ang_mom_without[:, 0],
-#     color="tab:blue",
-#     label="Kinematic tucking constraints",
-#     alpha=0.75,
-#     linewidth=1,
-# )
-# ax[1].plot(
-#     time_vector_CL,
-#     ang_mom_CL[:, 0],
-#     color="tab:orange",
-#     label="Holonomic tucking constraints",
-#     alpha=0.75,
-#     linewidth=1,
-# )

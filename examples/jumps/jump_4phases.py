@@ -157,8 +157,8 @@ def CoM_over_toes(controller: PenaltyController) -> cas.MX:
 movement = "Jump"
 version = 22
 nb_phase = 4
-name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/models"
-pickle_sol_init = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/examples/jumps/Jump_4phases_V20.pkl"
+name_folder_model = "../../models"
+pickle_sol_init = "Jump_4phases_V20.pkl"
 sol_jump = get_created_data_from_pickle(pickle_sol_init)
 
 

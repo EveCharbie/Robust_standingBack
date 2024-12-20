@@ -10,7 +10,7 @@ from pyorerun.multi_frame_rate_phase_rerun import MultiFrameRatePhaseRerun
 folder = "with_noise/"
 folder_HTC = folder + "HTC"
 folder_KTC = folder + "KTC"
-folder_FREE = folder + "FREE"
+folder_FREE = folder + "NTC"
 model_path = "../models/Model2D_7Dof_2C_5M_CL_V3.bioMod"
 
 # get matplotlib colors instead

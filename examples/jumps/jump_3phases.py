@@ -152,7 +152,7 @@ def CoM_over_toes(controller: PenaltyController) -> cas.MX:
 movement = "Jump"
 version = 1
 nb_phase = 3
-name_folder_model = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/models"
+name_folder_model = "../models"
 
 
 # --- Prepare ocp --- #

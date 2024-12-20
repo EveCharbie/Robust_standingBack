@@ -40,13 +40,13 @@ colors = colors + colors + colors  # duplicate the colors to have enough for all
 folder = "with_noise/"
 folder_HTC = folder + "HTC"
 folder_KTC = folder + "KTC"
-folder_FREE = folder + "FREE"
+folder_FREE = folder + "NTC"
 model_path = "../models/Model2D_7Dof_3C_5M_CL_V3_less_markers.bioMod"
 
 # remove "rgb(" and ")" and split by ","
 #  get the data with the smallest cost
 file_idx = []
-for config, (folder, str_suffix) in enumerate(zip([folder_KTC, folder_HTC, folder_FREE], ["KTC", "HTC", "FREE"])):
+for config, (folder, str_suffix) in enumerate(zip([folder_KTC, folder_HTC, folder_FREE], ["KTC", "HTC", "NTC"])):
     n_files = len([name for name in os.listdir(folder) if name.endswith("_CVG.pkl")])
     smallest_idx, smallest_value = 0, np.inf
     for i in range(0, n_files):
@@ -60,7 +60,7 @@ for config, (folder, str_suffix) in enumerate(zip([folder_KTC, folder_HTC, folde
 
 # Charger les données
 for config, (folder, str_suffix, file_id) in enumerate(
-    zip([folder_KTC, folder_HTC, folder_FREE], ["KTC", "HTC", "FREE"], file_idx)
+    zip([folder_KTC, folder_HTC, folder_FREE], ["KTC", "HTC", "NTC"], file_idx)
 ):
     #  get the number of _CVG.pkl files in the folder
     phase_reruns = []
