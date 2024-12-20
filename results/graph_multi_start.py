@@ -7,8 +7,8 @@ from matplotlib import colormaps as cmap
 
 
 # Solution with and without holonomic constraints
-path_sol = "../results/with_noise/KTC"
-path_sol_CL = "../results/with_noise/HTC"
+path_sol = "with_noise/KTC"
+path_sol_CL = "with_noise/HTC"
 sol_CL = path_sol_CL + "/" + "sol_0_CVG.pkl"
 data_CL = pd.read_pickle(sol_CL)
 

@@ -4,7 +4,7 @@ from plotly.colors import DEFAULT_PLOTLY_COLORS
 from pyorerun import PhaseRerun, BiorbdModel
 from pyorerun.multi_frame_rate_phase_rerun import MultiFrameRatePhaseRerun
 
-folder = "/home/pierre/Projets_Python/Robust_standingBack/sandbox/best_solutions/with_noise/HTC"
+folder = "with_noise/HTC"
 model_path = "../models/Model2D_7Dof_2C_5M_CL_V3.bioMod"
 
 # remove "rgb(" and ")" and split by ","
@@ -23,7 +23,6 @@ for i in range(0, 19):
     m = BiorbdModel(model_path)
     m.options.mesh_color = colors[i - 1]
     phase_reruns[-1].add_animated_model(m, q)
-    phase_reruns[-1].rerun()
 
 mrr2 = MultiFrameRatePhaseRerun(phase_reruns=phase_reruns)
-mrr2.rerun("yo")
+mrr2.rerun("all_multistart")

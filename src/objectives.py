@@ -59,23 +59,51 @@ def minimize_actuator_torques_CL(controller: PenaltyController, actuators) -> ca
     return cas.sum1(out)
 
 
-def add_objectives(objective_functions, actuators):
+WEIGHTS = {
+    "0_COM_VELOCITY": -1,
+    "0_TIME": 1000,
+    "0_CONTACT_FORCES": 5,
+    "1_TIME": 10,
+    "2_TIME": -10,
+    "3_TIME": 10,
+    "4_COM_VELOCITY": 100,
+    "4_COM_POSITION": 100,
+    "4_STATE": 100,
+    "4_TIME": 100,
+    "0_TORQUE_RATIO": 0.01,
+    "1_TORQUE_RATIO": 0.1,
+    "2_TORQUE_RATIO": 0.01,
+    "3_TORQUE_RATIO": 0.1,
+    "4_TORQUE_RATIO": 0.01,
+    "TAUDOT": 1,
+    "TAU_DERIVATIVE": 1,
+}
+
+
+def add_objectives(objective_functions, actuators, weights: dict = None):
+
+    if weights is None:
+        weights = WEIGHTS
 
     # Phase 0 (Propulsion):
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_COM_VELOCITY, node=Node.END, weight=-1, axes=Axis.Z, phase=0)
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=1000, min_bound=0.1, max_bound=0.4, phase=0)
+    objective_functions.add(
+        ObjectiveFcn.Mayer.MINIMIZE_COM_VELOCITY, node=Node.END, weight=weights["0_COM_VELOCITY"], axes=Axis.Z, phase=0
+    )
+    objective_functions.add(
+        ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=weights["0_TIME"], min_bound=0.1, max_bound=0.4, phase=0
+    )
     objective_functions.add(
         minimize_actuator_torques,
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
         quadratic=True,
-        weight=0.01,
+        weight=weights["0_TORQUE_RATIO"],
         phase=0,
     )
     objective_functions.add(
         ObjectiveFcn.Mayer.MINIMIZE_CONTACT_FORCES,
         node=Node.END,
-        weight=5,
+        weight=weights["0_CONTACT_FORCES"],
         contact_index=1,
         quadratic=True,
         phase=0,
@@ -83,87 +111,122 @@ def add_objectives(objective_functions, actuators):
     objective_functions.add(
         ObjectiveFcn.Mayer.MINIMIZE_CONTACT_FORCES,
         node=Node.END,
-        weight=5,
+        weight=weights["0_CONTACT_FORCES"],
         contact_index=0,
         quadratic=True,
         phase=0,
     )
 
     # Phase 1 (Flight):
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=10, min_bound=0.1, max_bound=0.3, phase=1)
+    objective_functions.add(
+        ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=weights["1_TIME"], min_bound=0.1, max_bound=0.3, phase=1
+    )
     objective_functions.add(
         minimize_actuator_torques,
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
         quadratic=True,
-        weight=0.1,
+        weight=weights["1_TORQUE_RATIO"],
         phase=1,
     )
 
     # Phase 2 (Tucked phase):
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=-10, min_bound=0.1, max_bound=0.4, phase=2)
+    objective_functions.add(
+        ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=weights["2_TIME"], min_bound=0.1, max_bound=0.4, phase=2
+    )
 
     # Phase 3 (Preparation landing):
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=10, min_bound=0.1, max_bound=0.3, phase=3)
+    objective_functions.add(
+        ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=weights["3_TIME"], min_bound=0.1, max_bound=0.3, phase=3
+    )
     objective_functions.add(
         minimize_actuator_torques,
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
         quadratic=True,
-        weight=0.1,
+        weight=weights["3_TORQUE_RATIO"],
         phase=3,
     )
 
     # Phase 4 (Landing):
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_STATE, key="qdot", node=Node.END, weight=100, phase=4)
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_COM_VELOCITY, node=Node.END, weight=100, phase=4)
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=100, min_bound=0.2, max_bound=1, phase=4)
+    objective_functions.add(
+        ObjectiveFcn.Mayer.MINIMIZE_STATE, key="qdot", node=Node.END, weight=weights["4_STATE"], phase=4
+    )
+    objective_functions.add(
+        ObjectiveFcn.Mayer.MINIMIZE_COM_VELOCITY, node=Node.END, weight=weights["4_COM_VELOCITY"], phase=4
+    )
+    objective_functions.add(
+        ObjectiveFcn.Mayer.MINIMIZE_TIME, weight=weights["4_TIME"], min_bound=0.2, max_bound=1, phase=4
+    )
     objective_functions.add(
         minimize_actuator_torques,
         custom_type=ObjectiveFcn.Lagrange,
         actuators=actuators,
         quadratic=True,
-        weight=0.01,
+        weight=weights["4_TORQUE_RATIO"],
         phase=4,
     )
-    objective_functions.add(ObjectiveFcn.Mayer.MINIMIZE_COM_POSITION, node=Node.END, weight=100, axes=Axis.Y, phase=4)
+    objective_functions.add(
+        ObjectiveFcn.Mayer.MINIMIZE_COM_POSITION, node=Node.END, weight=weights["4_COM_POSITION"], axes=Axis.Y, phase=4
+    )
 
     return objective_functions
 
 
-def add_tau_derivative_objectives(objective_functions):
+def add_tau_derivative_objectives(objective_functions, weights: dict = None):
+
+    if weights is None:
+        weights = WEIGHTS
+
+    weight_tau_derivative = weights["TAU_DERIVATIVE"]
+
     # Phase 0 (Propulsion):
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=1, phase=0)
+    objective_functions.add(
+        ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=weight_tau_derivative, phase=0
+    )
 
     # Phase 1 (Flight):
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=1, phase=1)
+    objective_functions.add(
+        ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=weight_tau_derivative, phase=1
+    )
 
     # Phase 2 (Tucked phase):
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=1, phase=2)
+    objective_functions.add(
+        ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=weight_tau_derivative, phase=2
+    )
 
     # Phase 3 (Preparation landing):
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=1, phase=3)
+    objective_functions.add(
+        ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=weight_tau_derivative, phase=3
+    )
 
     # Phase 4 (Landing):
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=1, phase=4)
+    objective_functions.add(
+        ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="tau", derivative=True, weight=weight_tau_derivative, phase=4
+    )
 
     return objective_functions
 
 
-def add_taudot_objectives(objective_functions):
+def add_taudot_objectives(objective_functions, weights: dict = None):
+    if weights is None:
+        weights = WEIGHTS
+
+    weight_taudot = weights["TAUDOT"]
+
     # Phase 0 (Propulsion):
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="taudot", weight=1, phase=0)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="taudot", weight=weight_taudot, phase=0)
 
     # Phase 1 (Flight):
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="taudot", weight=1, phase=1)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="taudot", weight=weight_taudot, phase=1)
 
     # Phase 2 (Tucked phase):
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="taudot", weight=1, phase=2)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="taudot", weight=weight_taudot, phase=2)
 
     # Phase 3 (Preparation landing):
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="taudot", weight=1, phase=3)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="taudot", weight=weight_taudot, phase=3)
 
     # Phase 4 (Landing):
-    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="taudot", weight=1, phase=4)
+    objective_functions.add(ObjectiveFcn.Lagrange.MINIMIZE_CONTROL, key="taudot", weight=weight_taudot, phase=4)
 
     return objective_functions

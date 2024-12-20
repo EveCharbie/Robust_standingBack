@@ -78,11 +78,6 @@ for config, (folder, str_suffix, file_id) in enumerate(
     mrr2 = MultiFrameRatePhaseRerun(phase_reruns=phase_reruns)
     mrr2.rerun(str_suffix)
 
-    # blueprint to get a yz-plane in the 3d view
-    #     [x, y, z].
-    #
-    #     For example [Right, Down, Forward] means that the X axis points to the right, the Y axis points
-    #     down, and the Z axis points forward.
     rr.log(
         "world/cam",
         rr.Pinhole(

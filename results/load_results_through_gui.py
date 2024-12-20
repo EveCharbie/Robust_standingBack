@@ -1,5 +1,5 @@
 # Packages
-from visualisation import visualisation_movement, graph_all
+from visualisation_utils import visualisation_movement, graph_all
 import os
 
 
@@ -27,8 +27,8 @@ def search_file(message: str):
 
 
 # Script
-name_file_move = search_file("Fichier avec le mouvement")
-name_file_model = search_file("Fichier du model")
+name_file_move = search_file("Motion file .pkl")
+name_file_model = search_file(".biomod file")
 
 graph_all(name_file_move)
 visualisation_movement(name_file_move, name_file_model)

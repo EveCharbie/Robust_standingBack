@@ -1,15 +1,13 @@
 from contextlib import redirect_stdout
 import os
-import sys
 
 import numpy as np
 import pickle
 
-sys.path.append("../examples/")
-from sommersault_5phases_with_pelvis_landing_tau_dot import prepare_ocp as prepare_ocp_free
-from sommersault_5phases_CL_with_pelvis_landing_tau_dot import prepare_ocp as prepare_ocp_HTC
-from sommersault_5phases_KTC_with_pelvis_landing_tau_dot import prepare_ocp as prepare_ocp_KTC
-from constants import PATH_MODEL, PATH_MODEL_1_CONTACT
+from examples.sommersault_5phases_with_pelvis_landing_tau_dot import prepare_ocp as prepare_ocp_free
+from examples.sommersault_5phases_CL_with_pelvis_landing_tau_dot import prepare_ocp as prepare_ocp_HTC
+from examples.sommersault_5phases_KTC_with_pelvis_landing_tau_dot import prepare_ocp as prepare_ocp_KTC
+from src.constants import PATH_MODEL, PATH_MODEL_1_CONTACT
 
 biorbd_model_path = (PATH_MODEL_1_CONTACT, PATH_MODEL, PATH_MODEL, PATH_MODEL, PATH_MODEL_1_CONTACT)
 phase_time = (0.2, 0.2, 0.3, 0.3, 0.3)
@@ -39,26 +37,14 @@ zipped = zip(
     file_idx,
 )
 
+data = pickle.load(open(folder_KTC + f"/sol_{file_idx[0]}_CVG.pkl", "rb"))
+sol = pickle.load(open(folder_KTC + f"/sol_{file_idx[0]}_CVG_sol.pkl", "rb"))
+sol.ocp = prepare_ocp_KTC(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START=False)
 
-# for config, (folder, str_suffix, prepare_ocp, file_id) in enumerate(zipped):
-#     print(f"file_id: {file_id}")
-#     data = pickle.load(open(folder + f"/sol_{file_id}_CVG.pkl", "rb"))
-#     sol = pickle.load(open(folder + f"/sol_{file_id}_CVG_sol.pkl", "rb"))
-#     sol.ocp = prepare_ocp(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START=False)
-#
-#     sol.print_cost()
-#     with open(f"{folder}/best_objectives_and_constraints_{str_suffix}.txt", "w") as f:
-#         with redirect_stdout(f):
-#             sol.print_cost()
-
-# data = pickle.load(open(folder_KTC + f"/sol_{file_idx[0]}_CVG.pkl", "rb"))
-# sol = pickle.load(open(folder_KTC + f"/sol_{file_idx[0]}_CVG_sol.pkl", "rb"))
-# sol.ocp = prepare_ocp_KTC(biorbd_model_path, phase_time, n_shooting, WITH_MULTI_START=False)
-#
-# sol.print_cost()
-# with open(f"{folder_KTC}/best_objectives_and_constraints_KTC.txt", "w") as f:
-#     with redirect_stdout(f):
-#         sol.print_cost()
+sol.print_cost()
+with open(f"{folder_KTC}/best_objectives_and_constraints_KTC.txt", "w") as f:
+    with redirect_stdout(f):
+        sol.print_cost()
 
 
 data = pickle.load(open(folder_FREE + f"/sol_{file_idx[1]}_CVG.pkl", "rb"))
