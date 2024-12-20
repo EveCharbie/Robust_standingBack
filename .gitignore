@@ -138,3 +138,8 @@ dmypy.json
 
 USB_Anais/
 sandbox/
+
+data_analysis/*.pdf
+data_analysis/*.png
+data_analysis/*.svg
+

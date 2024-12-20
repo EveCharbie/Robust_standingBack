@@ -57,6 +57,12 @@ forces = np.zeros((100, 6))
 for file in file_names.keys():
     with open(force_results_path + file + "_L.pkl", "rb") as f:
         data_L = pickle.load(f)
+
+    if not isinstance(data_L, dict):
+        raise FileExistsError(
+            "The loaded file is not a dictionary. " "It needs to be update @charbie, to put the version with the time"
+        )
+
     forces_insoles = data_L["force_data"] * 2
     time_insoles = data_L["time"]
 

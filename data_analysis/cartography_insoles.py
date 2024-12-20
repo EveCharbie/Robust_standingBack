@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import signal
-from Create_cylinder_insole import distance_between_line_sensors
+from create_cylinder_insole import distance_between_line_sensors
 
 
 # --- Functions --- #

@@ -7,10 +7,9 @@ from matplotlib import colormaps as cmap
 
 
 # Solution with and without holonomic constraints
-path_sol = "/home/mickaelbegon/Documents/Anais/Robust_standingBack/src/solutions/Salto_5phases_VEve18"
-
-path_sol_CL = "/home/mickaelbegon/Documents/Anais/results"
-sol_CL = path_sol_CL + "/" + "Salto_close_loop_landing_5phases_VEve12.pkl"
+path_sol = "../results/with_noise/KTC"
+path_sol_CL = "../results/with_noise/HTC"
+sol_CL = path_sol_CL + "/" + "sol_0_CVG.pkl"
 data_CL = pd.read_pickle(sol_CL)
 
 path_model = "../models/Model2D_7Dof_2C_5M_CL_V3.bioMod"
