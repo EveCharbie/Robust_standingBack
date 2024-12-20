@@ -7,9 +7,9 @@ from src.constants import (
     PATH_MODEL,
 )
 
-from sommersault_5phases_with_pelvis_landing_tau_dot import prepare_ocp as prepare_ocp_ntc
-from sommersault_5phases_CL_with_pelvis_landing_tau_dot import prepare_ocp as prepare_ocp_with_htc
-from sommersault_5phases_KTC_with_pelvis_landing_tau_dot import prepare_ocp as prepare_ocp_with_ktc
+from sommersault_taudot import prepare_ocp as prepare_ocp_ntc
+from sommersault_htc_taudot import prepare_ocp as prepare_ocp_with_htc
+from sommersault_ktc_taudot import prepare_ocp as prepare_ocp_with_ktc
 from src.save_results import save_results_taudot
 from src.save_results import save_results_holonomic_taudot
 

@@ -1,10 +1,8 @@
 # Introduction
-This repository contains the code generating the optimal control problems (OCP), 
-the analyze of the data experimental and the results of the article entitled “Including limb-on-limb holonomic constraints
-in predictive simulation allows replicating athlete’s backflip technique”. 
-The predictive simulation computes the optimal backflip techniques with and without a holonomic constraint. 
-This holonomic constraint enables the avatar to use its hand to pull its shanks during the tuck phase. 
-The goal is to compare the optimal kinematics in both scenarios and demonstrate that predictive simulations incorporating holonomic constraints produce more realistic and accurate representations of an athlete’s backflip technique.
+This repository contains data and code from optimal control problems (OCP) of a planar digital twin performing a backward tuck somersault. 
+The simulations explore the impact of limb-on-limb contact during the "tuck" phase, 
+specifically how allowing the digital twin to pull its shanks with its hands (using holonomic constraints) affects 
+movement compared to not having any contact or just having contact without force (kinematic constraints).
 
 ![kinograms](docs/kinograms.png)
 
@@ -56,18 +54,9 @@ Otherwise, use mumps, but you won't replicate the results.
 
 # Exemples
 In the folder `examples\`, you will find the following examples (NTC, KTC, HTC):
-- `sommersault_5phases_CL_with_pelvis_landing.py`: This script generates the optimal control problem with the holonomic constraint.
-- `sommersault_5phases_CL_with_pelvis_landing_tau_dot.py`: This script generates the optimal control problem with the holonomic constraint and torque derivative driven
-- `sommersault_5phases_KTC_with_pelvis_landing_tau_dot.py`: This script generates the optimal control problem with the kinematic constraint and torque derivative driven
-- `sommersault_5phases_with_pelvis_landing.py`: This script generates the optimal control problem without the holonomic constraint.
-- `sommersault_5phases_with_pelvis_landing_tau_dot.py`: This script generates the optimal control problem without the holonomic constraint and torque derivative driven 
- 
+- `sommersault_htc.py`: This script generates the optimal control problem with the holonomic constraint.
+- `sommersault_htc_taudot.py`: This script generates the optimal control problem with the holonomic constraint and torque derivative driven
+- `sommersault_ktc_taudot.py`: This script generates the optimal control problem with the kinematic constraint and torque derivative driven
+- `sommersault.py`: This script generates the optimal control problem without the holonomic constraint.
+- `sommersault_taudot.py`: This script generates the optimal control problem without the holonomic constraint and torque derivative driven 
 
-# Contents from the paper
-In predictive simulations of human movements, contact interactions between limbs are often neglected to reduce modeling complexity. However, limb-on-limb contacts are inherent to certain movements, such as the backward tuck somersault where athletes grasp their legs with their hands while rotating in the air. 
-
-In the present study, we introduced limb-on-limb holonomic constraints into an optimal control problem to simulate more realistic techniques of backward tuck somersault. It was simulated using a planar digital twin comprising eight degrees of freedom and was divided into five phases: propulsion, pre-tuck flight, tuck, post-tuck flight, and landing. We modeled the limb-on-limb interaction during the tuck phase in two ways: 
-- with holonomic tucking constraints allowing force generation between the hands and shank
-- with kinematic tucking constraints only prescribing the hand position, without force generation. Incorporating the holonomic tucking constraint allowed the avatar to pull its shanks using its hands, replicating the behavior measured in an athlete. 
-
-This pulling strategy reduced the hip joint torques and the metabolic energy expenditure required to counteract the centrifugal pseudo-forces during the somersault rotation, leading to a more efficient movement. These findings suggest that incorporating limb-on-limb holonomic constraints enhances the biomechanical accuracy and realism of simulated human movements. Our implementation of limb-on-limb holonomic constraints can be utilized in other simulation contexts, potentially advancing the modeling of complex human motions in sports science, rehabilitation, and robotics.

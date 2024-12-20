@@ -4,9 +4,9 @@ import os
 import numpy as np
 import pickle
 
-from examples.sommersault_5phases_with_pelvis_landing_tau_dot import prepare_ocp as prepare_ocp_free
-from examples.sommersault_5phases_CL_with_pelvis_landing_tau_dot import prepare_ocp as prepare_ocp_HTC
-from examples.sommersault_5phases_KTC_with_pelvis_landing_tau_dot import prepare_ocp as prepare_ocp_KTC
+from examples.sommersault_taudot import prepare_ocp as prepare_ocp_free
+from examples.sommersault_htc_taudot import prepare_ocp as prepare_ocp_HTC
+from examples.sommersault_ktc_taudot import prepare_ocp as prepare_ocp_KTC
 from src.constants import PATH_MODEL, PATH_MODEL_1_CONTACT
 
 biorbd_model_path = (PATH_MODEL_1_CONTACT, PATH_MODEL, PATH_MODEL, PATH_MODEL, PATH_MODEL_1_CONTACT)
