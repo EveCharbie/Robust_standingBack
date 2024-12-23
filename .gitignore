@@ -146,3 +146,4 @@ analysis_contact_forces/*.svg
 analysis_simulations/*.pdf
 analysis_simulations/*.png
 analysis_simulations/*.svg
+analysis_contact_forces/Figures/
